@@ -7,7 +7,7 @@ from typing import List, Optional
 import requests
 from bs4 import BeautifulSoup
 
-from backend.app.core.config import get_headers, REQUEST_TIMEOUT, fix_encoding
+from backend.app.core.config import get_headers, REQUEST_TIMEOUT, fix_encoding, get_session
 from backend.app.models import EpisodeItem, SearchResultItem, AnimeDetail, EpisodeRef, WatchDetail, VideoServer, DirectoryItem
 from backend.app.providers.base import BaseAnimeProvider
 
@@ -26,7 +26,7 @@ class AnimeAV1Provider(BaseAnimeProvider):
         """Fetch latest episodes published on AnimeAV1 homepage."""
         url = self.base_url
         headers = get_headers()
-        res = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+        res = get_session().get(url, headers=headers, timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
         res.encoding = "utf-8"
 
@@ -82,7 +82,7 @@ class AnimeAV1Provider(BaseAnimeProvider):
         encoded_query = urllib.parse.quote(query.strip())
         url = f"{self.base_url}/catalogo?search={encoded_query}"
         headers = get_headers(referer=self.base_url)
-        res = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+        res = get_session().get(url, headers=headers, timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
         res.encoding = "utf-8"
 
@@ -129,7 +129,7 @@ class AnimeAV1Provider(BaseAnimeProvider):
         """Fetch anime details and episode list from AnimeAV1."""
         target_url = self._format_url(url)
         headers = get_headers(referer=self.base_url)
-        res = requests.get(target_url, headers=headers, timeout=REQUEST_TIMEOUT)
+        res = get_session().get(target_url, headers=headers, timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
         res.encoding = "utf-8"
 
@@ -247,7 +247,7 @@ class AnimeAV1Provider(BaseAnimeProvider):
         """Extract video servers and episode watch player URLs from AnimeAV1."""
         target_url = self._format_url(url)
         headers = get_headers(referer=self.base_url)
-        res = requests.get(target_url, headers=headers, timeout=REQUEST_TIMEOUT)
+        res = get_session().get(target_url, headers=headers, timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
         res.encoding = "utf-8"
 
@@ -433,7 +433,7 @@ class AnimeAV1Provider(BaseAnimeProvider):
         url = f"{self.base_url}/catalogo?{query_string}" if query_string else f"{self.base_url}/catalogo"
 
         headers = get_headers(referer=self.base_url)
-        res = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+        res = get_session().get(url, headers=headers, timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
         res.encoding = "utf-8"
 

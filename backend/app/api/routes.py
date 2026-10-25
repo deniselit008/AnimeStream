@@ -16,7 +16,7 @@ from fastapi.responses import HTMLResponse
 
 from backend.app.core.cache import cache
 from backend.app.core.config import get_headers, REQUEST_TIMEOUT, get_random_user_agent
-from backend.app.core.mal import fetch_mal_relations
+from backend.app.core.mal import fetch_mal_relations, clean_title_for_mal
 from backend.app.models import (
     EpisodeItem,
     SearchResultItem,
@@ -382,16 +382,11 @@ async def get_anime_details(
     try:
         anime_info = await asyncio.to_thread(provider.get_anime, url)
 
-        # Enqueue or fetch franchise relations from MyAnimeList
+        # Attach franchise relations from MAL if already cached; otherwise let frontend fetch in background
         if not getattr(anime_info, 'relations', None):
-            try:
-                relations = await asyncio.wait_for(
-                    asyncio.to_thread(fetch_mal_relations, anime_info.title),
-                    timeout=2.5
-                )
-                anime_info.relations = relations
-            except Exception as rel_err:
-                logger.debug(f"Could not load MAL relations for {anime_info.title}: {rel_err}")
+            clean_title = clean_title_for_mal(anime_info.title)
+            cached_rel = cache.get(f"mal_rel_av_v2_{clean_title.lower()}")
+            anime_info.relations = cached_rel if cached_rel else []
 
         cache.set(cache_key, anime_info)
         return anime_info

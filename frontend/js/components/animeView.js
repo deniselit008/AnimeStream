@@ -289,7 +289,16 @@ export async function renderAnime(container, animeUrl) {
 
         <!-- Franchise & Related Anime Section Mount -->
         <div id="relations-mount">
-          ${buildRelationsHtml(currentRelations, activeRelationFilter)}
+          ${currentRelations && currentRelations.length > 0 
+            ? buildRelationsHtml(currentRelations, activeRelationFilter)
+            : `
+              <div class="relations-section" style="padding: 16px 20px; opacity: 0.75;">
+                <div style="display: flex; align-items: center; gap: 10px; font-size: 0.88rem; color: var(--text-dim);">
+                  <div class="spinner" style="width: 16px; height: 16px; border-width: 2px;"></div>
+                  <span>Buscando obras de la franquicia en MyAnimeList...</span>
+                </div>
+              </div>
+            `}
         </div>
 
         <!-- Episodes List Section -->
@@ -381,16 +390,20 @@ export async function renderAnime(container, animeUrl) {
     // If relations were not included in initial response, fetch in background
     if (!currentRelations || currentRelations.length === 0) {
       Api.getRelations(anime.title).then(fetched => {
+        const relMount = container.querySelector('#relations-mount');
         if (fetched && fetched.length > 0) {
           currentRelations = fetched;
-          const relMount = container.querySelector('#relations-mount');
           if (relMount) {
             relMount.innerHTML = buildRelationsHtml(currentRelations, activeRelationFilter);
             attachRelationsEvents();
           }
+        } else if (relMount) {
+          relMount.innerHTML = '';
         }
       }).catch(err => {
         console.debug('Background MAL relations error:', err);
+        const relMount = container.querySelector('#relations-mount');
+        if (relMount) relMount.innerHTML = '';
       });
     }
 

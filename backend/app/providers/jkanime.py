@@ -7,7 +7,7 @@ from typing import List, Optional
 import requests
 from bs4 import BeautifulSoup
 
-from backend.app.core.config import get_headers, REQUEST_TIMEOUT, fix_encoding
+from backend.app.core.config import get_headers, REQUEST_TIMEOUT, fix_encoding, get_session
 from backend.app.models import EpisodeItem, SearchResultItem, AnimeDetail, EpisodeRef, WatchDetail, VideoServer, DirectoryItem
 from backend.app.providers.base import BaseAnimeProvider
 
@@ -26,7 +26,7 @@ class JKAnimeProvider(BaseAnimeProvider):
         """Fetch latest published episodes from JKAnime homepage."""
         url = f"{self.base_url}/"
         headers = get_headers()
-        res = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+        res = get_session().get(url, headers=headers, timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
         res.encoding = "utf-8"
 
@@ -92,7 +92,7 @@ class JKAnimeProvider(BaseAnimeProvider):
         encoded_query = urllib.parse.quote(query.strip())
         url = f"{self.base_url}/buscar/{encoded_query}/"
         headers = get_headers(referer=self.base_url)
-        res = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+        res = get_session().get(url, headers=headers, timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
         res.encoding = "utf-8"
 
@@ -131,7 +131,7 @@ class JKAnimeProvider(BaseAnimeProvider):
 
     def get_anime(self, url: str) -> AnimeDetail:
         """Fetch anime metadata and full sorted episode list from JKAnime."""
-        session = requests.Session()
+        session = get_session()
         target_url = self._format_url(url)
         if not target_url.endswith("/"):
             target_url += "/"
@@ -266,7 +266,7 @@ class JKAnimeProvider(BaseAnimeProvider):
             target_url += "/"
 
         headers = get_headers(referer=self.base_url)
-        res = requests.get(target_url, headers=headers, timeout=REQUEST_TIMEOUT)
+        res = get_session().get(target_url, headers=headers, timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
         res.encoding = "utf-8"
 
@@ -406,7 +406,7 @@ class JKAnimeProvider(BaseAnimeProvider):
         url = f"{self.base_url}/directorio/?{query_string}" if query_string else f"{self.base_url}/directorio/"
 
         headers = get_headers(referer=self.base_url)
-        res = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+        res = get_session().get(url, headers=headers, timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
         res.encoding = "utf-8"
 
