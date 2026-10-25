@@ -12,7 +12,7 @@ Plataforma web completa y funcional lista para producción que actúa como agreg
 El proyecto está diseñado bajo una arquitectura desacoplada y orientada a microservicios/adaptadores:
 
 ```
-AnimeStream/
+Anime/
 ├── backend/
 │   ├── app/
 │   │   ├── api/
@@ -142,26 +142,6 @@ Todos los endpoints devuelven respuestas JSON homogéneas e interoperables indep
   - Guarda automáticamente el historial de capítulos vistos con fecha relativa ("Hace 10 min", "Ayer").
   - Guarda los animes marcados como favoritos.
   - Recuerda el último episodio reproducido.
-
----
-
-## 🎮 Compatibilidad con Xbox (Microsoft Edge & Gamepad TV UI)
-
-AnimeStream incluye soporte de primer nivel para **Xbox One, Xbox Series S y Xbox Series X** a través de **Microsoft Edge**:
-
-- **Desactivación del Cursor Virtual de Edge:** Configura automáticamente `navigator.gamepadInputEmulation = 'gamepad'`, eliminando el puntero circular virtual de Edge y permitiendo una navegación directa y nativa por el DOM con el mando de la consola.
-- **Interfaz TV de 10 Pies (10-Foot UI):** Detecta el entorno de Xbox (`.xbox-device`) aplicando márgenes de seguridad para sobreexploración de pantallas (overscan TV safe area), fuentes ampliadas y realces visuales con el verde oficial de Xbox (`#107c10`).
-- **Mapeo Completo del Mando de Xbox:**
-  - **Botón `A` (Verde):** Seleccionar enlace / botón enfocado o Alternar Reproducción / Pausa.
-  - **Botón `B` (Rojo):** Volver atrás / Cerrar ventanas modales.
-  - **Botón `X` (Azul):** Alternar Play/Pausa en vídeo o Añadir/Quitar de Favoritos en fichas.
-  - **Botón `Y` (Amarillo):** Acceso rápido al buscador (despliega automáticamente el teclado virtual del sistema Xbox).
-  - **`LB` / `RB`:** Episodio Anterior / Episodio Siguiente o cambio de página en catálogo.
-  - **`LT` / `RT`:** Retroceder / Avanzar 10 segundos en el reproductor.
-  - **`D-Pad` & Sticks:** Navegación espacial omnidireccional fluida / Control de volumen (±5%).
-  - **Botón `View`:** Volver atrás.
-  - **Botón `Menu` (☰):** Pantalla completa.
-- **Barra de Ayuda HUD:** Guía flotante con las insignias de colores oficiales del mando de Xbox.
 
 ---
 

@@ -59,7 +59,7 @@ if __name__ == "__main__":
     print("=" * 65)
     print(f" ▶  En este ordenador:        {local_url}")
     if lan_url:
-        print(f" ▶  En Xbox / Smart TV / Móvil: {lan_url}")
+        print(f" ▶  En Smart TV / Móvil:       {lan_url}")
     print(f" ▶  Documentación API:        {local_url}/docs")
     print("-" * 65)
     print(" Presiona Ctrl + C en esta consola para detener el servidor.")

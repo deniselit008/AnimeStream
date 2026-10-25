@@ -10,7 +10,6 @@ import { renderFavorites } from './components/favoritesView.js?v=3.0';
 import { renderHistory } from './components/historyView.js?v=3.0';
 import { renderDirectory } from './components/directoryView.js?v=3.0';
 import { renderLibrary } from './components/libraryView.js?v=3.0';
-import { initGamepadSupport } from './gamepad.js?v=3.0';
 import { AdBlock } from './adblock.js?v=3.0';
 
 // Initialize AdBlock engine immediately to intercept popups and third-party trackers
@@ -107,9 +106,7 @@ window.addEventListener('hashchange', () => {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     handleRoute().catch(console.error);
-    initGamepadSupport();
   });
 } else {
   handleRoute().catch(console.error);
-  initGamepadSupport();
 }

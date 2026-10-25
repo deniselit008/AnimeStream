@@ -241,7 +241,7 @@ class AdBlockEngine {
             </div>
             <div>
               <h3 style="margin: 0; font-size: 1.15rem; color: #fff;">Escudo AdBlocker Integrado</h3>
-              <p style="margin: 0; font-size: 0.8rem; color: var(--text-dim);">Protección nativa para Xbox, PC y Smart TV</p>
+              <p style="margin: 0; font-size: 0.8rem; color: var(--text-dim);">Protección nativa para PC, Smart TV y Móvil</p>
             </div>
           </div>
           <button class="modal-close-btn" id="btn-close-adblock-modal">✕</button>
