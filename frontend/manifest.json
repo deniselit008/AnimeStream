@@ -1,0 +1,10 @@
+{
+  "name": "AnimeStream - Catálogo & Reproductor",
+  "short_name": "AnimeStream",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0b0f19",
+  "theme_color": "#0b0f19",
+  "description": "Plataforma de streaming agregadora de AnimeAV1, JKAnime y TioAnime adaptada para PC, Xbox (Edge 10-foot UI) y Smart TV con AdBlocker integrado."
+}

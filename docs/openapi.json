@@ -1,0 +1,2153 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AnimeStream Aggregator API",
+    "description": "\n## 🎬 AnimeStream Aggregator API — v1.0.0\n\nPlataforma unificada y motor de agregación de anime en tiempo real que indexa, normaliza y transmite contenido desde tres de los proveedores más populares de habla hispana:\n* **AnimeAV1** (`animeav1.com`)\n* **JKAnime** (`jkanime.net`)\n* **TioAnime** (`tioanime.com`)\n\n---\n\n### 🏛️ Características de la Arquitectura\n* **Cero Datos Estáticos:** Toda la información se extrae dinámicamente en tiempo real analizando el DOM y los scripts estructurados de cada proveedor.\n* **Caché en Memoria Thread-Safe (TTL 15 min):** Minimiza el número de peticiones a los sitios de origen y reduce los tiempos de respuesta por debajo de **50ms**.\n* **Proxy de Streaming HLS Antihotlinking:** Resuelve listas de reproducción (`.m3u8`) y reescribe dinámicamente las rutas de los segmentos (`.ts`) para eludir restricciones de cabecera `Referer` o bloqueos 403 de Cloudflare.\n* **Tolerancia a Fallos Multifuente:** Si un sitio de terceros cae o modifica sus selectores CSS, la API aísla el error y entrega de inmediato los datos de los proveedores funcionales.\n* **Soporte Local y LAN:** Funciona sin conexión a servicios cloud de pago, autodetectando la IP en red local para reproducir contenido en móviles, tablets y Smart TVs.\n\n---\n\n### 📖 Documentación Interactiva\n* [Swagger UI Interactivo](/docs) — Prueba de peticiones y esquemas JSON directamente en el navegador.\n* [ReDoc Visualizer](/redoc) — Visualización limpia y estructurada de la especificación técnica.\n* [OpenAPI JSON Schema](/openapi.json) — Definición OpenAPI 3.0 en formato estándar para importar en Postman, Insomnia o herramientas de automatización.\n",
+    "contact": {
+      "name": "AnimeStream Core Team",
+      "url": "https://github.com/AnimeStream-spec/AnimeStream"
+    },
+    "license": {
+      "name": "MIT License",
+      "url": "https://opensource.org/licenses/MIT"
+    },
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/latest": {
+      "get": {
+        "tags": [
+          "Catálogo y Emisión"
+        ],
+        "summary": "Obtener últimos episodios en emisión",
+        "description": "### 📡 Extracción en Tiempo Real de Últimos Capítulos\n\nConsulta simultáneamente las portadas de los proveedores configurados (**AnimeAV1**, **JKAnime** y **TioAnime**):\n- **Entrelazado Equitativo:** Cuando `source=all`, intercala los capítulos de cada portal para ofrecer una portada variada.\n- **Aislamiento de Errores:** Si uno de los servidores externos no responde o está en mantenimiento, la respuesta devuelve los capítulos de los demás sin interrumpir la experiencia.\n- **Caché en Memoria:** Las respuestas válidas se almacenan en caché durante **15 minutos** para evitar la sobrecarga de los proveedores de origen.",
+        "operationId": "get_latest_episodes_api_latest_get",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtro de proveedor de origen: `all` (combinar todos de forma entrelazada), `animeav1`, `jkanime` o `tioanime`.",
+              "examples": [
+                "all"
+              ],
+              "default": "all",
+              "title": "Source"
+            },
+            "description": "Filtro de proveedor de origen: `all` (combinar todos de forma entrelazada), `animeav1`, `jkanime` o `tioanime`."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de episodios devuelta con éxito (desde caché o scraping en tiempo real).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EpisodeItem"
+                  },
+                  "title": "Response 200 Get Latest Episodes Api Latest Get"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Error al conectar con los proveedores de anime.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/search": {
+      "get": {
+        "tags": [
+          "Búsqueda Multi-Fuente"
+        ],
+        "summary": "Búsqueda global simultánea de animes",
+        "description": "### 🔍 Búsqueda Concurrente Multifuente con Resiliencia Total\n\nEjecuta la búsqueda de forma paralela en los buscadores de **AnimeAV1**, **JKAnime** y **TioAnime**:\n- **Comportamiento `Promise.allSettled`:** Si una web externa impone un captcha o tarda demasiado, sus errores se reportan en el campo `errors` y los resultados del resto de sitios se entregan de inmediato.\n- **Normalización de Formato:** Transforma los resultados heterogéneos de cada web en un esquema unificado con título, URL canónica, póster y tipo de producción.\n- **Caché Instantánea:** Almacena búsquedas frecuentes en memoria durante **15 minutos**.",
+        "operationId": "search_anime_api_search_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Nombre, título o palabra clave del anime a buscar.",
+              "examples": [
+                "Sousou no Frieren"
+              ],
+              "title": "Q"
+            },
+            "description": "Nombre, título o palabra clave del anime a buscar."
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por proveedor específico: `all`, `animeav1`, `jkanime` o `tioanime`.",
+              "examples": [
+                "all"
+              ],
+              "default": "all",
+              "title": "Source"
+            },
+            "description": "Filtrar por proveedor específico: `all`, `animeav1`, `jkanime` o `tioanime`."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Búsqueda completada exitosamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/directory": {
+      "get": {
+        "tags": [
+          "Directorio Filtrable"
+        ],
+        "summary": "Explorar catálogo filtrable de animes",
+        "description": "### 📂 Explorador y Filtro Avanzado de Anime\n\nPermite navegar por el catálogo completo combinando múltiples criterios de clasificación:\n- **26 Géneros soportados:** Acción, Aventura, Ciencia Ficción, Comedia, Drama, Fantasía, Magia, Mecha, Misterio, Psicológico, Romance, Shounen, Sobrenatural, etc.\n- **Formatos:** Series de Televisión, Películas cinemáticas, OVAs, ONAs y Especiales.\n- **Paginación Dinámica:** Conserva los parámetros activos en llamadas consecutivas (`page=1`, `page=2`, etc.).",
+        "operationId": "get_directory_api_directory_get",
+        "parameters": [
+          {
+            "name": "genre",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtro por género o temática (ej: `accion`, `aventura`, `comedia`, `drama`, `fantasia`, `romance`, `sci-fi`, etc.).",
+              "examples": [
+                "accion"
+              ],
+              "title": "Genre"
+            },
+            "description": "Filtro por género o temática (ej: `accion`, `aventura`, `comedia`, `drama`, `fantasia`, `romance`, `sci-fi`, etc.)."
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtro por tipo de producción: `tv` (Serie TV), `movie` (Película), `ova` (OVA), `special` (Especial), `ona` (ONA).",
+              "examples": [
+                "tv"
+              ],
+              "title": "Type"
+            },
+            "description": "Filtro por tipo de producción: `tv` (Serie TV), `movie` (Película), `ova` (OVA), `special` (Especial), `ona` (ONA)."
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtro por año de lanzamiento (desde `2026` hasta `2000`).",
+              "examples": [
+                "2024"
+              ],
+              "title": "Year"
+            },
+            "description": "Filtro por año de lanzamiento (desde `2026` hasta `2000`)."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtro por estado de emisión: `emision` (En emisión) o `finalizado` (Finalizado).",
+              "examples": [
+                "emision"
+              ],
+              "title": "Status"
+            },
+            "description": "Filtro por estado de emisión: `emision` (En emisión) o `finalizado` (Finalizado)."
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por proveedor específico o combinar todos: `all`, `animeav1`, `jkanime`, `tioanime`.",
+              "examples": [
+                "all"
+              ],
+              "default": "all",
+              "title": "Source"
+            },
+            "description": "Filtrar por proveedor específico o combinar todos: `all`, `animeav1`, `jkanime`, `tioanime`."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Número de página para la paginación (comienza en 1).",
+              "examples": [
+                1
+              ],
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Número de página para la paginación (comienza en 1)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página del catálogo devuelta correctamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DirectoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/anime": {
+      "get": {
+        "tags": [
+          "Detalles del Anime"
+        ],
+        "summary": "Obtener ficha técnica y lista de episodios",
+        "description": "### 📑 Extracción de Ficha Técnica y Episodios\n\nAnaliza la página principal de un anime en el proveedor especificado:\n- **Detección Automática:** Identifica la plataforma de origen a partir del dominio (`animeav1.com`, `jkanime.net`, `tioanime.com`).\n- **Lista Completa de Episodios:** Extrae todos los números de capítulos ordenados cronológicamente (gestionando paginación AJAX en series largas como *One Piece* o *Naruto*).\n- **Metadatos Enriquecidos:** Recupera título original, sinopsis traducida, lista de géneros y estado de publicación (*En emisión* / *Finalizado*).",
+        "operationId": "get_anime_details_api_anime_get",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "URL canónica de la ficha del anime en AnimeAV1, JKAnime o TioAnime.",
+              "examples": [
+                "https://jkanime.net/dragon-ball-super-beerus/"
+              ],
+              "title": "Url"
+            },
+            "description": "URL canónica de la ficha del anime en AnimeAV1, JKAnime o TioAnime."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ficha del anime recuperada satisfactoriamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnimeDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "URL no válida o proveedor no soportado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Fallo al raspar la página del anime desde el proveedor de origen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/watch": {
+      "get": {
+        "tags": [
+          "Sala de Reproducción y Streaming"
+        ],
+        "summary": "Obtener servidores de vídeo para un episodio",
+        "description": "### 🎬 Extracción de Reproductores y Navegación\n\nExtrae todos los servidores de vídeo disponibles para un capítulo específico:\n- **Multiservidor:** Obtiene iframes directos hacia servicios como *HLS Directo, Mega, Voe, Desu, Magi, YourUpload, MP4Upload, etc.*\n- **Enlaces de Navegación:** Identifica las URLs del capítulo previo (`prevUrl`) y posterior (`nextUrl`) para permitir navegación fluida.\n- **Proxy HLS Automático:** Si el capítulo proviene de un servidor HLS protegido por hotlinking, devuelve la ruta hacia el proxy local `/api/hls/player/{hash}`.",
+        "operationId": "get_watch_episode_api_watch_get",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "URL canónica del episodio en AnimeAV1, JKAnime o TioAnime.",
+              "examples": [
+                "https://animeav1.com/media/dark-machine-the-animation/2"
+              ],
+              "title": "Url"
+            },
+            "description": "URL canónica del episodio en AnimeAV1, JKAnime o TioAnime."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Servidores de vídeo extraídos con éxito.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "URL no válida o proveedor no soportado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "No se pudieron obtener los reproductores del capítulo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hls/player/{hash_id}": {
+      "get": {
+        "tags": [
+          "Sala de Reproducción y Streaming"
+        ],
+        "summary": "Reproductor HTML5 embebible para flujo HLS",
+        "description": "### 📺 Reproductor Embebible Local (HLS Player)\n\nGenera una página HTML optimizada para reproducir transmisiones HLS (`.m3u8`):\n- Incluye soporte nativo para **Hls.js** local con fallback.\n- Maneja reintentos automáticos ante cortes de red o microbúferes.\n- Apunta al proxy interno `/api/hls/m3u8/{hash_id}` para garantizar que el navegador nunca reciba un error `403 Forbidden`.",
+        "operationId": "get_hls_player_api_hls_player__hash_id__get",
+        "parameters": [
+          {
+            "name": "hash_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Identificador hash hexadecimal del flujo de vídeo.",
+              "examples": [
+                "3586d5b0201df9527045f57c57eb9241"
+              ],
+              "title": "Hash Id"
+            },
+            "description": "Identificador hash hexadecimal del flujo de vídeo."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documento HTML con hls.js preconfigurado para reproducir la transmisión HLS de forma fluida.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hls/m3u8/{hash_id}": {
+      "get": {
+        "tags": [
+          "Sala de Reproducción y Streaming"
+        ],
+        "summary": "Proxy y reescritor de manifiesto HLS .m3u8",
+        "description": "### 🔄 Proxy y Reescritor de Listas de Reproducción HLS (.m3u8)\n\nDescarga el manifiesto `.m3u8` original enviando las cabeceras `Referer` y `Origin` que el CDN remoto exige:\n- **Reescritura de Segmentos:** Convierte todas las URLs absolutas de segmentos en rutas locales `/api/hls/seg/{hash_id}/{filename}`.\n- **Bypass de CORS:** Aplica cabeceras `Access-Control-Allow-Origin: *` para permitir la reproducción en cualquier cliente web.",
+        "operationId": "get_hls_m3u8_api_hls_m3u8__hash_id__get",
+        "parameters": [
+          {
+            "name": "hash_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Identificador hash del vídeo HLS a retransmitir.",
+              "examples": [
+                "3586d5b0201df9527045f57c57eb9241"
+              ],
+              "title": "Hash Id"
+            },
+            "description": "Identificador hash del vídeo HLS a retransmitir."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Manifiesto .m3u8 reescrito devuelto con cabeceras CORS y tipo MIME application/vnd.apple.mpegurl.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "502": {
+            "description": "Fallo al obtener el manifiesto HLS remoto.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hls/seg/{hash_id}/{filename}": {
+      "get": {
+        "tags": [
+          "Sala de Reproducción y Streaming"
+        ],
+        "summary": "Proxy de fragmentos de vídeo MPEG-TS (.ts)",
+        "description": "### 📦 Proxy Inverso de Segmentos de Vídeo (.ts)\n\nTransmite de forma transparente los bloques binarios de vídeo a través del servidor local:\n- Conserva las cabeceras `Referer` y `Sec-Fetch-Site` requeridas para eludir el hotlinking.\n- Devuelve `Cache-Control: public, max-age=86400` para que el navegador guarde en búfer local los fragmentos ya descargados.",
+        "operationId": "get_hls_segment_api_hls_seg__hash_id___filename__get",
+        "parameters": [
+          {
+            "name": "hash_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Hash del vídeo HLS.",
+              "title": "Hash Id"
+            },
+            "description": "Hash del vídeo HLS."
+          },
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Nombre del archivo de segmento (ej: `seg-1-v1-a1.ts`).",
+              "title": "Filename"
+            },
+            "description": "Nombre del archivo de segmento (ej: `seg-1-v1-a1.ts`)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fragmento binario de vídeo devuelto correctamente.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "502": {
+            "description": "Error al descargar el segmento de vídeo desde el CDN remoto.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proxy-player": {
+      "get": {
+        "tags": [
+          "Sala de Reproducción y Streaming"
+        ],
+        "summary": "Proxy HTML para reproductores con protección Referer",
+        "description": "### 🛡️ Desactivador de Restricciones Iframe y Referer\n\nDescarga el código HTML del reproductor remoto eliminando las cabeceras restrictivas:\n- Elimina `Content-Security-Policy` restrictivo y `X-Frame-Options: SAMEORIGIN / DENY`.\n- Sobrescribe con `X-Frame-Options: ALLOWALL` y `Access-Control-Allow-Origin: *`.",
+        "operationId": "proxy_player_api_proxy_player_get",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "URL del reproductor embebido que restringe incrustaciones.",
+              "title": "Url"
+            },
+            "description": "URL del reproductor embebido que restringe incrustaciones."
+          },
+          {
+            "name": "ref",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Cabecera Referer que espera el servidor de vídeo.",
+              "title": "Ref"
+            },
+            "description": "Cabecera Referer que espera el servidor de vídeo."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página HTML del reproductor remoto con cabeceras X-Frame-Options y CSP despojadas para incrustar sin restricciones.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/library/parse-mal": {
+      "post": {
+        "tags": [
+          "Biblioteca MyAnimeList"
+        ],
+        "summary": "Importar archivo de exportación de MyAnimeList (.xml / .xml.gz)",
+        "description": "### 📥 Importación Manual de MyAnimeList\n\nProcesa archivos descargados desde `https://myanimelist.net/panel.php?go=export`:\n- **Soporte GZIP Automático:** Detecta y descomprime de inmediato archivos `.xml.gz` en memoria sin requerir herramientas externas.\n- **Clasificación Automática:** Agrupa en *Viendo (`watching`)*, *Visto (`completed`)*, *Pausado (`on_hold`)*, *Abandonado (`dropped`)* y *Pendiente (`plan_to_watch`)*.\n- **Metadatos del Usuario:** Extrae puntuaciones personales (0-10), recuento de episodios vistos y fecha de actualización.",
+        "operationId": "parse_mal_upload_api_library_parse_mal_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_parse_mal_upload_api_library_parse_mal_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Lista de MyAnimeList procesada e importada satisfactoriamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MALParseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato de archivo inválido o XML corrupto.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/library/local-file": {
+      "get": {
+        "tags": [
+          "Biblioteca MyAnimeList"
+        ],
+        "summary": "Auto-detectar e importar lista de MyAnimeList local",
+        "description": "### 📂 Detección Automática de Exportaciones en el Ordenador\n\nEscanea las carpetas habituales de descargas y documentos en busca del archivo de MyAnimeList:\n- Carpetas inspeccionadas: `~/Downloads`, `~/Descargas`, `~/Desktop`, `~/Escritorio`, `~/Documents` y la raíz del proyecto.\n- Patrón de búsqueda: `animelist*.xml.gz` y `animelist*.xml`.\n- Si encuentra varios, selecciona automáticamente el **más reciente** según fecha de modificación.",
+        "operationId": "detect_local_mal_file_api_library_local_file_get",
+        "responses": {
+          "200": {
+            "description": "Resultado de la búsqueda local (con datos del archivo si fue encontrado).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MALParseResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cache/stats": {
+      "get": {
+        "tags": [
+          "Sistema y Caché"
+        ],
+        "summary": "Consultar métricas de la caché en memoria",
+        "description": "### 📊 Métricas de Eficiencia del Sistema\n\nDevuelve el estado de la memoria caché interna en tiempo real:\n- **`hits`**: Número de peticiones resueltas en <1ms sin consultar a los sitios de origen.\n- **`misses`**: Peticiones que requirieron scraping en vivo.\n- **`hit_ratio`**: Porcentaje de acierto de la caché.\n- **`total_keys`**: Entradas activas actualmente en memoria.",
+        "operationId": "get_cache_stats_api_cache_stats_get",
+        "responses": {
+          "200": {
+            "description": "Estadísticas de aciertos (hits), fallos (misses), ratio de efectividad y llaves activas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CacheStatsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cache/clear": {
+      "post": {
+        "tags": [
+          "Sistema y Caché"
+        ],
+        "summary": "Vaciar caché en memoria",
+        "description": "### 🧹 Purgado Instantáneo de Memoria\n\nElimina todas las claves almacenadas en memoria forzando una recarga limpia y fresca desde los sitios de origen en las siguientes peticiones.",
+        "operationId": "clear_cache_api_cache_clear_post",
+        "responses": {
+          "200": {
+            "description": "Confirmación del vaciado de todas las llaves en caché.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/image-proxy": {
+      "get": {
+        "tags": [
+          "Sistema y Caché"
+        ],
+        "summary": "Proxy de imágenes con cabeceras anti-bloqueo",
+        "description": "### 🖼️ Proxy de Imágenes Transparentes\n\nEvita enlaces rotos por hotlinking o políticas de CORS al servir carátulas y capturas remotas:\n- Simula cabeceras de navegador de escritorio.\n- Aplica cabeceras `Cache-Control: public, max-age=604800, immutable` para persistir las imágenes en la caché del navegador durante 7 días.",
+        "operationId": "proxy_image_api_image_proxy_get",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "URL absoluta de la imagen a través del proxy.",
+              "examples": [
+                "https://cdn.animeav1.com/covers/4497.jpg"
+              ],
+              "title": "Url"
+            },
+            "description": "URL absoluta de la imagen a través del proxy."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Imagen devuelta con éxito (image/jpeg, image/png, image/webp).",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "502": {
+            "description": "Error al descargar la imagen remota.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnimeDetail": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Título oficial del anime.",
+            "examples": [
+              "Dragon Ball Super: Beerus"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "URL de origen de la ficha del anime.",
+            "examples": [
+              "https://jkanime.net/dragon-ball-super-beerus/"
+            ]
+          },
+          "image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image",
+            "description": "Póster vertical principal en alta definición.",
+            "examples": [
+              "https://cdn.jkdesa.com/assets/images/animes/image/dragon-ball-super-beerus.jpg"
+            ]
+          },
+          "backdrop": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backdrop",
+            "description": "Imagen horizontal de fondo o banner panorámico."
+          },
+          "synopsis": {
+            "type": "string",
+            "title": "Synopsis",
+            "description": "Sinopsis completa del argumento en español.",
+            "default": ""
+          },
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Genres",
+            "description": "Lista de géneros y categorías temáticas.",
+            "examples": [
+              [
+                "Acción",
+                "Aventura",
+                "Fantasía",
+                "Shounen"
+              ]
+            ]
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Estado actual de transmisión ('En emisión' o 'Finalizado').",
+            "default": "En emisión",
+            "examples": [
+              "En emisión"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "Proveedor donde reside esta ficha ('AnimeAV1', 'JKAnime' o 'TioAnime').",
+            "examples": [
+              "JKAnime"
+            ]
+          },
+          "episodes": {
+            "items": {
+              "$ref": "#/components/schemas/EpisodeRef"
+            },
+            "type": "array",
+            "title": "Episodes",
+            "description": "Lista completa y ordenada de todos los episodios disponibles."
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "url",
+          "source"
+        ],
+        "title": "AnimeDetail",
+        "example": {
+          "backdrop": "https://cdn.animeav1.com/backdrops/4497.jpg",
+          "episodes": [
+            {
+              "number": 1,
+              "title": "Episodio 1",
+              "url": "https://jkanime.net/dragon-ball-super-beerus/1/"
+            },
+            {
+              "number": 2,
+              "title": "Episodio 2",
+              "url": "https://jkanime.net/dragon-ball-super-beerus/2/"
+            }
+          ],
+          "genres": [
+            "Acción",
+            "Aventura",
+            "Fantasía",
+            "Shounen"
+          ],
+          "image": "https://cdn.jkdesa.com/assets/images/animes/image/dragon-ball-super-beerus.jpg",
+          "source": "JKAnime",
+          "status": "En emisión",
+          "synopsis": "Nueva edición mejorada con la última tecnología visual...",
+          "title": "Dragon Ball Super: Beerus",
+          "url": "https://jkanime.net/dragon-ball-super-beerus/"
+        }
+      },
+      "Body_parse_mal_upload_api_library_parse_mal_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File",
+            "description": "Archivo de exportación de MyAnimeList, ya sea comprimido en GZIP (`.xml.gz`) o en texto plano (`.xml`)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_mal_upload_api_library_parse_mal_post"
+      },
+      "CacheStatsResponse": {
+        "properties": {
+          "total_keys": {
+            "type": "integer",
+            "title": "Total Keys",
+            "description": "Total de entradas activas en la memoria caché.",
+            "examples": [
+              42
+            ]
+          },
+          "hits": {
+            "type": "integer",
+            "title": "Hits",
+            "description": "Peticiones atendidas directamente desde la memoria caché.",
+            "examples": [
+              128
+            ]
+          },
+          "misses": {
+            "type": "integer",
+            "title": "Misses",
+            "description": "Peticiones que requirieron consulta fresca a los proveedores de origen.",
+            "examples": [
+              42
+            ]
+          },
+          "hit_ratio": {
+            "type": "number",
+            "title": "Hit Ratio",
+            "description": "Porcentaje de acierto de la caché (0.0 a 1.0).",
+            "examples": [
+              0.75
+            ]
+          },
+          "default_ttl": {
+            "type": "integer",
+            "title": "Default Ttl",
+            "description": "Tiempo de vida predeterminado en segundos (900s = 15 min).",
+            "examples": [
+              900
+            ]
+          },
+          "sample_keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sample Keys",
+            "description": "Muestra de claves activas.",
+            "examples": [
+              [
+                "latest_all",
+                "dir_accion_none_none_none_all_1"
+              ]
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_keys",
+          "hits",
+          "misses",
+          "hit_ratio",
+          "default_ttl"
+        ],
+        "title": "CacheStatsResponse",
+        "example": {
+          "default_ttl": 900,
+          "hit_ratio": 0.75,
+          "hits": 128,
+          "misses": 42,
+          "sample_keys": [
+            "latest_all",
+            "dir_accion_none_none_none_all_1"
+          ],
+          "total_keys": 42
+        }
+      },
+      "DirectoryItem": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Título del anime en el catálogo.",
+            "examples": [
+              "Sousou no Frieren"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "URL hacia la ficha del anime.",
+            "examples": [
+              "https://animeav1.com/media/sousou-no-frieren"
+            ]
+          },
+          "image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image",
+            "description": "Póster del anime.",
+            "examples": [
+              "https://cdn.animeav1.com/covers/4200.jpg"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "Fuente agregada ('AnimeAV1', 'JKAnime' o 'TioAnime').",
+            "examples": [
+              "AnimeAV1"
+            ]
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type",
+            "description": "Formato del contenido: TV Anime, Película, OVA, Especial, ONA.",
+            "default": "TV Anime"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "Estado de publicación: En emisión o Finalizado.",
+            "default": "En emisión"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year",
+            "description": "Año de lanzamiento o estreno.",
+            "examples": [
+              "2024"
+            ]
+          },
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Genres",
+            "description": "Etiquetas de géneros asociados.",
+            "examples": [
+              [
+                "Aventura",
+                "Drama",
+                "Fantasía"
+              ]
+            ]
+          },
+          "synopsis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Synopsis",
+            "description": "Resumen o sinopsis introductoria del anime."
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "url",
+          "source"
+        ],
+        "title": "DirectoryItem",
+        "example": {
+          "genres": [
+            "Aventura",
+            "Drama",
+            "Fantasía"
+          ],
+          "image": "https://cdn.animeav1.com/covers/4200.jpg",
+          "source": "AnimeAV1",
+          "status": "Finalizado",
+          "synopsis": "El rey demonio ha sido derrotado y el grupo del héroe se disuelve...",
+          "title": "Sousou no Frieren",
+          "type": "TV Anime",
+          "url": "https://animeav1.com/media/sousou-no-frieren",
+          "year": "2023"
+        }
+      },
+      "DirectoryResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DirectoryItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Lista de animes correspondientes a los filtros y página solicitados."
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "description": "Número de página devuelta.",
+            "default": 1,
+            "examples": [
+              1
+            ]
+          },
+          "has_next": {
+            "type": "boolean",
+            "title": "Has Next",
+            "description": "Indica si existen páginas subsiguientes en el catálogo.",
+            "default": true
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total",
+            "description": "Cantidad de animes en la página actual.",
+            "examples": [
+              30
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "DirectoryResponse",
+        "example": {
+          "has_next": true,
+          "items": [
+            {
+              "genres": [
+                "Aventura",
+                "Fantasía"
+              ],
+              "image": "https://cdn.animeav1.com/covers/4200.jpg",
+              "source": "AnimeAV1",
+              "status": "Finalizado",
+              "title": "Sousou no Frieren",
+              "type": "TV Anime",
+              "url": "https://animeav1.com/media/sousou-no-frieren",
+              "year": "2023"
+            }
+          ],
+          "page": 1,
+          "total": 1
+        }
+      },
+      "EpisodeItem": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Título oficial o normalizado de la serie de anime.",
+            "examples": [
+              "Sousou no Frieren 2nd Season"
+            ]
+          },
+          "episode": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Episode",
+            "description": "Número del episodio emitido (entero o identificador alfanumérico en especiales).",
+            "examples": [
+              4
+            ]
+          },
+          "image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image",
+            "description": "URL de la captura del episodio o carátula de portada.",
+            "examples": [
+              "https://cdn.animeav1.com/thumbnails/4497.jpg"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "URL completa o ruta para ver el episodio en la plataforma agregada.",
+            "examples": [
+              "https://animeav1.com/media/dark-machine-the-animation/2"
+            ]
+          },
+          "animeUrl": {
+            "type": "string",
+            "title": "Animeurl",
+            "description": "URL completa hacia la ficha técnica principal del anime.",
+            "examples": [
+              "https://animeav1.com/media/dark-machine-the-animation"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "Proveedor de origen que emitió el capítulo: 'AnimeAV1', 'JKAnime' o 'TioAnime'.",
+            "examples": [
+              "AnimeAV1"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "episode",
+          "url",
+          "animeUrl",
+          "source"
+        ],
+        "title": "EpisodeItem",
+        "example": {
+          "animeUrl": "https://animeav1.com/media/dark-machine-the-animation",
+          "episode": 4,
+          "image": "https://cdn.animeav1.com/thumbnails/4497.jpg",
+          "source": "AnimeAV1",
+          "title": "Sousou no Frieren 2nd Season",
+          "url": "https://animeav1.com/media/dark-machine-the-animation/2"
+        }
+      },
+      "EpisodeRef": {
+        "properties": {
+          "number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Number",
+            "description": "Número del episodio.",
+            "examples": [
+              1
+            ]
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Etiqueta descriptiva del episodio.",
+            "examples": [
+              "Episodio 1"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "URL para reproducir este capítulo específico.",
+            "examples": [
+              "https://jkanime.net/one-piece/1/"
+            ]
+          },
+          "image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image",
+            "description": "Miniatura del episodio si está disponible."
+          }
+        },
+        "type": "object",
+        "required": [
+          "number",
+          "title",
+          "url"
+        ],
+        "title": "EpisodeRef",
+        "example": {
+          "image": "https://cdn.jkdesa.com/assets/images/animes/video/image_thumb/jkvideo_c457d7ae48d08a6b84bc0b1b9bd7d474.jpg",
+          "number": 1,
+          "title": "Episodio 1",
+          "url": "https://jkanime.net/one-piece/1/"
+        }
+      },
+      "ErrorDetail": {
+        "properties": {
+          "detail": {
+            "type": "string",
+            "title": "Detail",
+            "description": "Descripción detallada del error ocurrido.",
+            "examples": [
+              "URL no soportada. Debe pertenecer a animeav1.com, jkanime.net o tioanime.com"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "ErrorDetail"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MALAnimeItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "ID numérico de la serie en MyAnimeList.",
+            "examples": [
+              "52991"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Título de la obra según la exportación de MAL.",
+            "examples": [
+              "Sousou no Frieren"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Tipo de producción (TV, Movie, OVA, Special, ONA).",
+            "default": "TV",
+            "examples": [
+              "TV"
+            ]
+          },
+          "totalEpisodes": {
+            "type": "integer",
+            "title": "Totalepisodes",
+            "description": "Total de episodios oficiales de la serie.",
+            "default": 0,
+            "examples": [
+              28
+            ]
+          },
+          "watchedEpisodes": {
+            "type": "integer",
+            "title": "Watchedepisodes",
+            "description": "Episodios vistos por el usuario.",
+            "default": 0,
+            "examples": [
+              28
+            ]
+          },
+          "score": {
+            "type": "integer",
+            "title": "Score",
+            "description": "Puntuación personal otorgada por el usuario (0-10).",
+            "default": 0,
+            "examples": [
+              10
+            ]
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Identificador normalizado del estado: 'watching', 'completed', 'on_hold', 'dropped', 'plan_to_watch'.",
+            "examples": [
+              "completed"
+            ]
+          },
+          "statusLabel": {
+            "type": "string",
+            "title": "Statuslabel",
+            "description": "Etiqueta en español: 'Viendo', 'Visto', 'Pausado', 'Abandonado', 'Pendiente'.",
+            "examples": [
+              "Visto"
+            ]
+          },
+          "updatedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updatedat",
+            "description": "Fecha de inicio o finalización registrada.",
+            "examples": [
+              "2024-03-24"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "status",
+          "statusLabel"
+        ],
+        "title": "MALAnimeItem",
+        "example": {
+          "id": "52991",
+          "score": 10,
+          "status": "completed",
+          "statusLabel": "Visto",
+          "title": "Sousou no Frieren",
+          "totalEpisodes": 28,
+          "type": "TV",
+          "updatedAt": "2024-03-24",
+          "watchedEpisodes": 28
+        }
+      },
+      "MALParseResponse": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "description": "Nombre de usuario del propietario de la lista en MyAnimeList.",
+            "default": "Usuario",
+            "examples": [
+              "denis"
+            ]
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Número total de animes procesados en el archivo.",
+            "default": 0,
+            "examples": [
+              253
+            ]
+          },
+          "stats": {
+            "$ref": "#/components/schemas/MALStats",
+            "description": "Desglose estadístico por categoría de seguimiento."
+          },
+          "animes": {
+            "items": {
+              "$ref": "#/components/schemas/MALAnimeItem"
+            },
+            "type": "array",
+            "title": "Animes",
+            "description": "Colección completa de animes importados."
+          },
+          "found": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Found",
+            "description": "Indica si se auto-detectó un archivo en el sistema de archivos local.",
+            "examples": [
+              true
+            ]
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "Mensaje explicativo si no se encontró archivo local.",
+            "examples": [
+              "No se encontró ningún archivo animelist*.xml.gz en carpetas locales"
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error",
+            "description": "Descripción de error si ocurrió una excepción durante la lectura."
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filename",
+            "description": "Nombre del archivo local encontrado.",
+            "examples": [
+              "animelist_1792544888_-_18719935.xml.gz"
+            ]
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path",
+            "description": "Ruta absoluta local del archivo detectado.",
+            "examples": [
+              "C:\\Users\\denis\\Downloads\\animelist_1792544888_-_18719935.xml.gz"
+            ]
+          }
+        },
+        "type": "object",
+        "title": "MALParseResponse",
+        "example": {
+          "animes": [
+            {
+              "id": "52991",
+              "score": 10,
+              "status": "completed",
+              "statusLabel": "Visto",
+              "title": "Sousou no Frieren",
+              "totalEpisodes": 28,
+              "type": "TV",
+              "watchedEpisodes": 28
+            }
+          ],
+          "filename": "animelist_1792544888_-_18719935.xml.gz",
+          "found": true,
+          "stats": {
+            "completed": 145,
+            "dropped": 3,
+            "on_hold": 5,
+            "plan_to_watch": 88,
+            "watching": 12
+          },
+          "total": 253,
+          "username": "denis"
+        }
+      },
+      "MALStats": {
+        "properties": {
+          "watching": {
+            "type": "integer",
+            "title": "Watching",
+            "description": "Cantidad de animes actualmente en emisión que el usuario está viendo.",
+            "default": 0,
+            "examples": [
+              12
+            ]
+          },
+          "completed": {
+            "type": "integer",
+            "title": "Completed",
+            "description": "Cantidad de animes completados / vistos.",
+            "default": 0,
+            "examples": [
+              145
+            ]
+          },
+          "on_hold": {
+            "type": "integer",
+            "title": "On Hold",
+            "description": "Cantidad de animes en pausa.",
+            "default": 0,
+            "examples": [
+              5
+            ]
+          },
+          "dropped": {
+            "type": "integer",
+            "title": "Dropped",
+            "description": "Cantidad de animes abandonados.",
+            "default": 0,
+            "examples": [
+              3
+            ]
+          },
+          "plan_to_watch": {
+            "type": "integer",
+            "title": "Plan To Watch",
+            "description": "Cantidad de animes pendientes de ver.",
+            "default": 0,
+            "examples": [
+              88
+            ]
+          }
+        },
+        "type": "object",
+        "title": "MALStats",
+        "example": {
+          "completed": 145,
+          "dropped": 3,
+          "on_hold": 5,
+          "plan_to_watch": 88,
+          "watching": 12
+        }
+      },
+      "MessageResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Mensaje informativo o de confirmación de la operación.",
+            "examples": [
+              "Caché en memoria limpiada exitosamente"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "MessageResponse"
+      },
+      "SearchErrorItem": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "Nombre del proveedor que falló.",
+            "examples": [
+              "TioAnime"
+            ]
+          },
+          "error": {
+            "type": "string",
+            "title": "Error",
+            "description": "Mensaje técnico del error capturado.",
+            "examples": [
+              "Timeout connecting to upstream"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "error"
+        ],
+        "title": "SearchErrorItem"
+      },
+      "SearchResponse": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query",
+            "description": "Término de búsqueda ingresado.",
+            "examples": [
+              "Naruto"
+            ]
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SearchResultItem"
+            },
+            "type": "array",
+            "title": "Results",
+            "description": "Lista agregada y unificada de animes encontrados."
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/SearchErrorItem"
+            },
+            "type": "array",
+            "title": "Errors",
+            "description": "Lista de proveedores que experimentaron errores temporales sin afectar a los demás."
+          }
+        },
+        "type": "object",
+        "required": [
+          "query",
+          "results"
+        ],
+        "title": "SearchResponse",
+        "example": {
+          "errors": [],
+          "query": "Naruto",
+          "results": [
+            {
+              "image": "https://tioanime.com/uploads/thumbs/naruto-shippuden.jpg",
+              "source": "TioAnime",
+              "synopsis": "Naruto Uzumaki regresa tras 2 años y medio de entrenamiento...",
+              "title": "Naruto Shippuden",
+              "type": "TV Anime",
+              "url": "https://tioanime.com/anime/naruto-shippuden"
+            }
+          ]
+        }
+      },
+      "SearchResultItem": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Título del anime encontrado en la búsqueda.",
+            "examples": [
+              "One Piece"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "URL de la ficha técnica del anime en la fuente de origen.",
+            "examples": [
+              "https://jkanime.net/one-piece/"
+            ]
+          },
+          "image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image",
+            "description": "URL de la imagen de portada o póster del anime.",
+            "examples": [
+              "https://cdn.jkdesa.com/assets/images/animes/image/one-piece.jpg"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "Nombre del proveedor donde se encontró el resultado.",
+            "examples": [
+              "JKAnime"
+            ]
+          },
+          "synopsis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Synopsis",
+            "description": "Breve fragmento o sinopsis del anime si está disponible en la búsqueda.",
+            "examples": [
+              "Gol D. Roger fue conocido como el 'Rey de los Piratas'..."
+            ]
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type",
+            "description": "Formato de la producción (TV, Película, OVA, Especial).",
+            "default": "Anime",
+            "examples": [
+              "TV Anime"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "url",
+          "source"
+        ],
+        "title": "SearchResultItem",
+        "example": {
+          "image": "https://cdn.jkdesa.com/assets/images/animes/image/one-piece.jpg",
+          "source": "JKAnime",
+          "synopsis": "Gol D. Roger fue conocido como el 'Rey de los Piratas'...",
+          "title": "One Piece",
+          "type": "TV Anime",
+          "url": "https://jkanime.net/one-piece/"
+        }
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VideoServer": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Nombre del servidor o reproductor de vídeo.",
+            "examples": [
+              "HLS Directo",
+              "Mega",
+              "Desu",
+              "Voe"
+            ]
+          },
+          "embed": {
+            "type": "string",
+            "title": "Embed",
+            "description": "URL embebible del iframe o flujo protegido por proxy.",
+            "examples": [
+              "/api/hls/player/3586d5b0201df9527045f57c57eb9241"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "embed"
+        ],
+        "title": "VideoServer",
+        "example": {
+          "embed": "/api/hls/player/3586d5b0201df9527045f57c57eb9241",
+          "name": "HLS Directo (HD)"
+        }
+      },
+      "WatchDetail": {
+        "properties": {
+          "animeTitle": {
+            "type": "string",
+            "title": "Animetitle",
+            "description": "Título de la serie a la que pertenece el episodio.",
+            "examples": [
+              "Dragon Ball Super: Beerus"
+            ]
+          },
+          "episode": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Episode",
+            "description": "Número del episodio actual.",
+            "examples": [
+              2
+            ]
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "URL de origen del capítulo.",
+            "examples": [
+              "https://jkanime.net/dragon-ball-super-beerus/2/"
+            ]
+          },
+          "animeUrl": {
+            "type": "string",
+            "title": "Animeurl",
+            "description": "URL de la ficha principal del anime.",
+            "examples": [
+              "https://jkanime.net/dragon-ball-super-beerus/"
+            ]
+          },
+          "image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image",
+            "description": "Miniatura de portada del episodio."
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "Proveedor del episodio ('AnimeAV1', 'JKAnime' o 'TioAnime').",
+            "examples": [
+              "JKAnime"
+            ]
+          },
+          "prevUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prevurl",
+            "description": "URL del episodio anterior si existe.",
+            "examples": [
+              "https://jkanime.net/dragon-ball-super-beerus/1/"
+            ]
+          },
+          "nextUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nexturl",
+            "description": "URL del episodio siguiente si ya ha sido emitido."
+          },
+          "servers": {
+            "items": {
+              "$ref": "#/components/schemas/VideoServer"
+            },
+            "type": "array",
+            "title": "Servers",
+            "description": "Lista de todos los servidores de vídeo disponibles para este episodio."
+          }
+        },
+        "type": "object",
+        "required": [
+          "animeTitle",
+          "episode",
+          "url",
+          "animeUrl",
+          "source"
+        ],
+        "title": "WatchDetail",
+        "example": {
+          "animeTitle": "Dragon Ball Super: Beerus",
+          "animeUrl": "https://jkanime.net/dragon-ball-super-beerus/",
+          "episode": 2,
+          "image": "https://cdn.jkdesa.com/assets/images/animes/video/image_thumb/jkvideo_a378ee299a8f0f56f60bef587e56eadf.jpg",
+          "prevUrl": "https://jkanime.net/dragon-ball-super-beerus/1/",
+          "servers": [
+            {
+              "embed": "https://jkanime.net/jkplayer/um?e=...",
+              "name": "Desu"
+            },
+            {
+              "embed": "https://jkanime.net/jkplayer/umv?e=...",
+              "name": "Magi"
+            }
+          ],
+          "source": "JKAnime",
+          "url": "https://jkanime.net/dragon-ball-super-beerus/2/"
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Catálogo y Emisión",
+      "description": "Endpoints para consultar los **últimos episodios recién estrenados** en portada, agregando de manera concurrente AnimeAV1, JKAnime y TioAnime con rotación de cabeceras y caché de 15 minutos."
+    },
+    {
+      "name": "Búsqueda Multi-Fuente",
+      "description": "Búsqueda global simultánea entre todos los proveedores soportados (`Promise.allSettled`). Si un proveedor de terceros experimenta latencia o caída, el sistema devuelve los resultados válidos del resto con **cero caídas**."
+    },
+    {
+      "name": "Directorio Filtrable",
+      "description": "Exploración exhaustiva del catálogo de anime con filtros unificados por **género (26 categorías)**, **tipo** (*TV Anime, Película, OVA, Especial, ONA*), **año de estreno** (*2026-2000*) y **estado** (*En emisión, Finalizado*)."
+    },
+    {
+      "name": "Detalles del Anime",
+      "description": "Extracción profunda de la **ficha técnica** del anime seleccionado: sinopsis completa, póster en alta resolución, géneros, estado de emisión y la lista completa y ordenada de todos los episodios disponibles."
+    },
+    {
+      "name": "Sala de Reproducción y Streaming",
+      "description": "Extracción de **servidores de vídeo embebidos** (*Mega, Desu, Magi, Voe, MP4Upload, etc.*), proxy inverso de manifiestos HLS (`.m3u8`) y segmentos de vídeo (`.ts`), y servidor proxy para eludir bloqueos de `Referer` y `Cloudflare 403`."
+    },
+    {
+      "name": "Biblioteca MyAnimeList",
+      "description": "Motor de procesamiento e importación local de exportaciones de **MyAnimeList** (`.xml` y `.xml.gz`). Permite auto-detección en el disco duro o subida manual mediante formulario multipart."
+    },
+    {
+      "name": "Sistema y Caché",
+      "description": "Monitoreo en tiempo real de la **memoria caché interna (TTL de 15 min)**, estadísticas de aciertos/fallos (`hit_ratio`), purga instantánea y proxy de imágenes transparente."
+    }
+  ]
+}

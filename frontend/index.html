@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnimeStream - Agregador & Reproductor en Tiempo Real</title>
+  <meta name="description" content="Plataforma de streaming agregadora de AnimeAV1 y JKAnime en tiempo real. Modo oscuro, reproductor sin anuncios invasivos y sincronización de favoritos.">
+  <meta name="theme-color" content="#0b0f19">
+
+  <!-- Cache Prevention for Local Development -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23f47521'><polygon points='6 3 20 12 6 21 6 3'/></svg>">
+
+  <!-- Web App Manifest (PWA) -->
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/css/style.css?v=3.1">
+</head>
+<body>
+  <div id="app">
+    <!-- Navigation Mount -->
+    <div id="navbar-mount"></div>
+
+    <!-- Main Content Mount -->
+    <main class="main-content" id="main-content-mount">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; gap: 16px;">
+        <div class="spinner"></div>
+        <p style="color: var(--text-dim); font-size: 0.95rem;">Cargando catálogo en tiempo real...</p>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px;">
+        <p><strong>AnimeStream</strong> — Agregador y reproductor de catálogo unificado en tiempo real.</p>
+        <p style="font-size: 0.8rem; color: var(--text-dim);">
+          Fuentes de datos obtenidas de <a href="https://animeav1.com" target="_blank" rel="noopener">AnimeAV1</a>, <a href="https://jkanime.net" target="_blank" rel="noopener">JKAnime</a> y <a href="https://tioanime.com" target="_blank" rel="noopener">TioAnime</a>. Este sitio no almacena ningún archivo de vídeo en sus propios servidores.
+        </p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Global Error Handler for Startup Diagnostic -->
+  <script>
+    window.addEventListener('error', function(e) {
+      console.error('[AnimeStream Error]', e);
+      var mount = document.getElementById('main-content-mount');
+      if (mount && mount.querySelector('.spinner')) {
+        mount.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:40vh; gap:14px; text-align:center; padding:20px;">' +
+          '<div style="font-size:2.5rem;">⚠️</div>' +
+          '<h3 style="color:#ef4444; margin:0;">Error al inicializar la aplicación</h3>' +
+          '<p style="color:var(--text-dim,#9ca3af); font-size:0.9rem; max-width:500px; margin:0;">' + (e.message || 'Error cargando módulos de la aplicación.') + '</p>' +
+          '<button onclick="window.location.reload(true)" class="btn btn-primary" style="margin-top:10px; cursor:pointer; padding:8px 18px; border-radius:8px; border:none; background:#f47521; color:#fff; font-weight:600;">Forzar recarga limpia</button>' +
+          '</div>';
+      }
+    });
+  </script>
+
+  <!-- Main JavaScript App Module -->
+  <script type="module" src="/js/app.js?v=3.1"></script>
+</body>
+</html>
