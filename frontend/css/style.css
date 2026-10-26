@@ -421,6 +421,19 @@ button {
   background: rgba(255, 255, 255, 0.18);
 }
 
+.btn-danger {
+  background: #ef4444;
+  color: #fff;
+  border: 1px solid #ef4444;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+  transform: translateY(-1px);
+}
+
 .btn-outline {
   border: 1px solid var(--border-light);
   color: var(--text-muted);

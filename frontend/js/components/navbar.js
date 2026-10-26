@@ -72,10 +72,10 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
             <button 
               id="nav-btn-adblock" 
               class="nav-adblock-btn ${isAdblockOn ? '' : 'disabled'}" 
-              title="Escudo AdBlocker Integrado: ${isAdblockOn ? 'Activo' : 'Pausado'} (Clic para ver detalles)"
+              title="Escudo AdBlocker Integrado: ${isAdblockOn ? 'Activo' : 'Desactivado'} (Clic para gestionar)"
             >
-              <span>🛡️</span>
-              <span>AdBlock</span>
+              <span id="nav-adblock-icon">${isAdblockOn ? '🛡️' : '⚠️'}</span>
+              <span id="nav-adblock-label">AdBlock ${isAdblockOn ? 'ON' : 'OFF'}</span>
               <span class="adblock-count-badge" id="nav-adblock-count">${blockedCount}</span>
             </button>
           </div>
@@ -112,8 +112,13 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
     // Attach AdBlock Modal trigger
     const adblockBtn = container.querySelector('#nav-btn-adblock');
     if (adblockBtn) {
-      adblockBtn.addEventListener('click', () => {
-        AdBlock.openModal();
+      adblockBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof AdBlock.openModal === 'function') {
+          AdBlock.openModal();
+        } else if (typeof AdBlock.showModal === 'function') {
+          AdBlock.showModal();
+        }
       });
     }
 
@@ -121,14 +126,20 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
     window.addEventListener('animestream-adblock-change', (e) => {
       const btn = container.querySelector('#nav-btn-adblock');
       const badge = container.querySelector('#nav-adblock-count');
+      const icon = container.querySelector('#nav-adblock-icon');
+      const label = container.querySelector('#nav-adblock-label');
       if (btn && badge && e.detail) {
         badge.textContent = e.detail.count;
         if (e.detail.enabled) {
           btn.classList.remove('disabled');
           btn.title = `Escudo AdBlocker Integrado: Activo (${e.detail.count} bloqueados)`;
+          if (icon) icon.textContent = '🛡️';
+          if (label) label.textContent = 'AdBlock ON';
         } else {
           btn.classList.add('disabled');
-          btn.title = 'Escudo AdBlocker Integrado: Pausado';
+          btn.title = 'Escudo AdBlocker Integrado: Desactivado';
+          if (icon) icon.textContent = '⚠️';
+          if (label) label.textContent = 'AdBlock OFF';
         }
       }
     });

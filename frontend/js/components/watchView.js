@@ -306,8 +306,27 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
       // AdBlock shield button in player toolbar
       const adblockBtn = container.querySelector('#btn-player-adblock');
       if (adblockBtn) {
-        adblockBtn.addEventListener('click', () => {
-          AdBlock.openModal();
+        adblockBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (typeof AdBlock.openModal === 'function') {
+            AdBlock.openModal();
+          } else if (typeof AdBlock.showModal === 'function') {
+            AdBlock.showModal();
+          }
+        });
+
+        // Keep player button reactive to AdBlock toggles
+        window.addEventListener('animestream-adblock-change', (e) => {
+          const btn = container.querySelector('#btn-player-adblock');
+          if (btn && e.detail) {
+            const isAct = e.detail.enabled;
+            if (isAct) {
+              btn.classList.add('active');
+            } else {
+              btn.classList.remove('active');
+            }
+            btn.innerHTML = `${isAct ? Icons.shieldCheck : Icons.shield} <span>AdBlock ${isAct ? 'ON' : 'OFF'}</span>`;
+          }
         });
       }
 

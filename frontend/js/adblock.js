@@ -219,6 +219,11 @@ class AdBlockEngine {
     setInterval(purgeOverlays, 1500);
   }
 
+  // Open modal (alias for showModal)
+  openModal() {
+    this.showModal();
+  }
+
   // Show interactive AdBlock stats & settings modal
   showModal() {
     let modalOverlay = document.getElementById('adblock-modal-overlay');
@@ -233,10 +238,10 @@ class AdBlockEngine {
     const isAct = this.enabled;
 
     modalOverlay.innerHTML = `
-      <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-card" style="max-width: 480px; width: 92%;">
         <div class="modal-header">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 36px; height: 36px; border-radius: 50%; background: ${isAct ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; display: flex; align-items: center; justify-content: center; color: ${isAct ? '#10b981' : '#ef4444'};">
+            <div style="width: 38px; height: 38px; border-radius: 50%; background: ${isAct ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; display: flex; align-items: center; justify-content: center; color: ${isAct ? '#10b981' : '#ef4444'};">
               ${Icons.shieldCheck || Icons.shield}
             </div>
             <div>
@@ -244,26 +249,27 @@ class AdBlockEngine {
               <p style="margin: 0; font-size: 0.8rem; color: var(--text-dim);">Protección nativa para PC, Smart TV y Móvil</p>
             </div>
           </div>
-          <button class="modal-close-btn" id="btn-close-adblock-modal">✕</button>
+          <button class="modal-close-btn" id="btn-close-adblock-modal" title="Cerrar">✕</button>
         </div>
 
         <div class="modal-body" style="padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
-          <!-- Status Banner -->
-          <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+          <!-- Status Banner & Toggle Button -->
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
             <div>
-              <div style="font-size: 0.95rem; font-weight: 700; color: ${isAct ? '#10b981' : '#94a3b8'};">
-                ${isAct ? '● Escudo Activado' : '○ Escudo Pausado'}
+              <div style="font-size: 0.98rem; font-weight: 700; color: ${isAct ? '#10b981' : '#f87171'}; display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: ${isAct ? '#10b981' : '#ef4444'}; box-shadow: 0 0 8px ${isAct ? '#10b981' : '#ef4444'};"></span>
+                ${isAct ? 'Escudo Activado' : 'Escudo Desactivado'}
               </div>
-              <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">
-                ${isAct ? 'Protegiendo contra anuncios y ventanas emergentes' : 'La protección está temporalmente desactivada'}
+              <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 3px;">
+                ${isAct ? 'Bloqueando popups, ventanas y redirecciones' : 'La protección está actualmente desactivada'}
               </div>
             </div>
             <button 
               id="btn-modal-toggle-adblock" 
-              class="btn ${isAct ? 'btn-primary' : 'btn-secondary'}" 
-              style="padding: 7px 16px; font-size: 0.84rem;"
+              class="btn ${isAct ? 'btn-danger' : 'btn-primary'}" 
+              style="padding: 8px 18px; font-size: 0.86rem; font-weight: 600; cursor: pointer; white-space: nowrap; border-radius: var(--radius-sm);"
             >
-              ${isAct ? 'Pausar' : 'Activar'}
+              ${isAct ? 'Desactivar AdBlock' : 'Activar AdBlock'}
             </button>
           </div>
 
@@ -295,10 +301,10 @@ class AdBlockEngine {
         </div>
 
         <div class="modal-footer" style="padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color);">
-          <button id="btn-modal-reset-count" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem; color: var(--text-dim);">
+          <button id="btn-modal-reset-count" class="btn btn-outline" style="padding: 6px 14px; font-size: 0.82rem; color: var(--text-dim);">
             Reiniciar contador
           </button>
-          <button id="btn-modal-close" class="btn btn-primary" style="padding: 6px 18px; font-size: 0.85rem;">
+          <button id="btn-modal-close" class="btn btn-primary" style="padding: 6px 20px; font-size: 0.85rem;">
             Aceptar
           </button>
         </div>
@@ -308,23 +314,51 @@ class AdBlockEngine {
     document.body.appendChild(modalOverlay);
 
     // Attach modal events
-    const closeModal = () => modalOverlay.remove();
+    const closeModal = () => {
+      window.removeEventListener('keydown', onKeyDown);
+      modalOverlay.remove();
+    };
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') closeModal();
+    };
+    window.addEventListener('keydown', onKeyDown);
+
     modalOverlay.querySelector('#btn-close-adblock-modal').addEventListener('click', closeModal);
     modalOverlay.querySelector('#btn-modal-close').addEventListener('click', closeModal);
     modalOverlay.addEventListener('click', (e) => {
       if (e.target === modalOverlay) closeModal();
     });
 
-    modalOverlay.querySelector('#btn-modal-toggle-adblock').addEventListener('click', () => {
+    modalOverlay.querySelector('#btn-modal-toggle-adblock').addEventListener('click', (e) => {
+      e.stopPropagation();
       this.toggle();
       this.showModal(); // Re-render updated state
     });
 
-    modalOverlay.querySelector('#btn-modal-reset-count').addEventListener('click', () => {
+    modalOverlay.querySelector('#btn-modal-reset-count').addEventListener('click', (e) => {
+      e.stopPropagation();
       this.resetCounter();
       const countEl = modalOverlay.querySelector('#adblock-modal-count');
       if (countEl) countEl.textContent = '0';
     });
+  }
+
+  // Clean third party player iframe transparent clickjacking overlays if reachable
+  cleanThirdPartyPlayer(iframe) {
+    if (!this.enabled || !iframe) return;
+    try {
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (doc) {
+        const ads = doc.querySelectorAll('.ad-banner, .advertisement, [id*="ad_"], [class*="popunder"], [id*="popunder"]');
+        ads.forEach(ad => {
+          ad.remove();
+          this.recordBlock('Elemento publicitario dentro del reproductor eliminado');
+        });
+      }
+    } catch (e) {
+      // Cross-origin SOP prevents touching iframes from outside origin - expected and safe
+    }
   }
 }
 
