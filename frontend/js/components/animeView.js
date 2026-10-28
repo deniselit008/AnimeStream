@@ -244,10 +244,18 @@ export async function renderAnime(container, animeUrl) {
                 </div>
               ` : ''}
 
-              <!-- Synopsis -->
-              <p class="detail-synopsis">
-                ${escapeHtml(anime.synopsis || 'Sin descripción disponible.')}
-              </p>
+              <!-- Synopsis with intelligent clamping -->
+              <div class="detail-synopsis-wrapper">
+                <p class="detail-synopsis ${anime.synopsis && anime.synopsis.length > 280 ? 'is-clamped' : ''}" id="detail-synopsis-text">
+                  ${escapeHtml(anime.synopsis || 'Sin descripción disponible.')}
+                </p>
+                ${anime.synopsis && anime.synopsis.length > 280 ? `
+                  <button type="button" class="btn-toggle-synopsis" id="btn-toggle-synopsis" title="Expandir o contraer descripción">
+                    <span id="synopsis-toggle-text">Leer más</span>
+                    <span id="synopsis-toggle-icon">${Icons.chevronDown}</span>
+                  </button>
+                ` : ''}
+              </div>
 
               <!-- Actions -->
               <div class="detail-actions">
@@ -404,6 +412,30 @@ export async function renderAnime(container, animeUrl) {
         console.debug('Background MAL relations error:', err);
         const relMount = container.querySelector('#relations-mount');
         if (relMount) relMount.innerHTML = '';
+      });
+    }
+
+    // Attach Synopsis Expand / Collapse Toggle
+    const toggleSynopsisBtn = container.querySelector('#btn-toggle-synopsis');
+    const synopsisText = container.querySelector('#detail-synopsis-text');
+    if (toggleSynopsisBtn && synopsisText) {
+      let isSynopsisExpanded = false;
+      toggleSynopsisBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        isSynopsisExpanded = !isSynopsisExpanded;
+        if (isSynopsisExpanded) {
+          synopsisText.classList.remove('is-clamped');
+          const textEl = container.querySelector('#synopsis-toggle-text');
+          const iconEl = container.querySelector('#synopsis-toggle-icon');
+          if (textEl) textEl.textContent = 'Leer menos';
+          if (iconEl) iconEl.innerHTML = Icons.chevronUp;
+        } else {
+          synopsisText.classList.add('is-clamped');
+          const textEl = container.querySelector('#synopsis-toggle-text');
+          const iconEl = container.querySelector('#synopsis-toggle-icon');
+          if (textEl) textEl.textContent = 'Leer más';
+          if (iconEl) iconEl.innerHTML = Icons.chevronDown;
+        }
       });
     }
 

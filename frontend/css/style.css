@@ -695,6 +695,7 @@ button {
   position: relative;
   z-index: 2;
   display: flex;
+  align-items: flex-start;
   gap: 32px;
 }
 
@@ -709,10 +710,14 @@ button {
 .detail-poster-wrapper {
   flex-shrink: 0;
   width: 240px;
+  align-self: flex-start;
+  height: fit-content;
+  max-height: fit-content;
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
   border: 1px solid var(--border-light);
+  background: var(--bg-card);
 }
 
 .detail-poster {
@@ -724,6 +729,7 @@ button {
 
 .detail-info {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
@@ -778,12 +784,53 @@ button {
 }
 
 
+.detail-synopsis-wrapper {
+  margin-bottom: 8px;
+  max-width: 900px;
+}
+
 .detail-synopsis {
   color: var(--text-muted);
   font-size: 0.96rem;
   line-height: 1.65;
-  margin-bottom: 24px;
-  max-width: 900px;
+  margin-bottom: 0;
+  white-space: pre-line;
+}
+
+.detail-synopsis.is-clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-toggle-synopsis {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--accent-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 12px;
+  margin-top: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-toggle-synopsis:hover {
+  background: rgba(244, 117, 33, 0.12);
+  border-color: var(--accent-primary);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.btn-toggle-synopsis span {
+  display: inline-flex;
+  align-items: center;
 }
 
 .detail-actions {
@@ -791,7 +838,7 @@ button {
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  margin-top: auto;
+  margin-top: 18px;
 }
 
 /* ==========================================================================
