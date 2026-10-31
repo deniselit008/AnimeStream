@@ -30,17 +30,39 @@ USER_AGENTS = [
 # completely bypasses the block and resolves in <200ms with 0 timeouts.
 # -------------------------------------------------------------------------
 CF_CLEAN_IP = "104.26.11.188"
-CF_DOMAINS = {
-    "animeav1.com", "www.animeav1.com",
-    "tioanime.com", "www.tioanime.com"
-}
+CF_DOMAIN_SUFFIXES = (
+    "animeav1.com",
+    "tioanime.com",
+    "zilla-networks.com",
+    "jkanime.net"
+)
 
 _orig_getaddrinfo = socket.getaddrinfo
 
 def _unblocked_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
-    if host in CF_DOMAINS:
-        return _orig_getaddrinfo(CF_CLEAN_IP, port, family, type, proto, flags)
-    return _orig_getaddrinfo(host, port, family, type, proto, flags)
+    try:
+        # 1. Fast match by known anime & video streaming domain suffixes
+        if isinstance(host, str) and any(host == d or host.endswith("." + d) for d in CF_DOMAIN_SUFFIXES):
+            return _orig_getaddrinfo(CF_CLEAN_IP, port, family, type, proto, flags)
+
+        # 2. Dynamic check for any host resolving to blocked Cloudflare Anycast IP ranges
+        results = _orig_getaddrinfo(host, port, family, type, proto, flags)
+        unblocked = []
+        has_blocked = False
+        for item in results:
+            sockaddr = item[4]
+            ip = sockaddr[0]
+            if isinstance(ip, str) and (ip.startswith("188.114.96.") or ip.startswith("188.114.97.")):
+                has_blocked = True
+                new_sockaddr = (CF_CLEAN_IP, sockaddr[1]) + sockaddr[2:]
+                unblocked.append((item[0], item[1], item[2], item[3], new_sockaddr))
+            else:
+                unblocked.append(item)
+        if has_blocked:
+            return unblocked
+        return results
+    except Exception:
+        return _orig_getaddrinfo(host, port, family, type, proto, flags)
 
 socket.getaddrinfo = _unblocked_getaddrinfo
 

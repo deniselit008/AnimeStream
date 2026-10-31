@@ -8,14 +8,16 @@ import os
 import glob
 import gzip
 import logging
+import urllib.parse
+from html import escape
 from typing import List, Optional
 from xml.etree import ElementTree as ET
 import requests
 from fastapi import APIRouter, HTTPException, Query, Path, Response, UploadFile, File
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 
 from backend.app.core.cache import cache
-from backend.app.core.config import get_headers, REQUEST_TIMEOUT, get_random_user_agent
+from backend.app.core.config import get_headers, REQUEST_TIMEOUT, get_random_user_agent, get_session
 from backend.app.core.mal import fetch_mal_relations, clean_title_for_mal
 from backend.app.models import (
     EpisodeItem,
@@ -1022,71 +1024,94 @@ AD_DOMAINS = [
     "deloton", "adsco", "creativecdn", "tsyndicate", "adtrue", "vidoomy"
 ]
 
-def sanitize_player_html(html: str) -> str:
-    """Removes aggressive third-party ad scripts, popunders, and injects protective AdBlock shield."""
+def sanitize_player_html(html: str, base_href: Optional[str] = None, active: bool = True) -> str:
+    """
+    Cleans third-party ad scripts, injects base href for relative assets,
+    and deploys a non-destructive protective shield that preserves legitimate video player elements.
+    """
     if not html:
         return html
 
-    # 1. Remove script and iframe tags loading known ad network domains
-    for domain in AD_DOMAINS:
-        html = re.sub(rf'<script[^>]*src=[\'"][^\'"]*{re.escape(domain)}[^\'"]*[\'"][^>]*>.*?</script>', '', html, flags=re.I | re.S)
-        html = re.sub(rf'<script[^>]*src=[\'"][^\'"]*{re.escape(domain)}[^\'"]*[\'"][^>]*/>', '', html, flags=re.I)
-        html = re.sub(rf'<iframe[^>]*src=[\'"][^\'"]*{re.escape(domain)}[^\'"]*[\'"][^>]*>.*?</iframe>', '', html, flags=re.I | re.S)
+    # 1. Strip CSP and X-Frame-Options meta tags from inside HTML so the browser doesn't block player assets
+    html = re.sub(r'<meta[^>]*http-equiv=[\'"](?:content-security-policy|x-frame-options)[\'"][^>]*>', '', html, flags=re.I)
 
-    # 2. Inject protective AdBlock Shield script inside player head
-    shield_script = """<script>
-    (function() {
-      // AnimeStream Embedded AdBlock & Anti-Popup Shield
-      try {
-        window.open = function(url) {
-          console.warn('[AnimeStream AdBlock] Bloqueado popup no deseado:', url);
-          return null;
-        };
-        window.alert = function() {};
-        window.confirm = function() { return false; };
-        window.prompt = function() { return null; };
+    # 2. Inject <base href="..."> so relative paths (scripts, CSS, images, and API calls) resolve correctly to the video host
+    if base_href:
+        html = re.sub(r'<base[^>]*>', '', html, flags=re.I)
+        base_tag = f'<base href="{escape(base_href)}">'
+        if "<head>" in html:
+            html = html.replace("<head>", f"<head>\n{base_tag}", 1)
+        elif "<HEAD>" in html:
+            html = html.replace("<HEAD>", f"<HEAD>\n{base_tag}", 1)
+        else:
+            html = f"{base_tag}\n{html}"
 
-        // Prevent top navigation hijack
-        try {
-          Object.defineProperty(window, 'top', { get: function() { return window; } });
-        } catch(e) {}
+    if active:
+        # 3. Remove script and iframe tags loading known ad network domains
+        for domain in AD_DOMAINS:
+            html = re.sub(rf'<script[^>]*src=[\'"][^\'"]*{re.escape(domain)}[^\'"]*[\'"][^>]*>.*?</script>', '', html, flags=re.I | re.S)
+            html = re.sub(rf'<script[^>]*src=[\'"][^\'"]*{re.escape(domain)}[^\'"]*[\'"][^>]*/>', '', html, flags=re.I)
+            html = re.sub(rf'<iframe[^>]*src=[\'"][^\'"]*{re.escape(domain)}[^\'"]*[\'"][^>]*>.*?</iframe>', '', html, flags=re.I | re.S)
 
-        // Remove clickjacking transparent overlays
-        function purgeAdOverlays() {
+        # 4. Inject non-destructive protective shield (anti-popup & anti-clickjacking trap killer)
+        shield_script = """<script>
+        (function() {
           try {
-            var items = document.querySelectorAll('div, a, span, section');
-            for (var i = 0; i < items.length; i++) {
-              var el = items[i];
-              if (el.tagName === 'VIDEO' || el.querySelector('video') || el.classList.contains('jw-video')) continue;
-              var s = window.getComputedStyle(el);
-              var pos = s.position;
-              var zi = parseInt(s.zIndex, 10) || 0;
-              var op = parseFloat(s.opacity);
-              if ((pos === 'fixed' || pos === 'absolute') && zi >= 50 && (op < 0.1 || s.visibility === 'hidden' || s.backgroundColor === 'transparent')) {
-                var r = el.getBoundingClientRect();
-                if (r.width >= window.innerWidth * 0.5 && r.height >= window.innerHeight * 0.5) {
-                  el.remove();
-                }
-              }
-            }
-          } catch(e) {}
-        }
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', purgeAdOverlays);
-        } else {
-          purgeAdOverlays();
-        }
-        setInterval(purgeAdOverlays, 800);
-      } catch(e) {}
-    })();
-    </script>"""
+            // Neutralize unwanted popup window calls without breaking callers expecting an object
+            window.open = function(url, target, features) {
+              console.warn('[AnimeStream AdBlock] Bloqueado popup publicitario:', url);
+              return {
+                closed: true,
+                focus: function() {},
+                close: function() {},
+                location: { href: '' }
+              };
+            };
+            window.alert = function() {};
+            window.confirm = function() { return false; };
+            window.prompt = function() { return null; };
+            window.onbeforeunload = null;
 
-    if "<head>" in html:
-        html = html.replace("<head>", f"<head>\n{shield_script}", 1)
-    elif "<HEAD>" in html:
-        html = html.replace("<HEAD>", f"<HEAD>\n{shield_script}", 1)
-    else:
-        html = f"{shield_script}\n{html}"
+            // Remove transparent clickjacking overlay traps without harming player elements
+            function purgeClickjacking() {
+              try {
+                var traps = document.querySelectorAll('a[target="_blank"], a[href^="http"], div');
+                for (var i = 0; i < traps.length; i++) {
+                  var el = traps[i];
+                  // Never touch player controls or media elements
+                  if (el.querySelector('video, iframe') || el.closest('.dplayer, .jwplayer, .video-js, [class*="player"], [id*="player"]')) {
+                    continue;
+                  }
+                  var s = window.getComputedStyle(el);
+                  if ((s.position === 'fixed' || s.position === 'absolute') && (parseInt(s.zIndex, 10) >= 1000)) {
+                    var op = parseFloat(s.opacity);
+                    if (op < 0.05 || s.visibility === 'hidden') {
+                      var r = el.getBoundingClientRect();
+                      if (r.width >= window.innerWidth * 0.7 && r.height >= window.innerHeight * 0.7) {
+                        el.remove();
+                      }
+                    }
+                  }
+                }
+              } catch(e) {}
+            }
+
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', purgeClickjacking);
+            } else {
+              purgeClickjacking();
+            }
+            setInterval(purgeClickjacking, 1200);
+          } catch(e) {}
+        })();
+        </script>"""
+
+        if "<head>" in html:
+            html = html.replace("<head>", f"<head>\n{shield_script}", 1)
+        elif "<HEAD>" in html:
+            html = html.replace("<HEAD>", f"<HEAD>\n{shield_script}", 1)
+        else:
+            html = f"{shield_script}\n{html}"
 
     return html
 
@@ -1107,30 +1132,100 @@ async def proxy_player(
     ### 🛡️ Desactivador de Restricciones Iframe con Escudo AdBlock
 
     Descarga el código HTML del reproductor remoto eliminando las cabeceras restrictivas y anuncios:
+    - Inyecta base href para que scripts, estilos y peticiones relativas carguen correctamente.
     - Neutraliza scripts de redes publicitarias agresivas y popunders.
-    - Inyecta escudo anti-clickjacking para evitar secuestro de clics.
+    - Inyecta escudo anti-clickjacking para evitar secuestro de clics sin dañar controles del reproductor.
     - Elimina `Content-Security-Policy` restrictivo y `X-Frame-Options: SAMEORIGIN / DENY`.
     - Sobrescribe con `X-Frame-Options: ALLOWALL` y `Access-Control-Allow-Origin: *`.
     """
-    try:
-        headers = get_headers(referer=ref)
-        res = await asyncio.to_thread(requests.get, url, headers=headers, timeout=REQUEST_TIMEOUT)
+    # 1. Handle internal relative paths (e.g. /api/hls/player/...)
+    if url.startswith("/"):
+        return RedirectResponse(url=url, status_code=307)
 
-        excluded_headers = ["content-security-policy", "x-frame-options", "content-encoding", "transfer-encoding"]
+    # 2. Ensure valid scheme
+    if not url.startswith("http://") and not url.startswith("https://"):
+        url = "https://" + url
+
+    try:
+        session = get_session()
+        headers = get_headers(referer=ref)
+        if not ref:
+            parsed_origin = urllib.parse.urlparse(url)
+            headers["Referer"] = f"{parsed_origin.scheme}://{parsed_origin.netloc}/"
+
+        # Try request, retrying with verify=False if server has self-signed or incomplete SSL certificate
+        try:
+            res = await asyncio.to_thread(
+                session.get, url, headers=headers, timeout=REQUEST_TIMEOUT, allow_redirects=True
+            )
+        except requests.exceptions.SSLError:
+            res = await asyncio.to_thread(
+                session.get, url, headers=headers, timeout=REQUEST_TIMEOUT, allow_redirects=True, verify=False
+            )
+
+        # Direct video files (MP4, WebM, etc.) -> wrap in clean HTML5 video player
+        content_type = res.headers.get("content-type", "").lower()
+        if "video/" in content_type or res.url.lower().endswith((".mp4", ".m4v", ".webm")):
+            video_html = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Reproductor AnimeStream</title>
+  <style>
+    html, body {{ margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; display:flex; align-items:center; justify-content:center; }}
+    video {{ width:100%; height:100%; object-fit:contain; }}
+  </style>
+</head>
+<body>
+  <video src="{res.url}" controls autoplay playsinline></video>
+</body>
+</html>"""
+            return HTMLResponse(
+                content=video_html,
+                headers={
+                    "X-Frame-Options": "ALLOWALL",
+                    "Access-Control-Allow-Origin": "*",
+                    "Cache-Control": "no-cache"
+                }
+            )
+
+        # Calculate base_href from final resolved URL
+        final_url = res.url or url
+        parsed_final = urllib.parse.urlparse(final_url)
+        path = parsed_final.path or "/"
+        if not path.endswith("/"):
+            path = path.rsplit("/", 1)[0] + "/"
+        base_href = f"{parsed_final.scheme}://{parsed_final.netloc}{path}"
+
+        content_html = sanitize_player_html(res.text, base_href=base_href, active=adblock)
+
+        excluded_headers = [
+            "content-security-policy", "content-security-policy-report-only",
+            "x-frame-options", "content-encoding", "transfer-encoding"
+        ]
         response_headers = {
             k: v for k, v in res.headers.items()
             if k.lower() not in excluded_headers
         }
         response_headers["X-Frame-Options"] = "ALLOWALL"
         response_headers["Access-Control-Allow-Origin"] = "*"
-
-        content_html = sanitize_player_html(res.text) if adblock else res.text
+        response_headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
 
         return HTMLResponse(content=content_html, status_code=res.status_code, headers=response_headers)
+
     except Exception as e:
         logger.error(f"Proxy player error for {url}: {e}")
         return HTMLResponse(
-            content=f"<h3>Error al cargar el reproductor:</h3><p>{str(e)}</p>",
+            content=f"""
+            <div style="font-family: sans-serif; background: #0b0f19; color: #f8fafc; padding: 30px; text-align: center; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box;">
+              <div style="font-size: 2.5rem; margin-bottom: 12px;">⚠️</div>
+              <h3 style="margin: 0 0 10px; font-size: 1.2rem; color: #ef4444;">No se pudo cargar el reproductor remoto</h3>
+              <p style="margin: 0 0 18px; font-size: 0.9rem; color: #94a3b8; max-width: 480px;">{escape(str(e))}</p>
+              <div style="display: flex; gap: 10px;">
+                <a href="{escape(url)}" target="_blank" rel="noopener noreferrer" style="background: #f47521; color: #fff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-size: 0.88rem; font-weight: 600;">Abrir en pestaña externa</a>
+              </div>
+            </div>
+            """,
             status_code=502
         )
 

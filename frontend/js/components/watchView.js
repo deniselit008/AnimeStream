@@ -58,8 +58,13 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
 
     function getEmbedUrl(rawEmbedUrl) {
       if (!rawEmbedUrl) return '';
+      // Local endpoints (such as /api/hls/player/...) don't need proxying
+      if (rawEmbedUrl.startsWith('/') || rawEmbedUrl.startsWith('data:')) {
+        return rawEmbedUrl;
+      }
       if (useProxy) {
-        return `/api/proxy-player?url=${encodeURIComponent(rawEmbedUrl)}&ref=${encodeURIComponent(watchData.animeUrl || watchData.url)}`;
+        const adb = AdBlock.isEnabled() ? '1' : '0';
+        return `/api/proxy-player?url=${encodeURIComponent(rawEmbedUrl)}&ref=${encodeURIComponent(watchData.animeUrl || watchData.url)}&adblock=${adb}`;
       }
       return rawEmbedUrl;
     }
@@ -107,8 +112,9 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
               src="${escapeHtml(embedSrc)}" 
               allowfullscreen="true" 
               webkitallowfullscreen="true" 
-              mozallowfullscreen="true"
+              mozallowfullscreen="true" 
               allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+              referrerpolicy="no-referrer"
               ${AdBlock.isEnabled() ? 'sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-downloads allow-fullscreen"' : ''}
             ></iframe>
           ` : `
@@ -290,7 +296,7 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
           proxyBtn.textContent = useProxy ? 'Proxy ON' : 'Proxy OFF';
           if (useProxy) {
             proxyBtn.classList.add('active');
-            showToast('Modo Proxy activado (eludirá bloqueos de referer)', 'info');
+            showToast('Modo Proxy activado (eludirá bloqueos de referer y CORS)', 'info');
           } else {
             proxyBtn.classList.remove('active');
             showToast('Modo Proxy desactivado', 'info');
@@ -298,7 +304,10 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
           const iframe = container.querySelector('#main-player-iframe');
           const vServers = getVisibleServers();
           if (iframe && vServers[currentServerIndex]) {
-            iframe.src = getEmbedUrl(vServers[currentServerIndex].embed);
+            const nextSrc = getEmbedUrl(vServers[currentServerIndex].embed);
+            iframe.src = nextSrc;
+            const newTabLink = container.querySelector('#link-open-new-tab');
+            if (newTabLink) newTabLink.href = vServers[currentServerIndex].embed;
           }
         });
       }
@@ -326,6 +335,15 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
               btn.classList.remove('active');
             }
             btn.innerHTML = `${isAct ? Icons.shieldCheck : Icons.shield} <span>AdBlock ${isAct ? 'ON' : 'OFF'}</span>`;
+
+            // If proxy mode is active, reload iframe with updated adblock policy
+            if (useProxy) {
+              const iframe = container.querySelector('#main-player-iframe');
+              const vServers = getVisibleServers();
+              if (iframe && vServers[currentServerIndex]) {
+                iframe.src = getEmbedUrl(vServers[currentServerIndex].embed);
+              }
+            }
           }
         });
       }
