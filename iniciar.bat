@@ -1,55 +1,52 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
 chcp 65001 >nul
-title AnimeStream Aggregator
+cd /d "%~dp0"
+title AnimeStream (Node.js Edition)
 
 echo ========================================================
 echo        Iniciando AnimeStream en tu ordenador...
 echo ========================================================
 echo.
 
-set PY_CMD=
+set "NODE_CMD="
 
-if exist "%LOCALAPPDATA%\Programs\Python\Python315\python.exe" (
-    set "PATH=%LOCALAPPDATA%\Programs\Python\Python315;%LOCALAPPDATA%\Programs\Python\Python315\Scripts;%PATH%"
-    set "PY_CMD=%LOCALAPPDATA%\Programs\Python\Python315\python.exe"
-    goto :found_python
+if exist "%LOCALAPPDATA%\Programs\nodejs\node.exe" (
+    set "PATH=%LOCALAPPDATA%\Programs\nodejs;!PATH!"
+    set "NODE_CMD=%LOCALAPPDATA%\Programs\nodejs\node.exe"
+    goto :found_node
 )
 
-if exist "%LOCALAPPDATA%\Programs\Python\Python314\python.exe" (
-    set "PATH=%LOCALAPPDATA%\Programs\Python\Python314;%LOCALAPPDATA%\Programs\Python\Python314\Scripts;%PATH%"
-    set "PY_CMD=%LOCALAPPDATA%\Programs\Python\Python314\python.exe"
-    goto :found_python
+if exist "C:\Program Files\nodejs\node.exe" (
+    set "PATH=C:\Program Files\nodejs;!PATH!"
+    set "NODE_CMD=C:\Program Files\nodejs\node.exe"
+    goto :found_node
 )
 
-where py >nul 2>nul
+where node >nul 2>nul
 if %errorlevel% equ 0 (
-    set "PY_CMD=py"
-    goto :found_python
+    set "NODE_CMD=node"
+    goto :found_node
 )
 
-where python >nul 2>nul
-if %errorlevel% equ 0 (
-    set "PY_CMD=python"
-    goto :found_python
-)
-
-:no_python
-echo [ERROR] No se pudo encontrar Python en tu ordenador.
-echo Asegúrate de tener Python instalado en tu sistema.
+:no_node
+echo [ERROR] No se pudo encontrar Node.js en tu ordenador.
+echo Asegurate de tener Node.js instalado o descargalo desde https://nodejs.org/
 echo.
 pause
 exit /b 1
 
-:found_python
-echo [✓] Usando Python: %PY_CMD%
+:found_node
+echo [?] Node.js detectado correctamente.
 echo.
 
-echo Comprobando e instalando dependencias necesarias...
-"%PY_CMD%" -m pip install -q -r requirements.txt
+if not exist "node_modules\" (
+    echo [i] Instalando dependencias necesarias con npm...
+    call npm install
+    echo.
+)
 
+echo [i] Levantando servidor AnimeStream...
 echo.
-echo Iniciando servidor web local...
-"%PY_CMD%" run.py
-
+node run.js
 pause

@@ -1,0 +1,33 @@
+{
+  "name": "animestream-node",
+  "version": "4.0.0",
+  "description": "AnimeStream - Agregador y Reproductor de Anime en Tiempo Real en Node.js y Electron",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "node run.js",
+    "electron": "electron electron/main.js",
+    "dev": "node --watch run.js",
+    "server": "node server/index.js"
+  },
+  "keywords": [
+    "anime",
+    "streaming",
+    "aggregator",
+    "electron",
+    "nodejs"
+  ],
+  "author": "AnimeStream",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.21.0",
+    "cheerio": "^1.2.0",
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "fast-xml-parser": "^5.12.0",
+    "multer": "^2.5.0",
+    "open": "^11.0.4"
+  },
+  "devDependencies": {
+    "electron": "^45.2.2"
+  }
+}

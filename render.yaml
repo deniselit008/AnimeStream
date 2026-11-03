@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: animestream-api
-    runtime: docker
-    plan: free
-    region: frankfurt
-    envVars:
-      - key: PORT
-        value: 8000

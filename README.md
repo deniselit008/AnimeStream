@@ -1,204 +1,158 @@
-# 🎬 AnimeStream — Agregador y Reproductor de Anime en Tiempo Real
+# 🎬 AnimeStream — Edición Node.js & Electron
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.14%20%7C%203.15-3776AB?logo=python&logoColor=white)](https://python.org)
-[![Vanilla JS](https://img.shields.io/badge/Frontend-Vanilla%20SPA%20ES6+-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/es/docs/Web/JavaScript)
+[![Node.js](https://img.shields.io/badge/Node.js-v20%20%7C%20v22+-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-5.x-000000?logo=express&logoColor=white)](https://expressjs.com/)
+[![Electron](https://img.shields.io/badge/Electron-Desktop%20App-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![AdBlock](https://img.shields.io/badge/AdBlock-Nativo%20Integrado-10b981?logo=adblock&logoColor=white)](https://github.com)
-[![MyAnimeList](https://img.shields.io/badge/MyAnimeList-Jikan%20API%20v4-2e51a2?logo=myanimelist&logoColor=white)](https://myanimelist.net)
+[![MyAnimeList](https://img.shields.io/badge/MyAnimeList-Franchise%20Sync-2e51a2?logo=myanimelist&logoColor=white)](https://myanimelist.net)
 
-Plataforma web moderna, rápida y lista para producción que actúa como agregador y reproductor de anime en tiempo real. Extrae y unifica de manera concurrente el catálogo y los servidores de vídeo de tres de las fuentes de habla hispana más importantes:
-- **AnimeAV1** (`https://animeav1.com/`)
-- **JKAnime** (`https://jkanime.net/`)
-- **TioAnime** (`https://tioanime.com/`)
-
-Todo el contenido se procesa **en tiempo real sin bases de datos estáticas** ni desactualizaciones, integrando además información de franquicias (secuelas, precuelas y películas) vía **MyAnimeList (MAL)** y un potente **AdBlocker nativo integrado**.
+> **Reescritura completa y moderna en Node.js y Electron** de la plataforma AnimeStream.
+> Todo el backend, lógica de extracción en tiempo real, proxies de streaming HLS, AdBlocker integrado y la interfaz de usuario han sido reconstruidos para ofrecer máxima velocidad, resiliencia y una estética cinematográfica de última generación.
 
 ---
 
-## 🌟 Novedades y Características Destacadas
+## 🌟 Novedades de la Versión Node.js & Electron
 
-- 📺 **Compatibilidad Total con Smart TV (Hisense / VIDAA OS / WebOS / Tizen):** Motor de navegación espacial 2D (`tvNavigation.js`) diseñado para mandos a distancia de televisores. Incluye anillo de enfoque naranja de alto contraste, navegación completa con cruceta (D-Pad), botón OK/Enter, intercepción nativa del botón **Atrás/Volver** del mando (código 461 en VIDAA, 10009 en Tizen) para evitar el cierre involuntario del navegador, soporte para teclas de colores (Rojo: Inicio, Verde: Directorio, Amarillo: Mi Lista, Azul: Favoritos) y teclas multimedia (Play, Pause, FastForward, Rewind).
-- 🛡️ **Escudo AdBlocker Integrado:** Protección activa contra popups, popunders, redirecciones forzadas y capas transparentes de secuestro de clics (anti-clickjacking), con panel de control interactivo para activar o desactivar la protección a 1-clic y visor en vivo de anuncios bloqueados.
-- 🔗 **Franquicias y Relacionados Audiovisuales (MyAnimeList):** Descubre automáticamente las secuelas, precuelas, películas, OVAs y especiales relacionados con cada anime, excluyendo mangas u obras físicas y mostrando únicamente contenido audiovisual en alta definición con búsqueda instantánea.
-- ⚡ **Carga Ultra Rápida (0.3s):** Optimización de red con enrutamiento Anycast para resolver bloqueos de operadores en Cloudflare, sesiones HTTP persistentes y obtención asíncrona de metadatos en segundo plano.
-- 📑 **Ficha Técnica Inteligente:** Recuadro de portada con relación de aspecto fija (2:3) protegida contra deformaciones y sinopsis colapsable con botón inteligente **"Leer más / Leer menos"**.
-- 🔍 **Buscador Reactivo y Filtro Multi-Fuente:** Búsqueda rápida con selector de fuentes (Todas, AnimeAV1, JKAnime, TioAnime) y soporte para búsquedas consecutivas sin fallos de navegación.
-- 📦 **Ejecutable Portable (`AnimeStream.exe`):** Incluye un ejecutable independiente de 1-clic para Windows que empaqueta el servidor, backend y frontend sin necesidad de instalar dependencias ni configurar entornos.
-- 📚 **Gestor de Biblioteca ("Mi Lista"):** Compatible con exportaciones de MyAnimeList (`.xml`, `.xml.gz`) con detección automática de archivos locales y categorización (Viendo, Visto, Pendiente, Pausado, Abandonado).
+1. **⚡ Backend Nativo en Node.js (Express & Cheerio):**
+   - Conexiones ultra rápidas con Keep-Alive y Connection Pooling reutilizable.
+   - Scrapers concurrentes y tolerantes a fallos (`Promise.allSettled`) para **AnimeAV1**, **JKAnime** y **TioAnime**.
+   - Bypass inteligente de censura de operadoras (Anycast Clean Routing para Cloudflare).
+
+2. **💻 Modo Escritorio Nativo con Electron:**
+   - Ejecutable como aplicación de escritorio independiente con aceleración por hardware.
+   - Control de ventana nativo, atajos de teclado globales y menús de acceso rápido.
+   - Reproducción sin restricciones de CORS ni bloqueos de hotlinking para servidores como Mega, Voe, Okru, Mp4upload, etc.
+
+3. **🎨 Interfaz Ultra Moderna (Crunchyroll & Netflix Aesthetic):**
+   - **Glassmorphism y Neon Glow:** Fondos OLED profundos (`#07090e`), bordes translúcidos con desenfoque de cristal (`backdrop-filter: blur(24px)`) y acentos de color naranja fuego / cian / violeta.
+   - **Buscador con Autocompletado en Vivo:** Al escribir en la barra de búsqueda, se despliega una tarjeta flotante instantánea con miniaturas de anime y resultados en tiempo real sin recargar la página.
+   - **Hero Carousel Dinámico:** Portada cinemática con animes destacados en emisión, carátula panorámica, botón de reproducción directa y selector de favoritos a 1-clic.
+   - **Modo Cine & Luz Ambiental:** Sala de reproducción con botón de *Modo Cine* para maximizar la pantalla y efecto de luz ambiental posterior sincronizada.
+   - **Atajos de Teclado:**
+     - `C`: Activar / desactivar Modo Cine.
+     - `F`: Pantalla completa.
+     - `N`: Episodio siguiente.
+     - `P`: Episodio anterior.
+
+4. **📺 Compatibilidad Total con Smart TV (Hisense / VIDAA / WebOS / Tizen):**
+   - Motor de navegación espacial 2D (`tvNavigation.js`) con anillo de enfoque de alto contraste.
+   - Soporte para cruceta (D-Pad), botón OK/Enter, botón Atrás del mando (código 461 en VIDAA, 10009 en Tizen) y botones de colores.
+   - Servidor local accesible en la red Wi-Fi/Ethernet para reproducir directamente en el navegador del televisor.
+
+5. **🛡️ Escudo AdBlocker Integrado:**
+   - Bloqueo preventivo de popups, scripts de redes publicitarias invasivas y trampas de secuestro de clics (clickjacking).
+   - Servidor Proxy HTML (`/api/proxy-player`) que elimina cabeceras restrictivas `X-Frame-Options` y `Content-Security-Policy`.
+
+6. **🔗 Franquicia y Secuelas con MyAnimeList:**
+   - Detección automática de secuelas, precuelas, películas, OVAs y especiales con carátulas en alta definición y navegación interactiva.
+
+7. **📚 Gestor de Biblioteca e Importador MAL:**
+   - Permite importar listas de MyAnimeList (`.xml` y `.xml.gz`) tanto por subida manual como por detección automática de archivos en la carpeta de descargas del equipo.
 
 ---
 
-## 🏛️ Arquitectura del Proyecto
+## 🚀 Cómo Ejecutar la Aplicación
 
-El sistema sigue una arquitectura modular y desacoplada de alto rendimiento:
+Tienes dos opciones listas para usar de 1-clic:
+
+### Opción A: Modo Web (Navegador y Red Local / Smart TV)
+Haz doble clic sobre:
+```cmd
+iniciar.bat
+```
+O desde la consola:
+```bash
+npm start
+```
+Esto iniciará el servidor en `http://localhost:3000` y abrirá automáticamente tu navegador web por defecto. También mostrará en pantalla la dirección IP de tu red local (por ejemplo `http://192.168.1.XX:3000`) para ver el anime en tu Smart TV o móvil.
+
+---
+
+### Opción B: Modo Escritorio Nativo (Electron App)
+Haz doble clic sobre:
+```cmd
+iniciar_electron.bat
+```
+O desde la consola:
+```bash
+npm run electron
+```
+Esto levantará la aplicación nativa de escritorio con su propia ventana optimizada.
+
+---
+
+## 🏛️ Estructura del Código Reescrito
 
 ```
-Anime/
-├── backend/
-│   ├── app/
-│   │   ├── api/
-│   │   │   └── routes.py             # Endpoints REST (/api/latest, /api/search, /api/anime, /api/watch, etc.)
-│   │   ├── core/
-│   │   │   ├── config.py             # Configuración, Anycast clean routing, cabeceras y User-Agents
-│   │   │   └── cache.py              # Sistema de caché thread-safe en memoria con TTL de 15 min
-│   │   ├── models.py                 # Esquemas de datos unificados y tipados con Pydantic
-│   │   ├── providers/
-│   │   │   ├── base.py               # Interfaz abstracta BaseAnimeProvider
-│   │   │   ├── animeav1.py           # Scraping concurrente para AnimeAV1
-│   │   │   ├── jkanime.py            # Scraping estructurado para JKAnime
-│   │   │   └── tioanime.py           # Scraping optimizado para TioAnime
-│   │   └── main.py                   # Servidor FastAPI, middleware CORS y servicio de estáticos
-│   └── requirements.txt              # Requisitos Python del backend
-├── frontend/
-│   ├── index.html                    # Shell SPA con diseño oscuro cinematográfico
+prueba/
+├── server/
+│   ├── index.js                  # Servidor Express, socket pooling y fallback SPA
+│   ├── config.js                 # Constantes, Cloudflare Anycast unblocking y UTF-8 repair
+│   ├── cache.js                  # Caché thread-safe en memoria con TTL de 15 min
+│   ├── providers/
+│   │   ├── animeav1.js           # Scraper concurrente de AnimeAV1
+│   │   ├── jkanime.js            # Scraper estructurado de JKAnime
+│   │   ├── tioanime.js           # Scraper optimizado de TioAnime
+│   │   └── index.js              # Registro y detector de proveedores
+│   ├── services/
+│   │   ├── malService.js         # Extractor de franquicias audiovisuales MyAnimeList
+│   │   ├── streamProxy.js        # Proxy y reescritor de manifiestos HLS y segmentos MPEG-TS
+│   │   ├── playerSanitizer.js    # Sanitizador anti-anuncios y deshabilitador de restricciones iframe
+│   │   └── malXmlParser.js       # Parser de archivos exportados de MyAnimeList (.xml/.xml.gz)
+│   └── routes/
+│       └── api.js                # Endpoints REST unificados (/api/*)
+├── electron/
+│   ├── main.js                   # Proceso principal de Electron (gestión de ventanas y menú)
+│   └── preload.js                # Context bridge seguro
+├── public/                       # Frontend SPA moderno
+│   ├── index.html                # Plantilla HTML con tipografía Google Fonts
 │   ├── css/
-│   │   └── style.css                 # Diseño moderno streaming (Crunchyroll/Netflix), 100% responsivo
-│   └── js/
-│       ├── app.js                    # Enrutador por hash (#/, #/search, #/anime, #/watch, etc.)
-│       ├── api.js                    # Cliente HTTP asíncrono hacia la API REST
-│       ├── adblock.js                # Motor de AdBlock integrado con interceptor DOM y popups
-│       ├── tvNavigation.js           # Motor de navegación espacial 2D y compatibilidad con mandos Smart TV
-│       ├── storage.js                # Persistencia local (localStorage) para biblioteca, historial y favoritos
-│       ├── utils.js                  # Iconografía SVG, toasts, debounce y utilidades de formato
-│       └── components/
-│           ├── navbar.js             # Barra superior con buscador en tiempo real y botón de AdBlock
-│           ├── homeView.js           # Portada, Hero Banner, Continuar Viendo y Últimos Episodios
-│           ├── searchView.js         # Vista de búsqueda multi-fuente con filtros
-│           ├── animeView.js          # Ficha técnica, relaciones MAL, sinopsis colapsable y capítulos
-│           ├── watchView.js          # Sala de reproducción con pestañas de servidores y modo proxy
-│           ├── directoryView.js      # Catálogo y directorio con filtros de género, año y estado
-│           ├── libraryView.js        # Mi Lista: Viendo, Vistos, Pendientes e importador MAL (.xml/.xml.gz)
-│           ├── favoritesView.js      # Colección de animes favoritos
-│           └── historyView.js        # Historial cronológico con tiempo relativo y borrado
-├── dist/
-│   └── AnimeStream.exe               # Ejecutable portable autocontenido para Windows (sin dependencias)
-├── docs/
-│   ├── API.md                        # Documentación técnica completa de los endpoints REST
-│   └── openapi.json                  # Especificación OpenAPI 3.0 exportada
-├── AnimeStream.spec                  # Configuración de compilación con PyInstaller
-├── iniciar.bat                       # Lanzador directo de 1-clic con apertura automática de navegador
-├── requirements.txt                  # Dependencias del proyecto
-├── run.py                            # Punto de entrada para arranque local con Uvicorn
-└── README.md                         # Documentación general del repositorio
+│   │   └── style.css             # Estilos de diseño streaming, glassmorphism y modo cine
+│   ├── js/
+│   │   ├── app.js                # Enrutador por hash (#/, #/watch, #/anime, etc.)
+│   │   ├── api.js                # Cliente asíncrono hacia el backend
+│   │   ├── adblock.js            # Motor AdBlock integrado
+│   │   ├── tvNavigation.js       # Motor de navegación espacial 2D para mandos de TV
+│   │   ├── storage.js            # Persistencia de biblioteca, historial y favoritos
+│   │   ├── utils.js              # Iconos SVG y funciones auxiliares
+│   │   └── components/
+│   │       ├── navbar.js         # Barra superior con autocompletado en vivo
+│   │       ├── homeView.js       # Hero banner dinámico y últimos episodios
+│   │       ├── searchView.js     # Búsqueda multifuente
+│   │       ├── animeView.js      # Ficha técnica y lista interactiva de capítulos
+│   │       ├── watchView.js      # Sala de streaming con Modo Cine y atajos de teclado
+│   │       ├── directoryView.js  # Directorio con filtros avanzados
+│   │       ├── libraryView.js    # Gestor de biblioteca ("Mi Lista")
+│   │       ├── favoritesView.js  # Colección de favoritos
+│   │       └── historyView.js    # Historial de reproducción
+│   └── vendor/
+│       └── hls.min.js            # Reproductor HLS local offline
+├── run.js                        # Lanzador de consola con apertura automática de navegador
+├── iniciar.bat                   # Lanzador para Windows (Modo Web)
+├── iniciar_electron.bat          # Lanzador para Windows (Modo Electron)
+├── package.json                  # Dependencias y scripts npm
+└── README.md                     # Esta documentación
 ```
 
 ---
 
-## 🚀 Inicio Rápido
+## 📡 Endpoints de la API REST
 
-Tienes dos formas sencillas de ejecutar AnimeStream:
-
-### Opción 1: Ejecutable Portable (Recomendado para usuarios de Windows)
-Simplemente haz doble clic sobre:
-```
-dist\AnimeStream.exe
-```
-O ejecuta el script `iniciar.bat`. El servidor se iniciará automáticamente y se abrirá en tu navegador predeterminado. No requiere instalar Python ni ninguna librería externa.
-
----
-
-### Opción 2: Desde el código fuente (Python)
-
-#### 1. Requisitos previos
-- **Python 3.10 o superior** (probado y 100% compatible con Python 3.14 y 3.15).
-
-#### 2. Instalación de dependencias
-Abre una terminal o consola de comandos en la carpeta raíz y ejecuta:
-```bash
-pip install -r requirements.txt
-```
-
-#### 3. Ejecución
-Inicia el servidor local:
-```bash
-python run.py
-```
-
-- **Plataforma Web:** Abre en tu navegador [http://localhost:8000](http://localhost:8000)
-- **Documentación Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Documentación ReDoc:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
-
----
-
-## 🎨 Características de la Interfaz (UI/UX)
-
-- **Modo Oscuro Streaming:** Paleta oscura profesional (`#0b0f19`, `#161f30`) con acentos naranja y etiquetas distintivas por proveedor:
-  - **AnimeAV1:** Púrpura brillante.
-  - **JKAnime:** Cian / Turquesa.
-  - **TioAnime:** Naranja / Ámbar.
-- **Hero Banner Interactivo:** Portada destacada aleatoria con botón de reproducción inmediata del primer episodio.
-- **Buscador en Tiempo Real:** Campo de búsqueda rápida con selector de fuente (`Todas`, `AnimeAV1`, `JKAnime`, `TioAnime`), resistente a búsquedas consecutivas repetidas.
-- **Ficha Técnica Optimizada:**
-  - **Marco de Portada Fijo:** Proporción vertical 2:3 bloqueada que nunca se deforma ni se estira sin importar el tamaño del texto.
-  - **Sinopsis Inteligente:** Clampeo automático a 4 líneas con botón interactivo **"Leer más" / "Leer menos"** para mantener la vista simétrica y limpia.
-  - **Obras Relacionadas (MyAnimeList):** Sección de franquicia con carátulas en alta resolución y pestañas clasificadoras:
-    - *Secuelas & Precuelas*
-    - *Películas & Resúmenes*
-    - *OVAs & Spin-offs*
-    *(Filtro estricto que descarta mangas, novelas ligeras y material impreso, enfocándose 100% en producciones audiovisuales).*
-  - **Buscador de Capítulos:** Filtro instantáneo por número de capítulo (ej. `24`) y botón para invertir el orden (Ascendente / Descendente).
-  - **Favoritos y Mi Lista:** Botón de corazón interactivo y menú desplegable para actualizar el estado del anime en tu biblioteca.
-- **Sala de Reproducción Cinematográfica:**
-  - Contenedor centrado 16:9 con soporte para pantalla completa.
-  - Selector superior de servidores de vídeo para cambiar de opción de streaming al instante.
-  - Botón **"Modo Proxy"** para neutralizar bloqueos por hotlinking o errores 403 Forbidden.
-  - Botón directo de **AdBlock** en la barra de herramientas del reproductor para verificar o pausar la protección.
-  - Navegación rápida con botones **← Capítulo Anterior** y **Siguiente Capítulo →**.
-  - Marcador de "Visto" / "No visto" con sincronización en el catálogo.
-
----
-
-## 🛡️ Escudo AdBlocker Integrado
-
-AnimeStream incorpora una suite de protección de vanguardia diseñada específicamente para anular la publicidad agresiva habitual en los reproductores de terceros:
-
-1. **Anti-Popups & Popunders:** Intercepta la llamada nativa `window.open()`, impidiendo que los reproductores abran nuevas ventanas o pestañas no deseadas.
-2. **Anti-Clickjacking:** Escaneo y eliminación automática en tiempo real de capas transparentes invisibles (`z-index >= 1000`) superpuestas sobre el vídeo.
-3. **Sandbox Iframe Aislado:** Restricción estricta de privilegios del iframe (`allow-scripts`, `allow-same-origin`, etc.) revocando `allow-top-navigation` para impedir redirecciones del sitio principal.
-4. **Proxy Sanitizer:** Filtrado en el servidor que purga scripts maliciosos de redes de publicidad invasivas antes de servir el reproductor.
-5. **Panel Interactivo y Estado en Vivo:**
-   - Indicador en la barra superior: `🛡️ AdBlock ON` o `⚠️ AdBlock OFF`, junto con el contador de elementos bloqueados.
-   - Modal completo accesible con un clic para ver estadísticas, reiniciar contadores o **Desactivar / Activar el AdBlocker** en cualquier momento.
-
----
-
-## ⚡ Rendimiento y Conectividad
-
-- **Enrutamiento Anycast Anticaídas:** Configuración de nodos limpios para sortear bloqueos de DNS o proveedores de Internet frente a servidores protegidos por Cloudflare (reducción de latencia de 15 segundos a menos de 0.3 segundos).
-- **Carga en Segundo Plano no Bloqueante:** Las consultas a MyAnimeList se realizan de forma asíncrona tras entregar la ficha del anime, permitiendo que la página cargue de forma inmediata sin esperas.
-- **Caché en Memoria Thread-Safe (TTL 15 min):** Acelera drásticamente las consultas repetidas de directorios, búsquedas y fichas técnicas con respuestas inferiores a 20 ms.
-- **Connection Pooling:** Sesiones HTTP reusables para minimizar el handshake TLS en cada consulta.
-
----
-
-## 📡 Resumen de la API REST
-
-| Módulo | Endpoint | Método | Descripción |
-| :--- | :--- | :---: | :--- |
-| **Emisión** | `/api/latest` | `GET` | Últimos episodios publicados entrelazando las 3 fuentes. |
-| **Búsqueda** | `/api/search` | `GET` | Búsqueda concurrente con aislamiento de fallos (`Promise.allSettled`). |
-| **Directorio** | `/api/directory` | `GET` | Catálogo filtrable por género (26 categorías), tipo, año y estado. |
-| **Detalles** | `/api/anime` | `GET` | Ficha técnica, lista de capítulos y metadatos. |
-| **Franquicia** | `/api/anime/relations` | `GET` | Obras audiovisuales relacionadas desde MyAnimeList. |
-| **Reproducción** | `/api/watch` | `GET` | Enlaces y servidores de vídeo extraídos. |
-| **Proxy de Vídeo** | `/api/proxy-player` | `GET` | Bypass de cabeceras Referer y filtros de seguridad. |
-| **Streaming HLS** | `/api/hls/m3u8/{hash}` | `GET` | Proxy reescritor de listas HLS con bypass anti-hotlinking. |
-| **Biblioteca MAL** | `/api/library/parse-mal` | `POST` | Importación y descompresión de archivos de exportación MAL. |
-| **Biblioteca Local**| `/api/library/local-file` | `GET` | Detección automática de archivos `.xml` / `.xml.gz` en el PC. |
-| **Proxy Imágenes** | `/api/image-proxy` | `GET` | Servidor proxy de carátulas con cabeceras CORS y caché de 7 días. |
-| **Caché** | `/api/cache/stats` | `GET` | Métricas en vivo del sistema de caché. |
-
-> Para conocer parámetros, payloads y ejemplos cURL, consulta la guía técnica en [**`docs/API.md`**](docs/API.md).
-
----
-
-## 📦 Compilación del Ejecutable
-
-Si deseas volver a generar el ejecutable portable desde el código fuente:
-
-```bash
-pip install pyinstaller
-pyinstaller AnimeStream.spec --noconfirm
-```
-
-El binario actualizado quedará disponible en la carpeta `dist/AnimeStream.exe`.
+| Método | Endpoint | Descripción |
+|---|---|---|
+| `GET` | `/api/latest?source=all` | Últimos episodios en emisión de todas las fuentes. |
+| `GET` | `/api/search?q=:query&source=all` | Búsqueda global simultánea con tolerancia a fallos. |
+| `GET` | `/api/directory?genre=...&page=1` | Catálogo filtrable por género, año, estado y tipo. |
+| `GET` | `/api/anime?url=:canonicalUrl` | Ficha técnica completa y episodios ordenados. |
+| `GET` | `/api/anime/relations?title=:title` | Obras relacionadas desde MyAnimeList. |
+| `GET` | `/api/watch?url=:canonicalUrl` | Servidores de vídeo (HLS, Mega, Voe, etc.) y navegación. |
+| `GET` | `/api/hls/player/:hash` | Reproductor HTML5 nativo para transmisiones HLS. |
+| `GET` | `/api/hls/m3u8/:hash` | Proxy y reescritor de listas de reproducción `.m3u8`. |
+| `GET` | `/api/hls/seg/:hash/:file` | Proxy de fragmentos de vídeo `.ts`. |
+| `GET` | `/api/proxy-player?url=...` | Desactivador de restricciones Iframe con filtro AdBlock. |
+| `GET` | `/api/image-proxy?url=...` | Proxy de imágenes con cabeceras de caché persistente. |
+| `POST`| `/api/library/parse-mal` | Importación de archivos `.xml` o `.xml.gz` de MyAnimeList. |
+| `GET` | `/api/library/local-file` | Detección automática del archivo exportado más reciente. |
+| `GET` | `/api/cache/stats` | Estadísticas de aciertos y memoria caché. |
+| `POST`| `/api/cache/clear` | Vaciado manual de la memoria caché. |
+| `GET` | `/api/health` | Estado del servidor y tiempo de actividad. |
