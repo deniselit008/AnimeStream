@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 320" width="100%" height="auto">
+  <defs>
+    <filter id="shadow1" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+  <!-- Windows SmartScreen Dialog Frame -->
+  <rect x="20" y="20" width="500" height="280" rx="8" fill="#005da6" filter="url(#shadow1)"/>
+  
+  <!-- Header Bar -->
+  <text x="50" y="70" fill="#ffffff" font-family="-apple-system, Segoe UI, sans-serif" font-size="22" font-weight="600">Windows protegió su PC</text>
+  
+  <!-- Content text -->
+  <text x="50" y="115" fill="#e0f2fe" font-family="-apple-system, Segoe UI, sans-serif" font-size="14" font-weight="400">
+    <tspan x="50" dy="0">El Filtro SmartScreen de Microsoft Defender impidió el inicio de una</tspan>
+    <tspan x="50" dy="22">aplicación no reconocida. Si ejecuta esta aplicación, podría poner en</tspan>
+    <tspan x="50" dy="22">riesgo el equipo.</tspan>
+  </text>
+  
+  <!-- Step 1 Highlight: "Más información" -->
+  <g transform="translate(50, 195)">
+    <!-- Pulse Highlight Box -->
+    <rect x="-8" y="-18" width="165" height="32" rx="6" fill="#f47521" fill-opacity="0.25" stroke="#f47521" stroke-width="2" stroke-dasharray="4 2"/>
+    <text x="0" y="2" fill="#ffffff" font-family="-apple-system, Segoe UI, sans-serif" font-size="16" font-weight="600" text-decoration="underline">Más información</text>
+    
+    <!-- Pointer Arrow and Step Indicator -->
+    <g transform="translate(180, -2)">
+      <circle cx="16" cy="0" r="14" fill="#f47521"/>
+      <text x="16" y="5" text-anchor="middle" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="13" font-weight="800">1</text>
+      <text x="40" y="5" fill="#fcd34d" font-family="-apple-system, Segoe UI, sans-serif" font-size="14" font-weight="700">← Haz clic aquí</text>
+    </g>
+  </g>
+  
+  <!-- Bottom Default Button (No ejecutar) -->
+  <rect x="360" y="240" width="130" height="38" rx="4" fill="#0078d4" stroke="#60a5fa" stroke-width="1"/>
+  <text x="425" y="264" text-anchor="middle" fill="#ffffff" font-family="-apple-system, Segoe UI, sans-serif" font-size="14" font-weight="500">No ejecutar</text>
+</svg>

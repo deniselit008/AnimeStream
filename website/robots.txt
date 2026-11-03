@@ -1,0 +1,15 @@
+# Robots.txt for AnimeStream Landing & Download Page
+# Conforme a las directrices oficiales de Google Search Central
+
+User-agent: *
+Allow: /
+Allow: /assets/
+Allow: /css/
+Allow: /js/
+
+# Evitar rastreo de archivos temporales
+Disallow: /*.tmp$
+Disallow: /*.bak$
+
+# Ubicación del archivo de mapa del sitio (Sitemap)
+Sitemap: https://deniselit008.github.io/AnimeStream/sitemap.xml

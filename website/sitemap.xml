@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://deniselit008.github.io/AnimeStream/</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://deniselit008.github.io/AnimeStream/assets/og-image.svg</image:loc>
+      <image:title>AnimeStream para Windows — Descargar Gratis</image:title>
+      <image:caption>Captura y presentación oficial de AnimeStream para Windows 10 y 11</image:caption>
+    </image:image>
+  </url>
+</urlset>

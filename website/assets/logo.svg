@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="logo-grad" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f47521"/>
+      <stop offset="100%" stop-color="#e04e0b"/>
+    </linearGradient>
+    <linearGradient id="glow-grad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f47521" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Glow & Plate -->
+  <rect x="2" y="2" width="44" height="44" rx="12" fill="#141c2e" stroke="#2a3955" stroke-width="1.5"/>
+  <rect x="4" y="4" width="40" height="40" rx="10" fill="url(#glow-grad)"/>
+  <!-- Film / Streaming Shape -->
+  <path d="M12 10C10.8954 10 10 10.8954 10 12V36C10 37.1046 10.8954 38 12 38H36C37.1046 38 38 37.1046 38 36V12C38 10.8954 37.1046 10 36 10H12Z" fill="#162238" stroke="#334668" stroke-width="1.5"/>
+  <!-- Film Perforations -->
+  <rect x="13" y="13" width="3" height="3" rx="0.8" fill="#f47521" fill-opacity="0.9"/>
+  <rect x="13" y="22.5" width="3" height="3" rx="0.8" fill="#f47521" fill-opacity="0.9"/>
+  <rect x="13" y="32" width="3" height="3" rx="0.8" fill="#f47521" fill-opacity="0.9"/>
+  <rect x="32" y="13" width="3" height="3" rx="0.8" fill="#f47521" fill-opacity="0.9"/>
+  <rect x="32" y="22.5" width="3" height="3" rx="0.8" fill="#f47521" fill-opacity="0.9"/>
+  <rect x="32" y="32" width="3" height="3" rx="0.8" fill="#f47521" fill-opacity="0.9"/>
+  <!-- Vibrant Play Button in Center -->
+  <path d="M20 17.5L30 24L20 30.5V17.5Z" fill="url(#logo-grad)" stroke="#ffffff" stroke-width="1" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,189 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="100%" height="auto">
+  <defs>
+    <linearGradient id="window-grad" x1="0" y1="0" x2="960" y2="560" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#070a13"/>
+    </linearGradient>
+    <linearGradient id="hero-img-grad" x1="0" y1="0" x2="600" y2="280" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#312e81"/>
+      <stop offset="60%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#0b0f19"/>
+    </linearGradient>
+    <filter id="win-shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Desktop App Window Frame with Glow & Shadow -->
+  <rect x="10" y="10" width="940" height="540" rx="14" fill="url(#window-grad)" stroke="#223049" stroke-width="2" filter="url(#win-shadow)"/>
+
+  <!-- Window Header / Titlebar -->
+  <path d="M10 24C10 16.268 16.268 10 24 10H936C943.732 10 950 16.268 950 24V48H10V24Z" fill="#141c2e" stroke="#223049" stroke-width="1"/>
+  <!-- Traffic Light / Window Controls -->
+  <circle cx="34" cy="29" r="6" fill="#ef4444"/>
+  <circle cx="54" cy="29" r="6" fill="#f59e0b"/>
+  <circle cx="74" cy="29" r="6" fill="#10b981"/>
+  <!-- Title / URL Bar -->
+  <rect x="220" y="18" width="520" height="24" rx="6" fill="#0b0f19" stroke="#1f293d"/>
+  <text x="480" y="34" text-anchor="middle" fill="#94a3b8" font-family="-apple-system, Segoe UI, sans-serif" font-size="12" font-weight="500">🔒 http://localhost:8000 — AnimeStream Desktop v1.0.4</text>
+  <!-- Window Minimize/Maximize/Close icons on the right -->
+  <path d="M915 25L925 35M925 25L915 35" stroke="#64748b" stroke-width="1.5" stroke-linecap="round"/>
+  <rect x="885" y="24" width="10" height="10" stroke="#64748b" stroke-width="1.5" fill="none"/>
+  <line x1="855" y1="34" x2="865" y2="34" stroke="#64748b" stroke-width="1.5"/>
+
+  <!-- Top Navigation Bar inside App -->
+  <rect x="10" y="49" width="940" height="54" fill="#0b0f19" stroke="#161f30" stroke-width="1"/>
+  <!-- Logo Icon -->
+  <g transform="translate(30, 58)">
+    <rect width="36" height="36" rx="8" fill="#f47521"/>
+    <polygon points="14,10 26,18 14,26" fill="#ffffff"/>
+    <text x="46" y="24" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="18" font-weight="800">Anime<tspan fill="#f47521">Stream</tspan></text>
+  </g>
+
+  <!-- Nav Links -->
+  <text x="210" y="81" fill="#f47521" font-family="-apple-system, sans-serif" font-size="14" font-weight="700">Inicio</text>
+  <text x="270" y="81" fill="#94a3b8" font-family="-apple-system, sans-serif" font-size="14" font-weight="500">Directorio</text>
+  <text x="360" y="81" fill="#94a3b8" font-family="-apple-system, sans-serif" font-size="14" font-weight="500">Mi Lista (MAL)</text>
+  <text x="470" y="81" fill="#94a3b8" font-family="-apple-system, sans-serif" font-size="14" font-weight="500">Historial</text>
+
+  <!-- Live AdBlock Status Pill (Crucial feature) -->
+  <g transform="translate(680, 61)">
+    <rect width="135" height="30" rx="15" fill="#10b981" fill-opacity="0.15" stroke="#10b981" stroke-width="1.2"/>
+    <circle cx="16" cy="15" r="5" fill="#10b981"/>
+    <text x="30" y="20" fill="#6ee7b7" font-family="-apple-system, sans-serif" font-size="12" font-weight="700">🛡️ AdBlock: ON</text>
+  </g>
+
+  <!-- Smart TV Badge -->
+  <g transform="translate(830, 61)">
+    <rect width="95" height="30" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <text x="47" y="20" text-anchor="middle" fill="#cbd5e1" font-family="-apple-system, sans-serif" font-size="12" font-weight="600">📺 Smart TV</text>
+  </g>
+
+  <!-- MAIN APP CONTENT AREA -->
+  <!-- Left Side: Hero Featured Banner & Player -->
+  <g transform="translate(30, 120)">
+    <!-- Main Big Card (Featured Anime / Player) -->
+    <rect width="570" height="240" rx="12" fill="url(#hero-img-grad)" stroke="#223048" stroke-width="1.5"/>
+    
+    <!-- Hero Backdrop Artistic Elements -->
+    <circle cx="480" cy="90" r="80" fill="#f47521" fill-opacity="0.15"/>
+    <polygon points="420,40 540,160 380,180" fill="#8b5cf6" fill-opacity="0.15"/>
+    
+    <g transform="translate(30, 35)">
+      <!-- Provider Tag -->
+      <rect width="115" height="24" rx="12" fill="#8b5cf6" fill-opacity="0.25" stroke="#8b5cf6"/>
+      <text x="57" y="16" text-anchor="middle" fill="#c4b5fd" font-family="-apple-system, sans-serif" font-size="11" font-weight="700">ANIMEAV1 + MAL</text>
+      
+      <!-- Title -->
+      <text x="0" y="60" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="24" font-weight="800">Solo Leveling: Arise</text>
+      <!-- Subtitle info -->
+      <text x="0" y="85" fill="#94a3b8" font-family="-apple-system, sans-serif" font-size="13">Temporada 2 • Episodio 12 • Sub Español • Full HD 1080p</text>
+      
+      <!-- Synopsis lines -->
+      <text x="0" y="112" fill="#64748b" font-family="-apple-system, sans-serif" font-size="12">
+        <tspan x="0" dy="0">Sung Jin-woo enfrenta el despertar de las sombras mientras</tspan>
+        <tspan x="0" dy="16">los cazadores de rango S investigan la brecha dimensional...</tspan>
+      </text>
+
+      <!-- Action Buttons -->
+      <g transform="translate(0, 145)">
+        <!-- Play CTA -->
+        <rect width="150" height="38" rx="8" fill="#f47521"/>
+        <polygon points="22,14 30,19 22,24" fill="#ffffff"/>
+        <text x="40" y="24" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="13" font-weight="700">Reproducir Ahora</text>
+
+        <!-- Franchise / MAL Info -->
+        <g transform="translate(165, 0)">
+          <rect width="150" height="38" rx="8" fill="#1e293b" stroke="#334155"/>
+          <text x="75" y="24" text-anchor="middle" fill="#cbd5e1" font-family="-apple-system, sans-serif" font-size="12" font-weight="600">🔗 Ver Franquicia</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- Right Side: Server Selection & Multi-Source Switcher -->
+  <g transform="translate(620, 120)">
+    <rect width="310" height="240" rx="12" fill="#141c2e" stroke="#223048" stroke-width="1.5"/>
+    <text x="20" y="32" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="15" font-weight="700">⚡ Servidores de Streaming</text>
+    <text x="20" y="50" fill="#64748b" font-family="-apple-system, sans-serif" font-size="11">Sin popups ni redirecciones publicitarias</text>
+
+    <!-- Source 1: AnimeAV1 -->
+    <g transform="translate(20, 68)">
+      <rect width="270" height="42" rx="8" fill="#1a243a" stroke="#8b5cf6" stroke-width="1.2"/>
+      <circle cx="22" cy="21" r="5" fill="#8b5cf6"/>
+      <text x="36" y="26" fill="#f8fafc" font-family="-apple-system, sans-serif" font-size="13" font-weight="600">Servidor AV1 (Mega / StreamSB)</text>
+      <rect x="210" y="12" width="48" height="18" rx="4" fill="#8b5cf6" fill-opacity="0.3"/>
+      <text x="234" y="25" text-anchor="middle" fill="#c4b5fd" font-family="-apple-system, sans-serif" font-size="10" font-weight="700">RÁPIDO</text>
+    </g>
+
+    <!-- Source 2: JKAnime -->
+    <g transform="translate(20, 118)">
+      <rect width="270" height="42" rx="8" fill="#161f30" stroke="#06b6d4" stroke-width="1"/>
+      <circle cx="22" cy="21" r="5" fill="#06b6d4"/>
+      <text x="36" y="26" fill="#f8fafc" font-family="-apple-system, sans-serif" font-size="13" font-weight="600">Servidor JK (Fembed / YourUpload)</text>
+      <rect x="210" y="12" width="48" height="18" rx="4" fill="#06b6d4" fill-opacity="0.3"/>
+      <text x="234" y="25" text-anchor="middle" fill="#67e8f9" font-family="-apple-system, sans-serif" font-size="10" font-weight="700">1080P</text>
+    </g>
+
+    <!-- Source 3: TioAnime -->
+    <g transform="translate(20, 168)">
+      <rect width="270" height="42" rx="8" fill="#161f30" stroke="#f97316" stroke-width="1"/>
+      <circle cx="22" cy="21" r="5" fill="#f97316"/>
+      <text x="36" y="26" fill="#f8fafc" font-family="-apple-system, sans-serif" font-size="13" font-weight="600">Servidor Tio (Okru / Mp4Upload)</text>
+      <rect x="210" y="12" width="48" height="18" rx="4" fill="#f97316" fill-opacity="0.3"/>
+      <text x="234" y="25" text-anchor="middle" fill="#fdba74" font-family="-apple-system, sans-serif" font-size="10" font-weight="700">ESTABLE</text>
+    </g>
+
+    <!-- Proxy bypass notice -->
+    <text x="155" y="228" text-anchor="middle" fill="#10b981" font-family="-apple-system, sans-serif" font-size="11" font-weight="600">🛡️ Proxy Integrado Activo (Anti-Error 403)</text>
+  </g>
+
+  <!-- Bottom Row: Latest Episodes Row -->
+  <g transform="translate(30, 380)">
+    <text x="0" y="20" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="16" font-weight="800">🔥 Últimos Episodios en Emisión (Multi-Fuente)</text>
+    
+    <!-- Mini Cards Row -->
+    <g transform="translate(0, 34)">
+      <!-- Card 1 -->
+      <rect x="0" y="0" width="168" height="105" rx="8" fill="#161f30" stroke="#223048"/>
+      <rect x="6" y="6" width="156" height="56" rx="6" fill="#1e293b"/>
+      <!-- Source badge on card -->
+      <rect x="12" y="12" width="60" height="16" rx="4" fill="#8b5cf6"/>
+      <text x="42" y="24" text-anchor="middle" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="9" font-weight="700">AnimeAV1</text>
+      <text x="12" y="80" fill="#f8fafc" font-family="-apple-system, sans-serif" font-size="12" font-weight="700">Dandadan</text>
+      <text x="12" y="96" fill="#f47521" font-family="-apple-system, sans-serif" font-size="11" font-weight="600">Episodio 05</text>
+
+      <!-- Card 2 -->
+      <rect x="183" y="0" width="168" height="105" rx="8" fill="#161f30" stroke="#223048"/>
+      <rect x="189" y="6" width="156" height="56" rx="6" fill="#1e293b"/>
+      <rect x="195" y="12" width="60" height="16" rx="4" fill="#06b6d4"/>
+      <text x="225" y="24" text-anchor="middle" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="9" font-weight="700">JKAnime</text>
+      <text x="195" y="80" fill="#f8fafc" font-family="-apple-system, sans-serif" font-size="12" font-weight="700">Bleach: TYBW</text>
+      <text x="195" y="96" fill="#f47521" font-family="-apple-system, sans-serif" font-size="11" font-weight="600">Episodio 31</text>
+
+      <!-- Card 3 -->
+      <rect x="366" y="0" width="168" height="105" rx="8" fill="#161f30" stroke="#223048"/>
+      <rect x="372" y="6" width="156" height="56" rx="6" fill="#1e293b"/>
+      <rect x="378" y="12" width="60" height="16" rx="4" fill="#f97316"/>
+      <text x="408" y="24" text-anchor="middle" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="9" font-weight="700">TioAnime</text>
+      <text x="378" y="80" fill="#f8fafc" font-family="-apple-system, sans-serif" font-size="12" font-weight="700">Blue Lock S2</text>
+      <text x="378" y="96" fill="#f47521" font-family="-apple-system, sans-serif" font-size="11" font-weight="600">Episodio 04</text>
+
+      <!-- Card 4 -->
+      <rect x="549" y="0" width="168" height="105" rx="8" fill="#161f30" stroke="#223048"/>
+      <rect x="555" y="6" width="156" height="56" rx="6" fill="#1e293b"/>
+      <rect x="561" y="12" width="60" height="16" rx="4" fill="#8b5cf6"/>
+      <text x="591" y="24" text-anchor="middle" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="9" font-weight="700">AnimeAV1</text>
+      <text x="561" y="80" fill="#f8fafc" font-family="-apple-system, sans-serif" font-size="12" font-weight="700">Dragon Ball Daima</text>
+      <text x="561" y="96" fill="#f47521" font-family="-apple-system, sans-serif" font-size="11" font-weight="600">Episodio 04</text>
+
+      <!-- Card 5 -->
+      <rect x="732" y="0" width="168" height="105" rx="8" fill="#161f30" stroke="#223048"/>
+      <rect x="738" y="6" width="156" height="56" rx="6" fill="#1e293b"/>
+      <rect x="744" y="12" width="60" height="16" rx="4" fill="#06b6d4"/>
+      <text x="774" y="24" text-anchor="middle" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="9" font-weight="700">JKAnime</text>
+      <text x="744" y="80" fill="#f8fafc" font-family="-apple-system, sans-serif" font-size="12" font-weight="700">Re:Zero S3</text>
+      <text x="744" y="96" fill="#f47521" font-family="-apple-system, sans-serif" font-size="11" font-weight="600">Episodio 05</text>
+    </g>
+  </g>
+</svg>

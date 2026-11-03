@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="es" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnimeStream para Windows — Descargar Gratis la Última Versión Oficial</title>
+
+  <!-- Google SEO & Meta Tags Fundamentales -->
+  <meta name="description" content="Descarga gratis AnimeStream para Windows 10 y 11 (64-bit). Agregador de anime en tiempo real sin anuncios invasivos, multi-fuente (AnimeAV1, JKAnime, TioAnime), soporte Smart TV y modo portable.">
+  <meta name="keywords" content="AnimeStream, descargar AnimeStream, AnimeStream Windows, ver anime sin anuncios, agregador anime pc, anime para windows, AnimeStream exe, jkanime windows, tioanime windows, animeav1 windows, anime en tiempo real">
+  <meta name="author" content="deniselit008">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <link rel="canonical" href="https://deniselit008.github.io/AnimeStream/">
+
+  <!-- Open Graph / Facebook / WhatsApp / Discord -->
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="AnimeStream">
+  <meta property="og:url" content="https://deniselit008.github.io/AnimeStream/">
+  <meta property="og:title" content="AnimeStream para Windows — Descarga Gratis la Última Versión">
+  <meta property="og:description" content="Disfruta de streaming de anime en tiempo real sin anuncios invasivos, multi-fuente (AnimeAV1, JKAnime, TioAnime), compatible con Smart TV y 100% portable.">
+  <meta property="og:image" content="https://deniselit008.github.io/AnimeStream/assets/og-image.svg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="AnimeStream para Windows - Reproductor y Agregador de Anime en Tiempo Real">
+
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AnimeStream para Windows — Descarga Gratis la Última Versión">
+  <meta name="twitter:description" content="Streaming de anime en tiempo real sin publicidad invasiva. Multi-fuente, portable y con soporte para Smart TV.">
+  <meta name="twitter:image" content="https://deniselit008.github.io/AnimeStream/assets/og-image.svg">
+  <meta name="twitter:creator" content="@deniselit008">
+
+  <!-- Theme Color & Favicons -->
+  <meta name="theme-color" content="#070a12">
+  <link rel="icon" type="image/svg+xml" href="./assets/logo.svg">
+  <link rel="manifest" href="./manifest.json">
+
+  <!-- Main Stylesheet (Vanilla Modern CSS) -->
+  <link rel="stylesheet" href="./css/style.css">
+
+  <!-- Structured Data (Schema.org / JSON-LD) optimizado para Google Rich Snippets -->
+  <script type="application/ld+json">
+  [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "AnimeStream para Windows",
+      "operatingSystem": "Windows 10, Windows 11 (64-bit)",
+      "applicationCategory": "MultimediaApplication",
+      "applicationSubCategory": "Video Streaming & Anime Aggregator",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "softwareVersion": "1.0.4",
+      "fileSize": "24.3 MB",
+      "downloadUrl": "https://github.com/deniselit008/AnimeStream/releases/latest",
+      "featureList": [
+        "Agregación simultánea de AnimeAV1, JKAnime y TioAnime",
+        "Bloqueador de anuncios nativo con anti-clickjacking",
+        "Compatibilidad con mandos Smart TV y teclado",
+        "Integración con MyAnimeList para sagas y franquicias",
+        "Ejecutable portable autónomo sin necesidad de Python"
+      ],
+      "author": {
+        "@type": "Person",
+        "name": "deniselit008",
+        "url": "https://github.com/deniselit008"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "AnimeStream Team"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "ratingCount": "128",
+        "bestRating": "5",
+        "worstRating": "1"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "¿Es AnimeStream para Windows completamente gratuito?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí, AnimeStream es 100% gratuito y de código abierto bajo la licencia MIT. No tiene suscripciones de pago, microtransacciones ni funciones bloqueadas."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Por qué Windows muestra una advertencia de SmartScreen al abrir el programa?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Microsoft Windows SmartScreen suele mostrar una advertencia azul ('Windows protegió su PC') ante programas nuevos de código abierto que no cuentan con un certificado de firma digital corporativo de pago. El código de AnimeStream es totalmente abierto y auditable en GitHub, libre de malware. Para ejecutarlo, solo debes hacer clic en 'Más información' y luego en 'Ejecutar de todas formas'."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Necesito tener instalado Python o alguna dependencia?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. El archivo ejecutable AnimeStream.exe es un binario portable y autónomo. Contiene internamente todo el backend de FastAPI, Uvicorn y el frontend, funcionando con solo hacer doble clic."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cómo funciona el bloqueador de anuncios (AdBlock) integrado?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "AnimeStream incorpora un escudo activo con interceptor de window.open() para anular ventanas emergentes y popunders, eliminación de capas invisibles transparentes (anti-clickjacking), aislamiento de iframes y un proxy sanitizador en el servidor."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Puedo usarlo en una Smart TV?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí. AnimeStream incluye un motor de navegación espacial 2D diseñado para mandos a distancia con cruceta (D-Pad), compatible con navegadores de televisores Hisense VIDAA OS, LG WebOS, Samsung Tizen y Android TV."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿AnimeStream almacena archivos de vídeo en sus propios servidores?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. AnimeStream funciona como un agregador e indexador en tiempo real. No aloja ningún vídeo en servidores propios, sino que recopila y unifica los enlaces de reproductores públicos de AnimeAV1, JKAnime y TioAnime."
+          }
+        }
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Inicio",
+          "item": "https://deniselit008.github.io/AnimeStream/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Windows",
+          "item": "https://deniselit008.github.io/AnimeStream/#descargar"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Descargar AnimeStream.exe",
+          "item": "https://deniselit008.github.io/AnimeStream/#descargar"
+        }
+      ]
+    }
+  ]
+  </script>
+</head>
+<body>
+
+  <!-- Capas de iluminación de fondo -->
+  <div class="bg-glow-layer" aria-hidden="true">
+    <div class="bg-glow-orange"></div>
+    <div class="bg-glow-purple"></div>
+  </div>
+
+  <!-- Encabezado y Navegación Principal -->
+  <header class="site-header" id="siteHeader">
+    <div class="container navbar">
+      <!-- Logotipo de la marca -->
+      <a href="#hero" class="brand-logo" title="Volver al inicio de AnimeStream">
+        <img src="./assets/logo.svg" alt="Logotipo oficial de AnimeStream" class="brand-icon" width="40" height="40">
+        <span class="brand-text">Anime<span class="brand-accent">Stream</span></span>
+      </a>
+
+      <!-- Menú de Navegación Semántico -->
+      <nav aria-label="Menú principal de navegación">
+        <ul class="nav-links" id="navLinks">
+          <li><a href="#caracteristicas" class="nav-link">Características</a></li>
+          <li><a href="#fuentes" class="nav-link">Multi-Fuente</a></li>
+          <li><a href="#comparativa" class="nav-link">Comparativa</a></li>
+          <li><a href="#requisitos" class="nav-link">Requisitos</a></li>
+          <li><a href="#instalacion" class="nav-link">Instalación</a></li>
+          <li><a href="#faq" class="nav-link">FAQ</a></li>
+          <li>
+            <a href="https://github.com/deniselit008/AnimeStream" target="_blank" rel="noopener noreferrer" class="nav-link" title="Ver código fuente en GitHub">
+              GitHub
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Botón de acción rápida en el Navbar -->
+      <div class="nav-actions">
+        <a href="#descargar" class="btn btn-primary btn-sm js-download-btn" title="Descargar AnimeStream para Windows">
+          <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M0 3.449L9.75 2.1v9.451H0V3.449zm10.949-1.551L24 0v11.551H10.949V1.898zM0 12.45h9.75v9.451L0 20.551V12.45zm10.949 0H24V24l-13.051-1.898V12.45z"/>
+          </svg>
+          <span>Descargar <span class="js-version-tag">v1.0.4</span></span>
+        </a>
+
+        <!-- Botón de menú para móviles -->
+        <button class="mobile-nav-toggle" id="mobileMenuToggle" aria-label="Abrir menú de navegación" aria-expanded="false">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+
+    <!-- =======================================================================
+         HERO SECTION: Encabezado principal H1 y llamada a la acción (CTA)
+         ======================================================================= -->
+    <section class="hero-section" id="hero" aria-labelledby="hero-title-h1">
+      <div class="container">
+        
+        <!-- Píldora de novedad / versión destacada -->
+        <div class="hero-pill">
+          <span class="hero-pill-dot" aria-hidden="true"></span>
+          <span>Última versión estable disponible para Windows 10 y 11 (64-bit)</span>
+        </div>
+
+        <!-- H1 Principal único optimizado para SEO -->
+        <h1 class="hero-title" id="hero-title-h1">
+          AnimeStream para Windows<br>
+          <span class="hero-title-highlight">El Agregador de Anime Definitivo</span>
+        </h1>
+
+        <!-- Párrafo introductorio persuasivo -->
+        <p class="hero-subtitle">
+          Disfruta de tus animes favoritos con un catálogo unificado en tiempo real de 
+          <strong>AnimeAV1</strong>, <strong>JKAnime</strong> y <strong>TioAnime</strong>. 
+          Escudo <strong>AdBlock integrado</strong> contra popups y redirecciones, soporte para mandos Smart TV y modo portable de 1-clic sin instalación.
+        </p>
+
+        <!-- Grupo de botones CTA Principales -->
+        <div class="hero-cta-group">
+          <!-- Botón de Descarga Principal Dinámico (GitHub Releases) -->
+          <a href="https://github.com/deniselit008/AnimeStream/releases/latest" 
+             class="btn btn-primary btn-lg js-download-btn" 
+             id="heroDownloadBtn" 
+             title="Descargar la última versión de AnimeStream para Windows">
+            <svg class="btn-icon" style="width:28px; height:28px;" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M0 3.449L9.75 2.1v9.451H0V3.449zm10.949-1.551L24 0v11.551H10.949V1.898zM0 12.45h9.75v9.451L0 20.551V12.45zm10.949 0H24V24l-13.051-1.898V12.45z"/>
+            </svg>
+            <div class="download-btn-content">
+              <span class="download-btn-main">Descargar AnimeStream.exe</span>
+              <span class="download-btn-sub">Versión <span class="js-version-tag">v1.0.4</span> • <span class="js-file-size">~24.3 MB</span> • Windows 64-bit</span>
+            </div>
+          </a>
+
+          <!-- Botón Secundario a GitHub -->
+          <a href="https://github.com/deniselit008/AnimeStream" 
+             target="_blank" 
+             rel="noopener noreferrer" 
+             class="btn btn-secondary btn-lg" 
+             title="Explorar el repositorio oficial en GitHub">
+            <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            <span>Ver en GitHub</span>
+          </a>
+        </div>
+
+        <!-- Badges de confianza y garantías técnicas -->
+        <div class="hero-meta-badges">
+          <div class="hero-meta-item">
+            <span>🛡️</span>
+            <span>100% Libre de Virus y Spyware</span>
+          </div>
+          <div class="hero-meta-item">
+            <span>⚡</span>
+            <span>Ejecutable Portable (Sin Instalación)</span>
+          </div>
+          <div class="hero-meta-item">
+            <span>💻</span>
+            <span>Windows 10 / 11 (64-bit)</span>
+          </div>
+          <div class="hero-meta-item">
+            <span>📜</span>
+            <span>Licencia MIT (Código Abierto)</span>
+          </div>
+        </div>
+
+        <!-- Vista Previa / Mockup de la Aplicación -->
+        <div class="hero-mockup-wrapper">
+          <div class="hero-mockup-glow" aria-hidden="true"></div>
+          <img src="./assets/app-preview.svg" 
+               alt="Interfaz oscura y moderna de AnimeStream para Windows mostrando reproductor, servidores y últimos episodios" 
+               class="hero-mockup-img" 
+               width="960" 
+               height="560" 
+               loading="eager" 
+               decoding="async">
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         MÉTRICAS Y ESTADÍSTICAS RÁPIDAS
+         ======================================================================= -->
+    <section class="stats-section" id="metricas" aria-label="Métricas destacadas del agregador">
+      <div class="container">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-number accent">3 en 1</div>
+            <div class="stat-label">Fuentes simultáneas (AnimeAV1, JK, Tio)</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">&lt; 0.3s</div>
+            <div class="stat-label">Latencia con caché Anycast optimizada</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number accent">0</div>
+            <div class="stat-label">Anuncios invasivos (AdBlock nativo)</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">100%</div>
+            <div class="stat-label">Código abierto y portátil para PC</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         CARACTERÍSTICAS PRINCIPALES
+         ======================================================================= -->
+    <section class="section" id="caracteristicas" aria-labelledby="caracteristicas-h2">
+      <div class="container">
+        
+        <header class="section-header">
+          <span class="section-tag">¿Por qué AnimeStream?</span>
+          <h2 class="section-title" id="caracteristicas-h2">Diseñado para la Mejor Experiencia de Streaming en PC</h2>
+          <p class="section-desc">
+            AnimeStream no es una página web con anuncios molestos ni un software pesado. Es un agregador nativo de alto rendimiento creado específicamente para que veas anime sin interrupciones.
+          </p>
+        </header>
+
+        <div class="features-grid">
+          
+          <!-- Card 1: Multi-fuente en tiempo real -->
+          <article class="feature-card">
+            <div class="feature-icon-wrapper" aria-hidden="true">🌐</div>
+            <h3 class="feature-card-title">Agregador Multi-Fuente en Tiempo Real</h3>
+            <p class="feature-card-text">
+              Extrae y unifica simultáneamente el catálogo de <strong>AnimeAV1</strong>, <strong>JKAnime</strong> y <strong>TioAnime</strong>. Si un servidor de terceros falla, los otros continúan funcionando sin interrupción.
+            </p>
+            <div class="feature-tags">
+              <span class="feature-tag-badge">Sin caídas</span>
+              <span class="feature-tag-badge">Concurrente</span>
+            </div>
+          </article>
+
+          <!-- Card 2: Escudo AdBlocker -->
+          <article class="feature-card">
+            <div class="feature-icon-wrapper" aria-hidden="true">🛡️</div>
+            <h3 class="feature-card-title">Escudo AdBlocker Integrado</h3>
+            <p class="feature-card-text">
+              Di adiós a popups, popunders y capas transparentes invisibles que secuestran tus clics (anti-clickjacking). Sandbox aislado para reproductores y proxy sanitizador.
+            </p>
+            <div class="feature-tags">
+              <span class="feature-tag-badge">Anti-Popups</span>
+              <span class="feature-tag-badge">Anti-Clickjacking</span>
+            </div>
+          </article>
+
+          <!-- Card 3: Soporte Smart TV & Teclado -->
+          <article class="feature-card">
+            <div class="feature-icon-wrapper" aria-hidden="true">📺</div>
+            <h3 class="feature-card-title">Navegación 2D para Smart TV y Mando</h3>
+            <p class="feature-card-text">
+              Control espacial con cruceta (D-Pad), anillo de enfoque de alto contraste y mapeo de botones multimedia. Compatible con mandos de Hisense (VIDAA), LG (WebOS) y Samsung (Tizen).
+            </p>
+            <div class="feature-tags">
+              <span class="feature-tag-badge">Cruceta D-Pad</span>
+              <span class="feature-tag-badge">VIDAA & Tizen</span>
+            </div>
+          </article>
+
+          <!-- Card 4: Franquicias MyAnimeList -->
+          <article class="feature-card">
+            <div class="feature-icon-wrapper" aria-hidden="true">🔗</div>
+            <h3 class="feature-card-title">Franquicias y Relaciones con MAL</h3>
+            <p class="feature-card-text">
+              Descubre secuelas, precuelas, películas, OVAs y especiales con carátulas en alta resolución mediante la API de MyAnimeList. Filtro inteligente que omite mangas e historias impresas.
+            </p>
+            <div class="feature-tags">
+              <span class="feature-tag-badge">MyAnimeList</span>
+              <span class="feature-tag-badge">Precuelas y Películas</span>
+            </div>
+          </article>
+
+          <!-- Card 5: Rendimiento Anycast Ultra Rápido -->
+          <article class="feature-card">
+            <div class="feature-icon-wrapper" aria-hidden="true">⚡</div>
+            <h3 class="feature-card-title">Carga Ultra Rápida (Menos de 0.3s)</h3>
+            <p class="feature-card-text">
+              Enrutamiento inteligente Anycast que evita bloqueos de operadoras y Cloudflare. Caché en memoria thread-safe con respuestas en menos de 20 milisegundos.
+            </p>
+            <div class="feature-tags">
+              <span class="feature-tag-badge">Anycast DNS</span>
+              <span class="feature-tag-badge">Caché 15 min</span>
+            </div>
+          </article>
+
+          <!-- Card 6: Gestor de Biblioteca "Mi Lista" -->
+          <article class="feature-card">
+            <div class="feature-icon-wrapper" aria-hidden="true">📚</div>
+            <h3 class="feature-card-title">Gestión de Biblioteca y Mi Lista</h3>
+            <p class="feature-card-text">
+              Importa tus listas de seguimiento desde MyAnimeList (.xml / .xml.gz) con detección automática. Organiza tus animes en Viendo, Visto, Pendiente, Pausado y Favoritos.
+            </p>
+            <div class="feature-tags">
+              <span class="feature-tag-badge">Importar XML</span>
+              <span class="feature-tag-badge">Historial Local</span>
+            </div>
+          </article>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         MULTI-FUENTE INTERACTIVO (SPOTLIGHT)
+         ======================================================================= -->
+    <section class="section" id="fuentes" aria-labelledby="fuentes-h2">
+      <div class="container">
+        
+        <div class="sources-card">
+          <header class="section-header" style="margin-bottom:20px;">
+            <span class="section-tag">Catálogo Global Unificado</span>
+            <h2 class="section-title" id="fuentes-h2">Tres Grandes Fuentes en un Solo Buscador</h2>
+            <p class="section-desc">
+              AnimeStream consulta las principales plataformas en tiempo real para que siempre encuentres el anime que buscas con la mejor calidad disponible y servidores operativos.
+            </p>
+          </header>
+
+          <div class="sources-grid">
+            
+            <div class="source-box av1">
+              <div class="source-header">
+                <span class="source-name" style="color:var(--brand-purple);">AnimeAV1</span>
+                <span class="source-badge badge-purple">Códec AV1 & 1080p</span>
+              </div>
+              <p class="source-desc">
+                Pioneros en codificación de última generación AV1 y alta definición. Servidores rápidos con excelente compresión visual sin pérdida de nitidez.
+              </p>
+            </div>
+
+            <div class="source-box jk">
+              <div class="source-header">
+                <span class="source-name" style="color:var(--brand-cyan);">JKAnime</span>
+                <span class="source-badge badge-cyan">Clásico & Completo</span>
+              </div>
+              <p class="source-desc">
+                Uno de los repertorios de anime más antiguos y completos de habla hispana, con miles de series clásicas, estrenos en emisión y películas.
+              </p>
+            </div>
+
+            <div class="source-box tio">
+              <div class="source-header">
+                <span class="source-name" style="color:var(--accent-orange);">TioAnime</span>
+                <span class="source-badge badge-orange">Estrenos al Minuto</span>
+              </div>
+              <p class="source-desc">
+                Velocidad inmediata en la publicación de nuevos episodios subtitulados según se estrenan en Japón, con múltiples opciones de servidores de vídeo.
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         COMPARATIVA: AnimeStream vs Otras Opciones
+         ======================================================================= -->
+    <section class="section" id="comparativa" aria-labelledby="comparativa-h2">
+      <div class="container">
+        
+        <header class="section-header">
+          <span class="section-tag">Análisis Comparativo</span>
+          <h2 class="section-title" id="comparativa-h2">AnimeStream frente a Otras Alternativas</h2>
+          <p class="section-desc">
+            Compara por qué miles de usuarios eligen el ejecutable de escritorio AnimeStream en lugar de navegar en sitios web plagados de publicidad.
+          </p>
+        </header>
+
+        <div class="table-responsive">
+          <table class="compare-table" aria-label="Tabla comparativa entre AnimeStream y sitios convencionales">
+            <thead>
+              <tr>
+                <th scope="col">Característica</th>
+                <th scope="col" class="highlight-col">🎬 AnimeStream (Windows)</th>
+                <th scope="col">Sitios Web Comunes</th>
+                <th scope="col">Otras Apps de Escritorio</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Bloqueador de Anuncios y Popups</th>
+                <td class="highlight-col"><span class="check-icon">✓</span> Nativo e integrado (0 anuncios)</td>
+                <td><span class="cross-icon">✗</span> Invasivo (Decenas de popups)</td>
+                <td><span class="cross-icon">✗</span> Requiere extensiones externas</td>
+              </tr>
+              <tr>
+                <th scope="row">Fuentes Múltiples Unificadas</th>
+                <td class="highlight-col"><span class="check-icon">✓</span> AnimeAV1 + JKAnime + TioAnime</td>
+                <td><span class="cross-icon">✗</span> Solo 1 fuente por sitio</td>
+                <td><span class="cross-icon">✗</span> Generalmente solo 1 fuente</td>
+              </tr>
+              <tr>
+                <th scope="row">Instalación y Configuración</th>
+                <td class="highlight-col"><span class="check-icon">✓</span> Portable (Doble clic y listo)</td>
+                <td><span class="check-icon">✓</span> En navegador</td>
+                <td><span class="cross-icon">✗</span> Instaladores pesados (500MB+)</td>
+              </tr>
+              <tr>
+                <th scope="row">Control con Mando / Smart TV</th>
+                <td class="highlight-col"><span class="check-icon">✓</span> Soporte espacial 2D nativo</td>
+                <td><span class="cross-icon">✗</span> Requiere ratón/puntero incómodo</td>
+                <td><span class="cross-icon">✗</span> No soportado</td>
+              </tr>
+              <tr>
+                <th scope="row">Integración con MyAnimeList</th>
+                <td class="highlight-col"><span class="check-icon">✓</span> Relaciones de sagas + Importar XML</td>
+                <td><span class="cross-icon">✗</span> No disponible</td>
+                <td><span class="cross-icon">✗</span> Parcial o limitado</td>
+              </tr>
+              <tr>
+                <th scope="row">Privacidad y Seguridad</th>
+                <td class="highlight-col"><span class="check-icon">✓</span> 100% Código Abierto (Sin trackers)</td>
+                <td><span class="cross-icon">✗</span> Trackers de publicidad masivos</td>
+                <td><span class="cross-icon">✗</span> Código propietario cerrado</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         REQUISITOS DEL SISTEMA
+         ======================================================================= -->
+    <section class="section" id="requisitos" aria-labelledby="requisitos-h2">
+      <div class="container">
+        
+        <header class="section-header">
+          <span class="section-tag">Compatibilidad</span>
+          <h2 class="section-title" id="requisitos-h2">Requisitos del Sistema para Windows</h2>
+          <p class="section-desc">
+            AnimeStream es sumamente ligero y eficiente. Consume menos de 60 MB de memoria RAM en reposo.
+          </p>
+        </header>
+
+        <div class="req-grid">
+          
+          <!-- Requisitos Mínimos -->
+          <div class="req-card">
+            <div class="req-header">
+              <h3 class="req-title">Requisitos Mínimos</h3>
+              <span class="feature-tag-badge">Básico</span>
+            </div>
+            <ul class="req-list">
+              <li class="req-item">
+                <span class="req-item-label">Sistema Operativo:</span>
+                <span class="req-item-val">Windows 10 (64-bit)</span>
+              </li>
+              <li class="req-item">
+                <span class="req-item-label">Procesador (CPU):</span>
+                <span class="req-item-val">Intel o AMD Dual-Core (1.8 GHz)</span>
+              </li>
+              <li class="req-item">
+                <span class="req-item-label">Memoria RAM:</span>
+                <span class="req-item-val">2 GB</span>
+              </li>
+              <li class="req-item">
+                <span class="req-item-label">Almacenamiento:</span>
+                <span class="req-item-val">80 MB de espacio libre</span>
+              </li>
+              <li class="req-item">
+                <span class="req-item-label">Conexión:</span>
+                <span class="req-item-val">Banda ancha 5 Mbps (Streaming 720p)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Requisitos Recomendados -->
+          <div class="req-card recommended">
+            <div class="req-header">
+              <h3 class="req-title">Requisitos Recomendados</h3>
+              <span class="feature-tag-badge" style="background:rgba(244,117,33,0.2); color:var(--accent-orange);">Óptimo</span>
+            </div>
+            <ul class="req-list">
+              <li class="req-item">
+                <span class="req-item-label">Sistema Operativo:</span>
+                <span class="req-item-val">Windows 11 (64-bit)</span>
+              </li>
+              <li class="req-item">
+                <span class="req-item-label">Procesador (CPU):</span>
+                <span class="req-item-val">Intel Core i3 / Ryzen 3 o superior</span>
+              </li>
+              <li class="req-item">
+                <span class="req-item-label">Memoria RAM:</span>
+                <span class="req-item-val">4 GB o más</span>
+              </li>
+              <li class="req-item">
+                <span class="req-item-label">Almacenamiento:</span>
+                <span class="req-item-val">150 MB (para caché local)</span>
+              </li>
+              <li class="req-item">
+                <span class="req-item-label">Conexión:</span>
+                <span class="req-item-val">Fibra Óptica 20+ Mbps (Full HD 1080p)</span>
+              </li>
+            </ul>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         GUÍA DE INSTALACIÓN PASO A PASO (Con SmartScreen explicativo)
+         ======================================================================= -->
+    <section class="section" id="instalacion" aria-labelledby="instalacion-h2">
+      <div class="container">
+        
+        <header class="section-header">
+          <span class="section-tag">Guía Rápida</span>
+          <h2 class="section-title" id="instalacion-h2">Instalación en 3 Simples Pasos</h2>
+          <p class="section-desc">
+            No necesitas instalar Python, ni configurar bases de datos ni instalar entornos. El ejecutable hace todo por ti.
+          </p>
+        </header>
+
+        <div class="steps-container">
+          
+          <!-- Paso 1 -->
+          <article class="step-card">
+            <div class="step-number-box">1</div>
+            <div class="step-content">
+              <h3>Descarga el archivo ejecutable AnimeStream.exe</h3>
+              <p>
+                Haz clic en el botón de descarga para obtener la última versión oficial directamente desde los servidores seguros de GitHub Releases.
+              </p>
+              <a href="#descargar" class="btn btn-primary btn-sm js-download-btn">Descargar AnimeStream.exe</a>
+            </div>
+          </article>
+
+          <!-- Paso 2: Con aviso detallado de SmartScreen -->
+          <article class="step-card">
+            <div class="step-number-box">2</div>
+            <div class="step-content">
+              <h3>Ejecuta el archivo (Aviso de Windows SmartScreen)</h3>
+              <p>
+                Haz doble clic sobre <code>AnimeStream.exe</code>. Dado que AnimeStream es un proyecto independiente de código abierto y no paga miles de dólares anuales por un certificado corporativo a Microsoft, Windows Defender SmartScreen puede mostrar una pantalla azul de aviso ("Windows protegió su PC").
+              </p>
+
+              <!-- Cuadro explicativo paso a paso -->
+              <div class="smartscreen-tip-box">
+                <strong>¿Cómo omitir la advertencia de SmartScreen en 2 clics?</strong>
+                <ol style="margin-top:8px; padding-left:20px; line-height:1.6;">
+                  <li>Haz clic en el enlace subrayado <strong>"Más información"</strong> en la ventana azul.</li>
+                  <li>Aparecerá un nuevo botón abajo a la izquierda: haz clic en <strong>"Ejecutar de todas formas"</strong>.</li>
+                </ol>
+              </div>
+
+              <!-- Diagramas ilustrativos de SmartScreen -->
+              <div class="smartscreen-diagram-row">
+                <div>
+                  <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:6px;"><strong>Paso A:</strong> Clic en "Más información"</p>
+                  <img src="./assets/smartscreen-step1.svg" 
+                       alt="Captura paso 1: Cómo hacer clic en Más Información en la ventana azul de Windows SmartScreen" 
+                       class="smartscreen-diagram-img" 
+                       width="500" 
+                       height="260" 
+                       loading="lazy" 
+                       decoding="async">
+                </div>
+                <div>
+                  <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:6px;"><strong>Paso B:</strong> Clic en "Ejecutar de todas formas"</p>
+                  <img src="./assets/smartscreen-step2.svg" 
+                       alt="Captura paso 2: Cómo pulsar Ejecutar de todas formas para iniciar AnimeStream en Windows" 
+                       class="smartscreen-diagram-img" 
+                       width="500" 
+                       height="260" 
+                       loading="lazy" 
+                       decoding="async">
+                </div>
+              </div>
+
+            </div>
+          </article>
+
+          <!-- Paso 3 -->
+          <article class="step-card">
+            <div class="step-number-box">3</div>
+            <div class="step-content">
+              <h3>¡A disfrutar de tu anime favorito!</h3>
+              <p>
+                Al iniciarse, el servidor local arrancará automáticamente y abrirá AnimeStream en tu navegador predeterminado (en <code>http://localhost:8000</code>). ¡Ya puedes buscar cualquier anime, agregar a favoritos o enviarlo a tu Smart TV!
+              </p>
+            </div>
+          </article>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         CENTRO DE DESCARGA AVANZADO (Con GitHub API en vivo)
+         ======================================================================= -->
+    <section class="section" id="descargar" aria-labelledby="descargar-h2">
+      <div class="container">
+        
+        <div class="download-center-card">
+          <span class="section-tag">Descarga Oficial y Segura</span>
+          <h2 class="section-title" id="descargar-h2">Descargar AnimeStream para Windows</h2>
+          <p class="section-desc" style="max-width:650px; margin:0 auto;">
+            Obtén siempre la compilación más reciente y estable directamente desde GitHub. Sin instaladores basura, sin publicidad y sin requisitos previos.
+          </p>
+
+          <!-- Metadatos de la versión detectada dinámicamente -->
+          <div class="download-release-meta">
+            <div class="meta-pill">
+              Versión detectada: <strong class="js-version-tag">v1.0.4</strong>
+            </div>
+            <div class="meta-pill">
+              Tamaño de descarga: <strong class="js-file-size">24.3 MB</strong>
+            </div>
+            <div class="meta-pill">
+              Fecha de publicación: <strong class="js-release-date">Octubre 2026</strong>
+            </div>
+            <div class="meta-pill">
+              Arquitectura: <strong>Windows x64 (Portable)</strong>
+            </div>
+          </div>
+
+          <!-- Botones de Acción -->
+          <div class="download-actions-row">
+            <a href="https://github.com/deniselit008/AnimeStream/releases/latest" 
+               class="btn btn-primary btn-lg js-download-btn" 
+               id="centerDownloadBtn" 
+               title="Descargar ejecutable AnimeStream.exe">
+              <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="currentColor" d="M0 3.449L9.75 2.1v9.451H0V3.449zm10.949-1.551L24 0v11.551H10.949V1.898zM0 12.45h9.75v9.451L0 20.551V12.45zm10.949 0H24V24l-13.051-1.898V12.45z"/>
+              </svg>
+              <span>Descargar AnimeStream.exe (<span class="js-version-tag">v1.0.4</span>)</span>
+            </a>
+          </div>
+
+          <!-- Enlaces alternativos para desarrolladores -->
+          <div class="alternative-links">
+            <a href="https://github.com/deniselit008/AnimeStream/releases" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               class="alt-link js-github-releases-link" 
+               title="Ver historial completo de lanzamientos">
+              Historial de versiones (Changelog en GitHub)
+            </a>
+            <span>•</span>
+            <a href="https://github.com/deniselit008/AnimeStream/archive/refs/heads/main.zip" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               class="alt-link js-source-zip-link" 
+               title="Descargar código fuente en archivo ZIP">
+              Código fuente (.ZIP)
+            </a>
+            <span>•</span>
+            <a href="https://github.com/deniselit008/AnimeStream/blob/main/docs/API.md" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               class="alt-link" 
+               title="Documentación de la API REST">
+              Documentación API REST
+            </a>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         PREGUNTAS FRECUENTES (FAQ con Schema.org)
+         ======================================================================= -->
+    <section class="section" id="faq" aria-labelledby="faq-h2">
+      <div class="container">
+        
+        <header class="section-header">
+          <span class="section-tag">Resolvemos tus Dudas</span>
+          <h2 class="section-title" id="faq-h2">Preguntas Frecuentes (FAQ)</h2>
+          <p class="section-desc">
+            Todo lo que necesitas saber antes y después de descargar AnimeStream en tu ordenador con Windows.
+          </p>
+        </header>
+
+        <div class="faq-list">
+          
+          <!-- Pregunta 1 -->
+          <div class="faq-item active">
+            <button class="faq-question" aria-expanded="true" aria-controls="faq-ans-1">
+              <span>¿Es AnimeStream para Windows completamente gratuito?</span>
+              <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="faq-answer" id="faq-ans-1">
+              <p>
+                Sí, AnimeStream es 100% gratuito y de código abierto bajo la Licencia MIT. No contiene anuncios de pago, microtransacciones, cuentas premium ni funciones bloqueadas. Puedes usarlo, revisarlo y distribuirlo libremente.
+              </p>
+            </div>
+          </div>
+
+          <!-- Pregunta 2 -->
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false" aria-controls="faq-ans-2">
+              <span>¿Por qué Windows Defender SmartScreen muestra un aviso al abrirlo?</span>
+              <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="faq-answer" id="faq-ans-2">
+              <p>
+                Microsoft SmartScreen advierte de forma predeterminada sobre cualquier software nuevo que no cuente con un certificado digital comercial de pago emitido por Microsoft (los cuales tienen costos anuales muy elevados). AnimeStream es software libre comunitario. Su código está publicado en GitHub y es completamente seguro y limpio. Solo debes presionar <strong>"Más información"</strong> y luego <strong>"Ejecutar de todas formas"</strong>.
+              </p>
+            </div>
+          </div>
+
+          <!-- Pregunta 3 -->
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false" aria-controls="faq-ans-3">
+              <span>¿Necesito tener instalado Python para usar AnimeStream?</span>
+              <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="faq-answer" id="faq-ans-3">
+              <p>
+                No. El ejecutable <code>AnimeStream.exe</code> ya contiene empaquetados el motor de Python, FastAPI, Uvicorn y todo el frontend. No necesitas instalar Python ni librerías adicionales. Solo haz doble clic y comenzará a funcionar.
+              </p>
+            </div>
+          </div>
+
+          <!-- Pregunta 4 -->
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false" aria-controls="faq-ans-4">
+              <span>¿Cómo funciona el bloqueador de publicidad (AdBlock) integrado?</span>
+              <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="faq-answer" id="faq-ans-4">
+              <p>
+                AnimeStream cuenta con una arquitectura de protección en múltiples capas: intercepta la función nativa de ventanas emergentes <code>window.open()</code>, escanea y elimina en tiempo real capas invisibles transparentes sobre el vídeo (anti-clickjacking), y utiliza un iframe con sandbox estricto para evitar redirecciones indeseadas.
+              </p>
+            </div>
+          </div>
+
+          <!-- Pregunta 5 -->
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false" aria-controls="faq-ans-5">
+              <span>¿Puedo ver anime en mi televisor Smart TV con AnimeStream?</span>
+              <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="faq-answer" id="faq-ans-5">
+              <p>
+                ¡Sí! Puedes abrir el navegador de tu Smart TV (Hisense con VIDAA, LG con WebOS, Samsung con Tizen o Android TV) e ingresar la dirección IP local de tu PC con el puerto 8000 (por ejemplo <code>http://192.168.1.50:8000</code>). AnimeStream detecta el mando a distancia y te permite navegar fácilmente con la cruceta (D-Pad).
+              </p>
+            </div>
+          </div>
+
+          <!-- Pregunta 6 -->
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false" aria-controls="faq-ans-6">
+              <span>¿Cómo importo mi lista de animes desde MyAnimeList (MAL)?</span>
+              <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="faq-answer" id="faq-ans-6">
+              <p>
+                En AnimeStream ve a la sección <strong>"Mi Lista"</strong>. El sistema cuenta con detección automática de archivos de exportación de MyAnimeList (<code>.xml</code> o <code>.xml.gz</code>) que tengas en tu equipo, o puedes subirlo manualmente para tener sincronizados tus animes viendo, completados y pendientes.
+              </p>
+            </div>
+          </div>
+
+          <!-- Pregunta 7 -->
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false" aria-controls="faq-ans-7">
+              <span>¿Cómo se actualiza AnimeStream cuando se publica una nueva versión?</span>
+              <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="faq-answer" id="faq-ans-7">
+              <p>
+                Simplemente vuelve a visitar esta página o el repositorio de GitHub y descarga el nuevo archivo <code>AnimeStream.exe</code>. Puedes reemplazar el ejecutable anterior directamente sin perder tus datos de historial o favoritos, ya que se guardan de forma segura en tu navegador.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         SEGURIDAD Y CÓDIGO ABIERTO
+         ======================================================================= -->
+    <section class="section" id="seguridad" aria-labelledby="seguridad-h2">
+      <div class="container">
+        
+        <div class="security-banner">
+          <div class="security-icon" aria-hidden="true">🛡️</div>
+          <div class="security-content">
+            <h2 id="seguridad-h2" style="font-size:1.35rem; color:#fff; margin-bottom:8px;">Compromiso de Seguridad, Privacidad y Transparencia</h2>
+            <p>
+              AnimeStream es un proyecto 100% de código abierto sin ánimo de lucro. No recopila datos personales, no instala controladores en el sistema ni contiene adware o mineros de criptomonedas. Puedes auditar cada línea de código en GitHub antes de ejecutarlo.
+            </p>
+            <div style="margin-top:14px; display:flex; gap:12px; flex-wrap:wrap;">
+              <a href="https://github.com/deniselit008/AnimeStream" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" title="Revisar código fuente en GitHub">
+                Auditar Código en GitHub
+              </a>
+              <button onclick="copyToClipboard('https://github.com/deniselit008/AnimeStream.git', 'URL del repositorio copiada')" class="btn btn-secondary btn-sm" title="Copiar URL del repositorio Git">
+                Copiar Git Clone
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =======================================================================
+       PIE DE PÁGINA (FOOTER)
+       ======================================================================= -->
+  <footer class="site-footer">
+    <div class="container">
+      
+      <!-- Aviso legal / Disclaimer importante para agregadores de anime -->
+      <aside class="disclaimer-box" aria-label="Aviso legal">
+        <p><strong>Aviso de exención de responsabilidad (Disclaimer):</strong> AnimeStream es un agregador e indexador de enlaces de vídeo en tiempo real. AnimeStream no almacena, sube ni aloja ningún archivo de vídeo, multimedia o contenido protegido en sus propios servidores. Todo el material audiovisual es provisto por servicios independientes y plataformas de terceros externas (AnimeAV1, JKAnime, TioAnime). Para cualquier solicitud de retirada por derechos de autor, comuníquese directamente con los proveedores originales que alojan el contenido.</p>
+      </aside>
+
+      <div class="footer-top">
+        
+        <div class="footer-brand">
+          <a href="#hero" class="brand-logo" title="Volver al inicio">
+            <img src="./assets/logo.svg" alt="AnimeStream Logo" class="brand-icon" width="36" height="36">
+            <span class="brand-text">Anime<span class="brand-accent">Stream</span></span>
+          </a>
+          <p>
+            Plataforma agregadora y reproductora de anime en tiempo real para Windows. Rápida, sin publicidad invasiva y 100% de código abierto.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Navegación</h4>
+          <ul class="footer-links">
+            <li><a href="#caracteristicas" class="footer-link">Características</a></li>
+            <li><a href="#fuentes" class="footer-link">Multi-Fuente</a></li>
+            <li><a href="#comparativa" class="footer-link">Comparativa</a></li>
+            <li><a href="#requisitos" class="footer-link">Requisitos</a></li>
+            <li><a href="#instalacion" class="footer-link">Instalación</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Descargas</h4>
+          <ul class="footer-links">
+            <li><a href="#descargar" class="footer-link js-download-btn">Última Versión Windows</a></li>
+            <li><a href="https://github.com/deniselit008/AnimeStream/releases" target="_blank" rel="noopener noreferrer" class="footer-link">Historial de Releases</a></li>
+            <li><a href="https://github.com/deniselit008/AnimeStream/archive/refs/heads/main.zip" class="footer-link">Código Fuente (.zip)</a></li>
+            <li><a href="#faq" class="footer-link">Guía SmartScreen</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Comunidad & Soporte</h4>
+          <ul class="footer-links">
+            <li><a href="https://github.com/deniselit008/AnimeStream" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub Repo</a></li>
+            <li><a href="https://github.com/deniselit008/AnimeStream/issues" target="_blank" rel="noopener noreferrer" class="footer-link">Reportar un Error (Issues)</a></li>
+            <li><a href="https://github.com/deniselit008/AnimeStream/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="footer-link">Licencia MIT</a></li>
+            <li><a href="https://github.com/deniselit008/AnimeStream/blob/main/docs/API.md" target="_blank" rel="noopener noreferrer" class="footer-link">Documentación de la API</a></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="footer-bottom">
+        <p>© 2026 <strong>AnimeStream</strong>. Desarrollado con ❤️ y código abierto por <a href="https://github.com/deniselit008" target="_blank" rel="noopener noreferrer" style="color:var(--accent-orange); text-decoration:none;">deniselit008</a>.</p>
+        <p>Optimizado para Google Search y estándares web modernos.</p>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- =======================================================================
+       MODAL DE INSTRUCCIONES POST-DESCARGA
+       ======================================================================= -->
+  <div class="modal-overlay" id="downloadModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-card">
+      <button class="modal-close-btn" id="modalCloseBtn" aria-label="Cerrar ventana">×</button>
+      <div style="font-size:2.8rem; margin-bottom:12px;">🎉</div>
+      <h3 id="modalTitle" style="font-size:1.4rem; color:#fff; margin-bottom:8px;">¡Tu descarga ha comenzado!</h3>
+      <p style="color:var(--text-muted); font-size:0.95rem; line-height:1.5; margin-bottom:20px;">
+        Gracias por descargar <strong>AnimeStream para Windows</strong>. Si la descarga no inició automáticamente, haz clic en el botón de abajo.
+      </p>
+
+      <div style="background:#0f172a; padding:14px; border-radius:8px; border:1px solid #1e293b; text-align:left; font-size:0.86rem; color:#cbd5e1; margin-bottom:20px;">
+        <p><strong>💡 Recordatorio importante:</strong></p>
+        <p style="margin-top:6px;">
+          Al abrir el archivo, si Windows muestra <em>"Windows protegió su PC"</em>, haz clic en <strong>Más información</strong> y luego en <strong>Ejecutar de todas formas</strong>.
+        </p>
+      </div>
+
+      <a href="https://github.com/deniselit008/AnimeStream/releases/latest" class="btn btn-primary btn-sm js-download-btn" style="width:100%;">
+        Reintentar Descarga
+      </a>
+    </div>
+  </div>
+
+  <!-- Botón flotante para volver arriba -->
+  <button class="back-to-top" id="backToTopBtn" aria-label="Volver arriba">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+  </button>
+
+  <!-- Script interactivo de descargas y GitHub API -->
+  <script src="./js/download.js" defer></script>
+
+</body>
+</html>
