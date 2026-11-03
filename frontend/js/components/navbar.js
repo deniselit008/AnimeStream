@@ -3,6 +3,7 @@
  */
 import { Icons, escapeHtml } from '../utils.js?v=3.0';
 import { AdBlock } from '../adblock.js?v=3.0';
+import { TVNavigation } from '../tvNavigation.js?v=3.2';
 
 let navbarInitialized = false;
 
@@ -14,6 +15,7 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
     navbarInitialized = true;
     const isAdblockOn = AdBlock.isEnabled();
     const blockedCount = AdBlock.loadBlockedCount();
+    const isTvOn = TVNavigation.isEnabled();
 
     container.innerHTML = `
       <header class="navbar">
@@ -78,6 +80,16 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
               <span id="nav-adblock-label">AdBlock ${isAdblockOn ? 'ON' : 'OFF'}</span>
               <span class="adblock-count-badge" id="nav-adblock-count">${blockedCount}</span>
             </button>
+
+            <!-- Smart TV Mode Button -->
+            <button 
+              id="nav-btn-tv-mode" 
+              class="nav-tv-btn ${isTvOn ? 'active' : ''}" 
+              title="Modo Smart TV: Navegación por cruceta/mando a distancia (Hisense / VIDAA / WebOS / Tizen)"
+            >
+              <span>📺</span>
+              <span id="nav-tv-label">Smart TV</span>
+            </button>
           </div>
         </div>
       </header>
@@ -121,6 +133,29 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
         }
       });
     }
+
+    // Attach TV Mode trigger
+    const tvBtn = container.querySelector('#nav-btn-tv-mode');
+    if (tvBtn) {
+      tvBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        TVNavigation.toggle();
+      });
+    }
+
+    // Reactive listener for TV updates
+    window.addEventListener('animestream-tv-change', (e) => {
+      const btn = container.querySelector('#nav-btn-tv-mode');
+      if (btn && e.detail) {
+        if (e.detail.enabled) {
+          btn.classList.add('active');
+          btn.title = 'Modo Smart TV: Activo (Navegación con cruceta del mando)';
+        } else {
+          btn.classList.remove('active');
+          btn.title = 'Modo Smart TV: Desactivado';
+        }
+      }
+    });
 
     // Reactive listener for AdBlock updates attached ONCE
     window.addEventListener('animestream-adblock-change', (e) => {

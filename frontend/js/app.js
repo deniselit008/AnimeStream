@@ -11,9 +11,11 @@ import { renderHistory } from './components/historyView.js?v=3.0';
 import { renderDirectory } from './components/directoryView.js?v=3.0';
 import { renderLibrary } from './components/libraryView.js?v=3.0';
 import { AdBlock } from './adblock.js?v=3.0';
+import { TVNavigation } from './tvNavigation.js?v=3.2';
 
-// Initialize AdBlock engine immediately to intercept popups and third-party trackers
+// Initialize AdBlock & Smart TV Navigation engines
 AdBlock.init();
+TVNavigation.init();
 
 function parseHash() {
   const hash = window.location.hash.slice(1) || '/';

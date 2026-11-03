@@ -1917,3 +1917,144 @@ button {
   from { transform: scale(0.94); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+
+/* ==========================================================================
+   Smart TV Compatibility (Hisense VIDAA, WebOS, Tizen, D-Pad Remote Navigation)
+   ========================================================================== */
+.nav-tv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #60a5fa;
+  padding: 6px 13px;
+  border-radius: var(--radius-xl);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.nav-tv-btn:hover,
+.nav-tv-btn.active {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: #3b82f6;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+}
+
+/* Spatial Navigation 2D Focus Rings for TV D-Pad */
+.tv-mode .tv-focused,
+.tv-mode a:focus-visible,
+.tv-mode button:focus-visible,
+.tv-mode input:focus-visible,
+.tv-mode select:focus-visible {
+  outline: 3px solid var(--accent-primary) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 22px rgba(244, 117, 33, 0.75), 0 8px 24px rgba(0, 0, 0, 0.7) !important;
+  transform: scale(1.04) !important;
+  transition: transform 0.14s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.14s ease !important;
+  z-index: 100 !important;
+}
+
+/* TV Focus on Cards */
+.tv-mode .anime-card.tv-focused,
+.tv-mode .anime-card:focus-visible,
+.tv-mode .continue-card.tv-focused,
+.tv-mode .continue-card:focus-visible {
+  transform: translateY(-6px) scale(1.05) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.85), 0 0 24px rgba(244, 117, 33, 0.85) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+.tv-mode .server-tab.tv-focused {
+  background: rgba(244, 117, 33, 0.25) !important;
+  border-color: var(--accent-primary) !important;
+  color: #fff !important;
+}
+
+.tv-mode .episode-pill.tv-focused {
+  background: var(--accent-primary) !important;
+  color: #fff !important;
+  border-color: #fff !important;
+}
+
+.tv-mode .genre-tag.tv-focused,
+.tv-mode .btn-pill.tv-focused {
+  background: rgba(244, 117, 33, 0.3) !important;
+  border-color: var(--accent-primary) !important;
+  color: #fff !important;
+}
+
+/* TV Remote Control On-Screen Guide HUD */
+.tv-hud-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  z-index: 99999;
+  pointer-events: none;
+  opacity: 0;
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.32s ease;
+}
+
+.tv-hud-bar.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.tv-hud-pill {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(11, 15, 25, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(244, 117, 33, 0.45);
+  border-radius: 40px;
+  padding: 8px 22px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75), 0 0 20px rgba(244, 117, 33, 0.28);
+  color: #f8fafc;
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+.tv-hud-badge {
+  font-weight: 800;
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  padding-right: 12px;
+}
+
+.tv-hud-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #cbd5e1;
+}
+
+.tv-hud-item kbd {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.tv-hud-colors {
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  padding-left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}

@@ -17,6 +17,7 @@ Todo el contenido se procesa **en tiempo real sin bases de datos estáticas** ni
 
 ## 🌟 Novedades y Características Destacadas
 
+- 📺 **Compatibilidad Total con Smart TV (Hisense / VIDAA OS / WebOS / Tizen):** Motor de navegación espacial 2D (`tvNavigation.js`) diseñado para mandos a distancia de televisores. Incluye anillo de enfoque naranja de alto contraste, navegación completa con cruceta (D-Pad), botón OK/Enter, intercepción nativa del botón **Atrás/Volver** del mando (código 461 en VIDAA, 10009 en Tizen) para evitar el cierre involuntario del navegador, soporte para teclas de colores (Rojo: Inicio, Verde: Directorio, Amarillo: Mi Lista, Azul: Favoritos) y teclas multimedia (Play, Pause, FastForward, Rewind).
 - 🛡️ **Escudo AdBlocker Integrado:** Protección activa contra popups, popunders, redirecciones forzadas y capas transparentes de secuestro de clics (anti-clickjacking), con panel de control interactivo para activar o desactivar la protección a 1-clic y visor en vivo de anuncios bloqueados.
 - 🔗 **Franquicias y Relacionados Audiovisuales (MyAnimeList):** Descubre automáticamente las secuelas, precuelas, películas, OVAs y especiales relacionados con cada anime, excluyendo mangas u obras físicas y mostrando únicamente contenido audiovisual en alta definición con búsqueda instantánea.
 - ⚡ **Carga Ultra Rápida (0.3s):** Optimización de red con enrutamiento Anycast para resolver bloqueos de operadores en Cloudflare, sesiones HTTP persistentes y obtención asíncrona de metadatos en segundo plano.
@@ -56,6 +57,7 @@ Anime/
 │       ├── app.js                    # Enrutador por hash (#/, #/search, #/anime, #/watch, etc.)
 │       ├── api.js                    # Cliente HTTP asíncrono hacia la API REST
 │       ├── adblock.js                # Motor de AdBlock integrado con interceptor DOM y popups
+│       ├── tvNavigation.js           # Motor de navegación espacial 2D y compatibilidad con mandos Smart TV
 │       ├── storage.js                # Persistencia local (localStorage) para biblioteca, historial y favoritos
 │       ├── utils.js                  # Iconografía SVG, toasts, debounce y utilidades de formato
 │       └── components/

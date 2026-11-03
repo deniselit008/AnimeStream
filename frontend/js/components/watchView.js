@@ -385,6 +385,36 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
       if (activeEl && ['INPUT', 'TEXTAREA', 'SELECT'].indexOf(activeEl.tagName) !== -1) return;
 
       const k = e.key || e.code;
+      const keyCode = e.keyCode || e.which;
+
+      // Smart TV Remote Back key (VIDAA 461, Tizen 10009): delegate to TVNavigation
+      if (keyCode === 461 || keyCode === 10009) {
+        return;
+      }
+
+      // If TV mode is active or user is currently focused on interactive UI (buttons, server tabs, links),
+      // allow arrow keys to perform spatial navigation instead of intercepting them for volume/seek.
+      const isArrow = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(k) !== -1 || (keyCode >= 37 && keyCode <= 40);
+      const isTvMode = document.body.classList.contains('tv-mode');
+      const isNavigatingUI = activeEl && (
+        activeEl.tagName === 'BUTTON' ||
+        activeEl.tagName === 'A' ||
+        activeEl.classList.contains('tv-focused') ||
+        activeEl.classList.contains('server-tab') ||
+        activeEl.classList.contains('btn')
+      );
+
+      if (isArrow && (isTvMode || isNavigatingUI)) {
+        const isPlayerFocused = activeEl && (activeEl.id === 'main-player-iframe' || activeEl.closest('.player-wrapper'));
+        if (!isPlayerFocused) {
+          return; // Let spatial navigation engine handle moving focus
+        }
+      }
+
+      if ((k === ' ' || e.code === 'Space') && isNavigatingUI) {
+        return; // Let native button click handle space
+      }
+
       let cmd = null;
       let deltaVol = 0;
       let deltaSeek = 0;

@@ -701,6 +701,56 @@ def get_hls_player_html(hash_id: str) -> str:
     // Handle Keyboard Shortcuts inside player iframe (CAPTURE PHASE to override Chromium defaults)
     function handlePlayerKey(e) {{
       const k = e.key || e.code;
+      const keyCode = e.keyCode || e.which;
+
+      // Smart TV Remote Back Button (VIDAA 461, Tizen 10009, Backspace 8, Escape 27)
+      if (keyCode === 461 || keyCode === 10009 || keyCode === 8 || keyCode === 27 || k === 'Back' || k === 'BrowserBack' || k === 'GoBack') {{
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        try {{
+          window.parent.postMessage({{ type: 'TV_REMOTE_BACK' }}, '*');
+        }} catch(err) {{}}
+        return false;
+      }}
+
+      // Smart TV Remote Media Keys (Play, Pause, FastForward, Rewind)
+      if (keyCode === 415 || k === 'MediaPlay') {{
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        if (video.paused) window.togglePlay();
+        return false;
+      }}
+      if (keyCode === 19 || k === 'MediaPause') {{
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        if (!video.paused) window.togglePlay();
+        return false;
+      }}
+      if (keyCode === 10252 || k === 'MediaPlayPause') {{
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        window.togglePlay();
+        return false;
+      }}
+      if (keyCode === 417 || k === 'MediaFastForward') {{
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        window.seekRelative(10);
+        return false;
+      }}
+      if (keyCode === 412 || k === 'MediaRewind') {{
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        window.seekRelative(-10);
+        return false;
+      }}
+
       if (k === 'ArrowUp' || e.code === 'ArrowUp') {{
         e.preventDefault();
         e.stopPropagation();
@@ -775,6 +825,12 @@ def get_hls_player_html(hash_id: str) -> str:
           break;
         case 'toggle_play':
           window.togglePlay();
+          break;
+        case 'play':
+          if (video.paused) window.togglePlay();
+          break;
+        case 'pause':
+          if (!video.paused) window.togglePlay();
           break;
         case 'toggle_mute':
           window.toggleMute();
