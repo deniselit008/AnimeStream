@@ -119,16 +119,14 @@ jobs:
 
       - name: Renombrar y preparar APK
         run: |
-          mkdir -p dist/android
-          cp android/app/build/outputs/apk/debug/*.apk dist/android/AnimeStream.apk || true
+          mkdir -p dist-apk
+          cp android/app/build/outputs/apk/debug/*.apk dist-apk/AnimeStream.apk
 
       - name: Subir paquete .apk de Android
         uses: actions/upload-artifact@v4
         with:
           name: AnimeStream-Android-apk
-          path: |
-            dist/android/AnimeStream.apk
-            android/app/build/outputs/apk/**/*.apk
+          path: dist-apk/AnimeStream.apk
 
   # ============================================================================
   # 4. PUBLICAR EN GITHUB RELEASES (.exe, .AppImage, .apk)
@@ -178,8 +176,8 @@ jobs:
         with:
           tag_name: ${{ steps.get_tag.outputs.tag }}
           files: |
-            release-assets/windows/*.exe
-            release-assets/linux/*.AppImage
-            release-assets/linux/*.deb
-            release-assets/android/*.apk
+            release-assets/**/*.exe
+            release-assets/**/*.AppImage
+            release-assets/**/*.deb
+            release-assets/**/*.apk
           generate_release_notes: true
