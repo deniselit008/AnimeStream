@@ -1,7 +1,7 @@
 /**
  * Modern Floating Navbar Component with Live Autocomplete Suggestions
  */
-import { Icons, escapeHtml, getSourceBadgeClass } from '../utils.js?v=4.0';
+import { Icons, escapeHtml, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster } from '../utils.js?v=4.1';
 import { AdBlock } from '../adblock.js?v=4.0';
 import { TVNavigation } from '../tvNavigation.js?v=4.0';
 import { Api } from '../api.js?v=4.0';
@@ -169,18 +169,29 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
           const topResults = results.slice(0, 6);
           suggestionsDropdown.innerHTML = `
             <div class="suggestions-header">Sugerencias rápidas:</div>
-            ${topResults.map(item => `
-              <a href="#/anime?url=${encodeURIComponent(item.url)}" class="suggestion-item">
-                <img src="${escapeHtml(item.image || '/favicon.ico')}" class="suggestion-thumb" alt="${escapeHtml(item.title)}" loading="lazy" />
-                <div class="suggestion-info">
-                  <div class="suggestion-title">${escapeHtml(item.title)}</div>
-                  <div class="suggestion-meta">
-                    <span class="badge ${getSourceBadgeClass(item.source)}">${escapeHtml(item.source)}</span>
-                    <span class="suggestion-type">${escapeHtml(item.type || 'Anime')}</span>
+            ${topResults.map(item => {
+              const coverUrl = resolveAnimeCover(item);
+              const fallbackSvg = getDefaultPoster(item.title, item.source);
+              return `
+                <a href="#/anime?url=${encodeURIComponent(item.url)}" class="suggestion-item">
+                  <img 
+                    src="${escapeHtml(coverUrl)}" 
+                    class="suggestion-thumb" 
+                    alt="${escapeHtml(item.title)}" 
+                    loading="lazy" 
+                    referrerpolicy="no-referrer"
+                    onerror="if (!this.dataset.retried && this.src && !this.src.includes('/api/image-proxy') && '${escapeHtml(item.image || '')}') { this.dataset.retried='1'; this.src='/api/image-proxy?url=' + encodeURIComponent('${escapeHtml(item.image || '')}'); } else { this.onerror=null; this.src='${escapeHtml(fallbackSvg)}'; }"
+                  />
+                  <div class="suggestion-info">
+                    <div class="suggestion-title">${escapeHtml(item.title)}</div>
+                    <div class="suggestion-meta">
+                      <span class="badge ${getSourceBadgeClass(item.source)}">${escapeHtml(item.source)}</span>
+                      <span class="suggestion-type">${escapeHtml(item.type || 'Anime')}</span>
+                    </div>
                   </div>
-                </div>
-              </a>
-            `).join('')}
+                </a>
+              `;
+            }).join('')}
             <div class="suggestions-footer" id="view-all-results-btn">
               Ver todos los resultados para "<strong>${escapeHtml(q)}</strong>" &rarr;
             </div>

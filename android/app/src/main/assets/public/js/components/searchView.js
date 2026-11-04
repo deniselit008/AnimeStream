@@ -2,8 +2,8 @@
  * Search View Component
  * Multi-source real-time search with error shielding and source tabs.
  */
-import { Api } from '../api.js?v=3.0';
-import { Icons, escapeHtml, getSourceBadgeClass } from '../utils.js?v=3.0';
+import { Api } from '../api.js?v=4.0';
+import { Icons, escapeHtml, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster } from '../utils.js?v=4.1';
 
 export async function renderSearch(container, query, source = 'all') {
   container.innerHTML = `
@@ -140,16 +140,18 @@ export async function renderSearch(container, query, source = 'all') {
     }
 
     grid.innerHTML = results.map(item => {
-      const fallbackImg = `https://via.placeholder.com/240x340/161f30/94a3b8?text=${encodeURIComponent(item.title)}`;
+      const coverUrl = resolveAnimeCover(item);
+      const fallbackSvg = getDefaultPoster(item.title, item.source);
       return `
         <div class="anime-card">
           <a href="#/anime?url=${encodeURIComponent(item.url)}" class="anime-card-media poster" title="${escapeHtml(item.title)}">
             <img 
-              src="${escapeHtml(item.image || fallbackImg)}" 
+              src="${escapeHtml(coverUrl)}" 
               alt="${escapeHtml(item.title)}" 
               class="anime-card-img" 
               loading="lazy"
-              onerror="this.src='${fallbackImg}'"
+              referrerpolicy="no-referrer"
+              onerror="if (!this.dataset.retried && this.src && !this.src.includes('/api/image-proxy') && '${escapeHtml(item.image || '')}') { this.dataset.retried='1'; this.src='/api/image-proxy?url=' + encodeURIComponent('${escapeHtml(item.image || '')}'); } else { this.onerror=null; this.src='${escapeHtml(fallbackSvg)}'; }"
             />
             <div class="play-overlay">
               <div class="play-btn-circle">${Icons.play}</div>

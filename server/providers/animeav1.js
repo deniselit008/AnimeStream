@@ -88,8 +88,9 @@ class AnimeAV1Provider {
       if (seen.has(slug) || ['catalogo', 'horario', 'pages'].includes(slug)) return;
       seen.add(slug);
 
-      const card = $(el).closest('.card, .item, .media, .group') || $(el);
-      const titleEl = card.find('h3, h4, h5, .title').first();
+      const card = $(el).closest('article, [class*="group"], .card, .item, .media');
+      const parent = card.length ? card : $(el).parent();
+      const titleEl = parent.find('h3, h4, h5, .title').first();
       let title = titleEl.text().trim();
       if (!title) {
         const text = $(el).text().trim();
@@ -100,7 +101,7 @@ class AnimeAV1Provider {
       }
       title = fixEncoding(title);
 
-      const imgEl = card.find('img').first();
+      const imgEl = parent.find('img').first();
       let image = imgEl.attr('src') || imgEl.attr('data-src');
       if (image && !image.startsWith('http')) {
         image = this._formatUrl(image);

@@ -86,40 +86,77 @@ class JKAnimeProvider {
     const results = [];
     const seen = new Set();
 
-    $('a').each((_, el) => {
-      const href = $(el).attr('href') || '';
-      const m = href.match(/(?:https:\/\/jkanime\.net)?\/([^/]+)\/?$/);
-      if (!m) return;
+    const items = $('.anime__item');
+    if (items.length > 0) {
+      items.each((_, el) => {
+        const link = $(el).find('a[href*="jkanime.net/"], a[href^="/"]').first();
+        const href = link.attr('href') || '';
+        const m = href.match(/(?:https:\/\/jkanime\.net)?\/([^/]+)\/?$/);
+        if (!m) return;
 
-      const slug = m[1];
-      if (seen.has(slug) || ['buscar', 'directorio', 'horario', 'top'].includes(slug)) return;
-      seen.add(slug);
+        const slug = m[1];
+        if (seen.has(slug) || ['buscar', 'directorio', 'horario', 'top', 'editar-perfil', 'jkanime.net'].includes(slug)) return;
+        seen.add(slug);
 
-      const card = $(el).closest('.anime__item, .col, .item, .card') || $(el);
-      const titleEl = card.find('h5, h6, h4, h3, .title').first();
-      let title = titleEl.text().trim();
-      if (!title) {
-        title = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      }
-      title = fixEncoding(title);
+        const titleEl = $(el).find('.anime__item__text h5 a, h5 a, h5').first();
+        let title = titleEl.text().trim() || slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        title = fixEncoding(title);
 
-      const imgEl = card.find('.set-bg, img').first();
-      let image = imgEl.attr('data-setbg') || imgEl.attr('src');
-      if (!image) {
-        image = `https://cdn.jkdesa.com/assets/images/animes/image/${slug}.jpg`;
-      }
+        const pic = $(el).find('.anime__item__pic, .set-bg, [data-setbg]').first();
+        let image = pic.attr('data-setbg') || pic.find('img').attr('src') || $(el).find('img').attr('src');
+        if (!image) {
+          image = `https://cdn.jkdesa.com/assets/images/animes/image/${slug}.jpg`;
+        }
 
-      const synopsis = fixEncoding(card.find('p').text().trim() || null);
+        const type = $(el).find('.anime__item__text ul li.anime, ul li').last().text().trim() || 'Anime';
+        const synopsis = fixEncoding($(el).find('p').text().trim() || null);
 
-      results.push({
-        title,
-        url: `https://jkanime.net/${slug}/`,
-        image,
-        source: this.name,
-        synopsis: synopsis || null,
-        type: 'Anime'
+        results.push({
+          title,
+          url: `https://jkanime.net/${slug}/`,
+          image,
+          source: this.name,
+          synopsis: synopsis || null,
+          type
+        });
       });
-    });
+    } else {
+      $('a').each((_, el) => {
+        const href = $(el).attr('href') || '';
+        const m = href.match(/(?:https:\/\/jkanime\.net)?\/([^/]+)\/?$/);
+        if (!m) return;
+
+        const slug = m[1];
+        if (seen.has(slug) || ['buscar', 'directorio', 'horario', 'top', 'editar-perfil', 'jkanime.net'].includes(slug)) return;
+        seen.add(slug);
+
+        const card = $(el).closest('.anime__item, .col, .item, .card');
+        const parent = card.length ? card : $(el).parent();
+        const titleEl = parent.find('h5, h6, h4, h3, .title').first();
+        let title = titleEl.text().trim();
+        if (!title) {
+          title = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+        title = fixEncoding(title);
+
+        const imgEl = parent.find('.set-bg, img').first();
+        let image = imgEl.attr('data-setbg') || imgEl.attr('src');
+        if (!image) {
+          image = `https://cdn.jkdesa.com/assets/images/animes/image/${slug}.jpg`;
+        }
+
+        const synopsis = fixEncoding(parent.find('p').text().trim() || null);
+
+        results.push({
+          title,
+          url: `https://jkanime.net/${slug}/`,
+          image,
+          source: this.name,
+          synopsis: synopsis || null,
+          type: 'Anime'
+        });
+      });
+    }
 
     return results;
   }

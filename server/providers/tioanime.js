@@ -80,12 +80,13 @@ class TioAnimeProvider {
       if (!slug || seen.has(slug) || ['directorio', 'programacion'].includes(slug)) return;
       seen.add(slug);
 
-      const parent = $(el).closest('article, .col, .item, .anime, .card') || $(el);
-      const titleEl = parent.find('h3, h4, h5, span.title, .title').first();
+      const parent = $(el).closest('article, .col, .item, .anime, .card');
+      const container = parent.length ? parent : $(el).parent();
+      const titleEl = container.find('h3, h4, h5, span.title, .title').first();
       let title = titleEl.text().trim() || slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       title = fixEncoding(title);
 
-      const imgEl = parent.find('img').first();
+      const imgEl = container.find('img').first();
       let imgSrc = imgEl.attr('src');
       if (imgSrc && !imgSrc.startsWith('http')) {
         imgSrc = this._formatUrl(imgSrc);
