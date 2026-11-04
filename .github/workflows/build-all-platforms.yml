@@ -2,6 +2,11 @@ name: Compilar Ejecutables e Instaladores (Windows .exe, Linux ELF, Android .apk
 
 on:
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Nombre de la release en GitHub (ej. 1.1.0 o v1.1.0)'
+        required: false
+        default: '1.1.0'
   release:
     types: [published, created]
   push:
@@ -98,13 +103,19 @@ jobs:
           mkdir -p android/app/src/main/assets/public
           cp -r public/* android/app/src/main/assets/public/
 
-      - name: Otorgar permisos a gradlew
-        run: chmod +x android/gradlew
+      - name: Otorgar permisos a gradlew y verificar wrapper
+        run: |
+          cd android
+          chmod +x gradlew
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            mkdir -p gradle/wrapper
+            curl -Lo gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradle/wrapper/gradle-wrapper.jar
+          fi
 
       - name: Compilar APK con Gradle
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Renombrar y preparar APK
         run: |
@@ -128,6 +139,19 @@ jobs:
     if: always() && !cancelled() && (needs.build-windows.result == 'success' || needs.build-linux.result == 'success' || needs.build-android.result == 'success')
     runs-on: ubuntu-latest
     steps:
+      - name: Determinar etiqueta de release
+        id: get_tag
+        run: |
+          if [ -n "${{ inputs.tag_name }}" ]; then
+            echo "tag=${{ inputs.tag_name }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=1.1.0" >> $GITHUB_OUTPUT
+          fi
+
       - name: Descargar artefactos de Windows
         uses: actions/download-artifact@v4
         continue-on-error: true
@@ -152,6 +176,7 @@ jobs:
       - name: Publicar en GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.get_tag.outputs.tag }}
           files: |
             release-assets/windows/*.exe
             release-assets/linux/*.AppImage
