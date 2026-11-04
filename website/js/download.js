@@ -1,7 +1,7 @@
 /**
  * AnimeStream for Windows - Interactive Download Engine & GitHub Release Fetcher
- * Fetches latest releases from GitHub API with fallback protection,
- * handles interactive FAQ accordion, download modal, and system checks.
+ * Fetches latest releases from GitHub API with fallback protection and localStorage caching,
+ * ensuring the download button and metadata ALWAYS reflect the latest available version.
  */
 
 (function () {
@@ -11,11 +11,12 @@
   const GITHUB_CONFIG = {
     owner: 'deniselit008',
     repo: 'AnimeStream',
-    fallbackVersion: '1.0.4',
+    fallbackVersion: '1.0.5',
     fallbackSizeMB: '24.3 MB',
-    fallbackAssetUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.0.4/AnimeStream.1.0.4.exe',
+    fallbackAssetUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.0.5/AnimeStream.1.0.5.exe',
     fallbackReleaseUrl: 'https://github.com/deniselit008/AnimeStream/releases/latest',
-    fallbackZipUrl: 'https://github.com/deniselit008/AnimeStream/archive/refs/heads/main.zip'
+    fallbackZipUrl: 'https://github.com/deniselit008/AnimeStream/archive/refs/heads/main.zip',
+    storageKey: 'animestream_release_cache_v2'
   };
 
   // State
@@ -46,105 +47,152 @@
     }
   }
 
+  // Normalize tag to guarantee 'v' prefix for display
+  function normalizeDisplayTag(tag) {
+    if (!tag) return `v${GITHUB_CONFIG.fallbackVersion}`;
+    return tag.toString().startsWith('v') ? tag.toString() : `v${tag}`;
+  }
+
   /**
-   * Fetch the latest valid Windows release from GitHub
+   * Fetch the latest valid Windows release from GitHub API
+   * Uses releases/latest first, falls back to releases list, and caches to localStorage
    */
   async function fetchLatestWindowsRelease() {
-    const apiUrl = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/releases`;
+    // 1. Try local cache first for instant rendering (0 delay)
+    try {
+      const cached = localStorage.getItem(GITHUB_CONFIG.storageKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.tag) {
+          latestReleaseData = parsed;
+          updateUIWithReleaseData(parsed);
+        }
+      }
+    } catch (e) {
+      // Ignore localStorage issues
+    }
 
     try {
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`GitHub API HTTP ${response.status}`);
-      }
-
-      const releases = await response.json();
-      if (!Array.isArray(releases) || releases.length === 0) {
-        throw new Error('No releases found');
-      }
-
-      // Find the first release that contains a Windows .exe asset
-      let targetRelease = null;
+      let releaseObj = null;
       let targetAsset = null;
 
-      for (const rel of releases) {
-        if (rel.draft) continue;
-        if (Array.isArray(rel.assets) && rel.assets.length > 0) {
-          // Look for an .exe file
-          const exeAsset = rel.assets.find(a => 
-            a.name.toLowerCase().endsWith('.exe')
-          );
-          if (exeAsset) {
-            targetRelease = rel;
-            targetAsset = exeAsset;
-            break;
+      // 2. Fetch directly from the official /releases/latest endpoint
+      try {
+        const latestResp = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/releases/latest`, {
+          headers: { 'Accept': 'application/vnd.github.v3+json' },
+          cache: 'no-cache'
+        });
+        if (latestResp.ok) {
+          releaseObj = await latestResp.json();
+        }
+      } catch (err) {
+        console.warn('[AnimeStream Web] releases/latest endpoint fetch notice:', err.message);
+      }
+
+      // 3. Fallback: query the full releases list if /latest did not resolve
+      if (!releaseObj || releaseObj.message === 'Not Found') {
+        const listResp = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/releases`, {
+          headers: { 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (listResp.ok) {
+          const releases = await listResp.json();
+          if (Array.isArray(releases) && releases.length > 0) {
+            releaseObj = releases.find(r => !r.draft) || releases[0];
           }
         }
       }
 
-      // If no release had assets, default to the latest release entry
-      if (!targetRelease) {
-        targetRelease = releases[0];
+      if (!releaseObj) {
+        throw new Error('No valid releases found via GitHub API');
       }
 
+      // 4. Resolve the best downloadable binary: prioritize .exe, then .zip, then any installer
+      if (Array.isArray(releaseObj.assets) && releaseObj.assets.length > 0) {
+        targetAsset = releaseObj.assets.find(a => a.name.toLowerCase().endsWith('.exe'))
+                   || releaseObj.assets.find(a => a.name.toLowerCase().endsWith('.zip'))
+                   || releaseObj.assets.find(a => a.name.toLowerCase().endsWith('.msi'))
+                   || releaseObj.assets[0];
+      }
+
+      const cleanTag = releaseObj.tag_name || GITHUB_CONFIG.fallbackVersion;
+      const displayTag = normalizeDisplayTag(cleanTag);
+      const assetUrl = targetAsset 
+        ? targetAsset.browser_download_url 
+        : `https://github.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/releases/download/${cleanTag}/AnimeStream.${cleanTag}.exe`;
+      const assetName = targetAsset ? targetAsset.name : `AnimeStream.${cleanTag}.exe`;
+      const assetSize = targetAsset && targetAsset.size ? formatBytes(targetAsset.size) : GITHUB_CONFIG.fallbackSizeMB;
+
       latestReleaseData = {
-        tag: targetRelease.tag_name || GITHUB_CONFIG.fallbackVersion,
-        name: targetRelease.name || `AnimeStream ${targetRelease.tag_name}`,
-        publishedAt: formatDate(targetRelease.published_at),
-        assetUrl: targetAsset ? targetAsset.browser_download_url : GITHUB_CONFIG.fallbackAssetUrl,
-        assetName: targetAsset ? targetAsset.name : `AnimeStream.${targetRelease.tag_name}.exe`,
-        assetSize: targetAsset ? formatBytes(targetAsset.size) : GITHUB_CONFIG.fallbackSizeMB,
+        tag: cleanTag,
+        displayTag: displayTag,
+        name: releaseObj.name || `AnimeStream ${displayTag}`,
+        publishedAt: formatDate(releaseObj.published_at) || 'Noviembre 2026',
+        assetUrl: assetUrl,
+        assetName: assetName,
+        assetSize: assetSize,
         downloadCount: targetAsset ? targetAsset.download_count : 0,
-        releaseUrl: targetRelease.html_url || GITHUB_CONFIG.fallbackReleaseUrl,
-        zipUrl: targetRelease.zipball_url || GITHUB_CONFIG.fallbackZipUrl,
-        body: targetRelease.body || ''
+        releaseUrl: releaseObj.html_url || GITHUB_CONFIG.fallbackReleaseUrl,
+        zipUrl: releaseObj.zipball_url || GITHUB_CONFIG.fallbackZipUrl,
+        body: releaseObj.body || '',
+        fetchedAt: Date.now()
       };
+
+      // 5. Cache to localStorage for fast subsequent loads
+      try {
+        localStorage.setItem(GITHUB_CONFIG.storageKey, JSON.stringify(latestReleaseData));
+      } catch (e) {}
 
       updateUIWithReleaseData(latestReleaseData);
 
     } catch (err) {
       console.warn('[AnimeStream Web] Usando versión de respaldo (fallback):', err.message);
-      // Fallback UI
-      updateUIWithReleaseData({
-        tag: GITHUB_CONFIG.fallbackVersion,
-        name: `AnimeStream ${GITHUB_CONFIG.fallbackVersion}`,
-        publishedAt: 'Reciente',
-        assetUrl: GITHUB_CONFIG.fallbackAssetUrl,
-        assetName: `AnimeStream.${GITHUB_CONFIG.fallbackVersion}.exe`,
-        assetSize: GITHUB_CONFIG.fallbackSizeMB,
-        downloadCount: 0,
-        releaseUrl: GITHUB_CONFIG.fallbackReleaseUrl,
-        zipUrl: GITHUB_CONFIG.fallbackZipUrl,
-        body: ''
-      });
+      if (!latestReleaseData) {
+        const fallbackTag = GITHUB_CONFIG.fallbackVersion;
+        const displayTag = normalizeDisplayTag(fallbackTag);
+        latestReleaseData = {
+          tag: fallbackTag,
+          displayTag: displayTag,
+          name: `AnimeStream ${displayTag}`,
+          publishedAt: 'Noviembre 2026',
+          assetUrl: GITHUB_CONFIG.fallbackAssetUrl,
+          assetName: `AnimeStream.${fallbackTag}.exe`,
+          assetSize: GITHUB_CONFIG.fallbackSizeMB,
+          downloadCount: 0,
+          releaseUrl: GITHUB_CONFIG.fallbackReleaseUrl,
+          zipUrl: GITHUB_CONFIG.fallbackZipUrl,
+          body: '',
+          fetchedAt: Date.now()
+        };
+        updateUIWithReleaseData(latestReleaseData);
+      }
     }
   }
 
   /**
-   * Update all DOM elements with latest release data
+   * Update all DOM elements with latest release data dynamically
    */
   function updateUIWithReleaseData(data) {
+    if (!data) return;
+    const displayTag = data.displayTag || normalizeDisplayTag(data.tag);
+
     // 1. Update all download CTA buttons
     const downloadBtns = document.querySelectorAll('.js-download-btn');
     downloadBtns.forEach(btn => {
-      btn.href = data.assetUrl;
-      btn.setAttribute('download', data.assetName);
-      
+      btn.href = data.assetUrl || GITHUB_CONFIG.fallbackReleaseUrl;
+      btn.setAttribute('download', data.assetName || `AnimeStream.${data.tag}.exe`);
+      btn.setAttribute('title', `Descargar AnimeStream ${displayTag} para Windows`);
+
+      // Update subtitle if exists inside button
       const subText = btn.querySelector('.download-btn-sub');
       if (subText) {
-        subText.textContent = `Versión ${data.tag} • ${data.assetSize} • Windows 64-bit`;
+        subText.innerHTML = `Versión <strong>${displayTag}</strong> • ${data.assetSize} • Windows 64-bit`;
       }
     });
 
     // 2. Update version text elements
     const versionElements = document.querySelectorAll('.js-version-tag');
     versionElements.forEach(el => {
-      el.textContent = data.tag.startsWith('v') ? data.tag : `v${data.tag}`;
+      el.textContent = displayTag;
     });
 
     // 3. Update size text elements
@@ -176,14 +224,18 @@
     const schemaScript = document.querySelector('script[type="application/ld+json"]');
     if (schemaScript) {
       try {
-        const schema = JSON.parse(schemaScript.textContent);
-        if (schema && schema['@type'] === 'SoftwareApplication') {
-          schema.softwareVersion = data.tag;
-          schema.downloadUrl = data.assetUrl;
-          schemaScript.textContent = JSON.stringify(schema, null, 2);
+        const schemas = JSON.parse(schemaScript.textContent);
+        if (Array.isArray(schemas)) {
+          const appSchema = schemas.find(s => s['@type'] === 'SoftwareApplication');
+          if (appSchema) {
+            appSchema.softwareVersion = data.tag;
+            appSchema.fileSize = data.assetSize;
+            appSchema.downloadUrl = data.assetUrl;
+            schemaScript.textContent = JSON.stringify(schemas, null, 2);
+          }
         }
       } catch (e) {
-        // Ignore schema json parse error
+        // Ignore json parse error
       }
     }
   }
@@ -199,7 +251,10 @@
     if (!modal) return;
 
     downloadBtns.forEach(btn => {
-      btn.addEventListener('click', function () {
+      btn.addEventListener('click', function (e) {
+        // If clicking inside the modal itself, don't re-trigger
+        if (btn.closest('#downloadModal')) return;
+
         // Open instructions modal
         setTimeout(() => {
           modal.classList.add('open');
