@@ -22,13 +22,50 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
     container.innerHTML = `
       <header class="navbar">
         <div class="navbar-container">
-          <!-- Logo -->
-          <a href="#/" class="logo-link">
-            <div class="logo-icon">
-              <svg viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+          <!-- Top Row: Logo & Action Badges -->
+          <div class="navbar-top-row">
+            <!-- Logo -->
+            <a href="#/" class="logo-link">
+              <div class="logo-icon">
+                <svg viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+              </div>
+              <span>Anime<span class="text-gradient">Stream</span></span>
+            </a>
+
+            <!-- Quick Action Badges (Top right on mobile, inline on desktop) -->
+            <div class="nav-badges-group">
+              <!-- Integrated AdBlock Status Button -->
+              <button 
+                id="nav-btn-adblock" 
+                class="nav-adblock-btn ${isAdblockOn ? '' : 'disabled'}" 
+                title="Escudo AdBlocker Integrado: ${isAdblockOn ? 'Activo' : 'Desactivado'} (Clic para gestionar)"
+              >
+                <span id="nav-adblock-icon">${isAdblockOn ? '🛡️' : '⚠️'}</span>
+                <span id="nav-adblock-label">AdBlock ${isAdblockOn ? 'ON' : 'OFF'}</span>
+                <span class="adblock-count-badge" id="nav-adblock-count">${blockedCount}</span>
+              </button>
+
+              <!-- Smart TV Mode Button (Desktop only) -->
+              <button 
+                id="nav-btn-tv-mode" 
+                class="nav-tv-btn ${isTvOn ? 'active' : ''}" 
+                title="Modo Smart TV: Navegación por cruceta/mando a distancia"
+              >
+                <span>📺</span>
+                <span id="nav-tv-label">Smart TV</span>
+              </button>
+
+              <!-- Network & Device Cast IPs Button -->
+              <button 
+                id="nav-btn-network" 
+                class="nav-network-btn" 
+                title="Dispositivos &amp; Red Local: Ver IPs para conectar Smart TV o Móvil"
+              >
+                <span class="network-radar-icon">📡</span>
+                <span class="nav-network-label">Dispositivos</span>
+              </button>
             </div>
-            <span>Anime<span class="text-gradient">Stream</span></span>
-          </a>
+          </div>
 
           <!-- Modern Search Bar with Live Suggestions Dropdown -->
           <div class="search-wrapper">
@@ -38,12 +75,12 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
                 type="text" 
                 class="search-input" 
                 id="nav-search-input" 
-                placeholder="Buscar anime en tiempo real (ej. Frieren, One Piece, Bleach...)" 
+                placeholder="Buscar anime en tiempo real (ej. Frieren, One Piece...)" 
                 autocomplete="off"
                 spellcheck="false"
               />
               <select class="source-select-nav" id="nav-source-select" title="Filtrar por fuente">
-                <option value="all">Todas las fuentes</option>
+                <option value="all">Todas</option>
                 <option value="animeav1">AnimeAV1</option>
                 <option value="jkanime">JKAnime</option>
                 <option value="tioanime">TioAnime</option>
@@ -57,59 +94,50 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
             <div class="search-suggestions-dropdown" id="nav-search-suggestions"></div>
           </div>
 
-          <!-- Navigation Links & Action Badges -->
-          <div class="nav-actions-wrapper">
-            <nav class="nav-links">
-              <a href="#/" class="nav-link" data-route="/">
-                ${Icons.home} <span>Inicio</span>
-              </a>
-              <a href="#/directory" class="nav-link" data-route="/directory">
-                ${Icons.compass} <span>Directorio</span>
-              </a>
-              <a href="#/library" class="nav-link" data-route="/library">
-                ${Icons.bookmark} <span>Mi Lista</span>
-              </a>
-              <a href="#/favorites" class="nav-link" data-route="/favorites">
-                ${Icons.heart} <span>Favoritos</span>
-              </a>
-              <a href="#/history" class="nav-link" data-route="/history">
-                ${Icons.history} <span>Historial</span>
-              </a>
-            </nav>
-
-            <!-- Integrated AdBlock Status Button -->
-            <button 
-              id="nav-btn-adblock" 
-              class="nav-adblock-btn ${isAdblockOn ? '' : 'disabled'}" 
-              title="Escudo AdBlocker Integrado: ${isAdblockOn ? 'Activo' : 'Desactivado'} (Clic para gestionar)"
-            >
-              <span id="nav-adblock-icon">${isAdblockOn ? '🛡️' : '⚠️'}</span>
-              <span id="nav-adblock-label">AdBlock ${isAdblockOn ? 'ON' : 'OFF'}</span>
-              <span class="adblock-count-badge" id="nav-adblock-count">${blockedCount}</span>
-            </button>
-
-            <!-- Smart TV Mode Button -->
-            <button 
-              id="nav-btn-tv-mode" 
-              class="nav-tv-btn ${isTvOn ? 'active' : ''}" 
-              title="Modo Smart TV: Navegación por cruceta/mando a distancia"
-            >
-              <span>📺</span>
-              <span id="nav-tv-label">Smart TV</span>
-            </button>
-
-            <!-- Network & Device Cast IPs Button -->
-            <button 
-              id="nav-btn-network" 
-              class="nav-network-btn" 
-              title="Dispositivos &amp; Red Local: Ver IPs para conectar Smart TV o Móvil"
-            >
-              <span class="network-radar-icon">📡</span>
-              <span>Dispositivos</span>
-            </button>
-          </div>
+          <!-- Desktop Navigation Links (Hidden on mobile) -->
+          <nav class="nav-links desktop-nav-links">
+            <a href="#/" class="nav-link" data-route="/">
+              ${Icons.home} <span>Inicio</span>
+            </a>
+            <a href="#/directory" class="nav-link" data-route="/directory">
+              ${Icons.compass} <span>Directorio</span>
+            </a>
+            <a href="#/library" class="nav-link" data-route="/library">
+              ${Icons.bookmark} <span>Mi Lista</span>
+            </a>
+            <a href="#/favorites" class="nav-link" data-route="/favorites">
+              ${Icons.heart} <span>Favoritos</span>
+            </a>
+            <a href="#/history" class="nav-link" data-route="/history">
+              ${Icons.history} <span>Historial</span>
+            </a>
+          </nav>
         </div>
       </header>
+
+      <!-- Native Mobile Bottom Navigation Bar (Fixed at bottom on mobile) -->
+      <nav class="mobile-bottom-nav">
+        <a href="#/" class="bottom-nav-item" data-route="/">
+          ${Icons.home}
+          <span>Inicio</span>
+        </a>
+        <a href="#/directory" class="bottom-nav-item" data-route="/directory">
+          ${Icons.compass}
+          <span>Directorio</span>
+        </a>
+        <a href="#/library" class="bottom-nav-item" data-route="/library">
+          ${Icons.bookmark}
+          <span>Mi Lista</span>
+        </a>
+        <a href="#/favorites" class="bottom-nav-item" data-route="/favorites">
+          ${Icons.heart}
+          <span>Favoritos</span>
+        </a>
+        <a href="#/history" class="bottom-nav-item" data-route="/history">
+          ${Icons.history}
+          <span>Historial</span>
+        </a>
+      </nav>
     `;
 
     // Search Form submission
@@ -294,8 +322,8 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
     });
   }
 
-  // Update active navigation link
-  const navLinks = container.querySelectorAll('.nav-links .nav-link');
+  // Update active navigation link (desktop & mobile bottom nav)
+  const navLinks = container.querySelectorAll('.nav-links .nav-link, .mobile-bottom-nav .bottom-nav-item');
   navLinks.forEach(link => {
     const route = link.dataset.route;
     if ((route === '/' && (activeRoute === '' || activeRoute === '/')) ||
