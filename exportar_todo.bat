@@ -5,7 +5,7 @@ cd /d "%~dp0"
 title AnimeStream - Exportador Multiplataforma
 
 echo ========================================================
-echo   AnimeStream - Exportar a Windows, Mac, Linux y Android
+echo   AnimeStream - Exportar Windows (.exe), Linux (ELF) y Android (.apk)
 echo ========================================================
 echo.
 

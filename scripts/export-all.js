@@ -1,10 +1,10 @@
 /**
  * AnimeStream - Multiplatform Exporter
- * Generates ready-to-use distribution packages for Windows, Mac, Linux, and Android.
+ * Generates ready-to-use distribution packages for Windows (.exe), Linux (ELF binary), and Android (.apk).
+ * Note: macOS compatibility has been explicitly removed as requested.
  */
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DIST_DIR = path.join(ROOT_DIR, 'dist');
@@ -13,7 +13,7 @@ const EXPORT_DIR = path.join(DIST_DIR, 'exports');
 console.log('=================================================================');
 console.log('📦  AnimeStream - Exportador Multiplataforma');
 console.log('=================================================================');
-console.log('Plataformas objetivo: Windows, macOS, Linux, Android');
+console.log('Plataformas objetivo: Windows (.exe), Linux (ELF Binary), Android (.apk)');
 console.log('-----------------------------------------------------------------');
 
 // Ensure directories
@@ -35,9 +35,9 @@ function copyRecursiveSync(src, dest, ignorePatterns = []) {
 }
 
 // -----------------------------------------------------------------------------
-// 1. WINDOWS PORTABLE & SILENT PACKAGE
+// 1. WINDOWS PACKAGE (.exe & Silent Portable)
 // -----------------------------------------------------------------------------
-console.log('[1/4] Preparando paquete para Windows (Portable & Sin CMD)...');
+console.log('[1/3] Preparando paquete para Windows (.exe y modo silencioso)...');
 const winDir = path.join(EXPORT_DIR, 'AnimeStream-Windows');
 if (!fs.existsSync(winDir)) fs.mkdirSync(winDir, { recursive: true });
 
@@ -50,26 +50,28 @@ if (!fs.existsSync(winDir)) fs.mkdirSync(winDir, { recursive: true });
   if (fs.existsSync(src)) fs.copyFileSync(src, path.join(winDir, file));
 });
 
-// Add a quick README for Windows
 fs.writeFileSync(path.join(winDir, 'LEEME_WINDOWS.txt'), 
 `=================================================================
-AnimeStream para Windows (Node.js & Electron Edition)
+AnimeStream para Windows (Ejecutable .exe y Portable)
 =================================================================
 
-COMO USAR:
-1. Haz doble clic en "AnimeStream.vbs" para iniciar de forma silenciosa
-   (SIN ventana de consola CMD).
-2. O haz doble clic en "iniciar_electron.bat" para iniciar en ventana de escritorio.
-3. Para Smart TV / Movil: en la app pulsa en el boton "Dispositivos" para ver tu IP local.
+ARCHIVOS INCLUIDOS:
+1. AnimeStream.vbs       -> Lanzador 100% silencioso (SIN ventana de consola CMD).
+2. iniciar_electron.bat  -> Lanzador en ventana nativa de escritorio Electron.
+3. iniciar.bat           -> Lanzador con servidor local para Smart TV y navegador.
+
+COMPILACIÓN DE INSTALADOR .EXE NATIVO:
+Para compilar el instalador "AnimeStream-Setup.exe" y "AnimeStream-Portable.exe":
+  npm run build:win
 =================================================================
 `);
 
 console.log('  ✔ Paquete Windows creado en dist/exports/AnimeStream-Windows');
 
 // -----------------------------------------------------------------------------
-// 2. LINUX PACKAGE (AppImage & Script Launcher)
+// 2. LINUX PACKAGE (ELF Binary & Standalone Launcher)
 // -----------------------------------------------------------------------------
-console.log('[2/4] Preparando paquete para Linux (Ubuntu, Debian, Fedora, Arch)...');
+console.log('[2/3] Preparando paquete para Linux (Binario ELF & AppImage)...');
 const linuxDir = path.join(EXPORT_DIR, 'AnimeStream-Linux');
 if (!fs.existsSync(linuxDir)) fs.mkdirSync(linuxDir, { recursive: true });
 
@@ -82,7 +84,6 @@ if (!fs.existsSync(linuxDir)) fs.mkdirSync(linuxDir, { recursive: true });
   if (fs.existsSync(src)) fs.copyFileSync(src, path.join(linuxDir, file));
 });
 
-// Create Linux .desktop launcher
 fs.writeFileSync(path.join(linuxDir, 'AnimeStream.desktop'),
 `[Desktop Entry]
 Name=AnimeStream
@@ -96,83 +97,71 @@ Categories=AudioVideo;Player;
 
 fs.writeFileSync(path.join(linuxDir, 'LEEME_LINUX.txt'),
 `=================================================================
-AnimeStream para Linux
+AnimeStream para Linux (Binarios ELF & AppImage)
 =================================================================
 
-COMO USAR:
+COMO EJECUTAR EN CUALQUIER DISTRO (Ubuntu, Debian, Fedora, Arch):
 1. Abre una terminal en esta carpeta.
-2. Dale permisos de ejecucion: chmod +x iniciar_linux.sh
-3. Ejecuta: ./iniciar_linux.sh
+2. Otorga permisos de ejecución:
+   chmod +x iniciar_linux.sh
+3. Ejecuta directamente:
+   ./iniciar_linux.sh
+
+COMPILACIÓN DE BINARIO ELF (.AppImage y .deb):
+Para generar el ejecutable ELF portátil universal (.AppImage):
+  npm run build:linux
 =================================================================
 `);
 
 console.log('  ✔ Paquete Linux creado en dist/exports/AnimeStream-Linux');
 
 // -----------------------------------------------------------------------------
-// 3. MACOS PACKAGE
+// 3. ANDROID PACKAGE (.apk Native Project)
 // -----------------------------------------------------------------------------
-console.log('[3/4] Preparando paquete para macOS (Intel & Apple Silicon)...');
-const macDir = path.join(EXPORT_DIR, 'AnimeStream-macOS');
-if (!fs.existsSync(macDir)) fs.mkdirSync(macDir, { recursive: true });
+console.log('[3/3] Preparando paquete para Android (.apk)...');
+const androidExportDir = path.join(EXPORT_DIR, 'AnimeStream-Android');
+if (!fs.existsSync(androidExportDir)) fs.mkdirSync(androidExportDir, { recursive: true });
 
-['electron', 'server', 'public'].forEach(folder => {
-  copyRecursiveSync(path.join(ROOT_DIR, folder), path.join(macDir, folder), ['.git']);
-});
+// Sync Android project structure
+copyRecursiveSync(path.join(ROOT_DIR, 'android'), path.join(androidExportDir, 'project'), ['.gradle', 'build', '.idea']);
 
-['package.json', 'run.js', 'iniciar_mac.sh'].forEach(file => {
-  const src = path.join(ROOT_DIR, file);
-  if (fs.existsSync(src)) fs.copyFileSync(src, path.join(macDir, file));
-});
+// Sync public web assets into android assets
+const androidAssetsDir = path.join(ROOT_DIR, 'android', 'app', 'src', 'main', 'assets', 'public');
+if (!fs.existsSync(androidAssetsDir)) fs.mkdirSync(androidAssetsDir, { recursive: true });
+copyRecursiveSync(path.join(ROOT_DIR, 'public'), androidAssetsDir);
 
-fs.writeFileSync(path.join(macDir, 'LEEME_MAC.txt'),
+// Copy assets to exported android project as well
+copyRecursiveSync(path.join(ROOT_DIR, 'public'), path.join(androidExportDir, 'project', 'app', 'src', 'main', 'assets', 'public'));
+
+fs.writeFileSync(path.join(androidExportDir, 'COMO_COMPILAR_Y_USAR_APK.txt'),
 `=================================================================
-AnimeStream para macOS
+AnimeStream para Android (.apk)
 =================================================================
 
-COMO USAR:
-1. Abre Terminal en esta carpeta.
-2. Dale permisos: chmod +x iniciar_mac.sh
-3. Ejecuta: ./iniciar_mac.sh
+Este directorio contiene el proyecto nativo completo de Android para generar "AnimeStream.apk".
+
+OPCIÓN 1 (Compilación con Gradle en Terminal):
+1. Entra a la carpeta "project/":
+   cd project
+2. Ejecuta el compilador de Gradle:
+   En Windows: gradlew.bat assembleRelease  (o assembleDebug)
+   En Linux:   ./gradlew assembleRelease    (o assembleDebug)
+3. Tu archivo "AnimeStream.apk" se generará en:
+   project/app/build/outputs/apk/release/AnimeStream.apk
+
+OPCIÓN 2 (Con Android Studio):
+1. Abre Android Studio.
+2. Selecciona "Open an Existing Project" y elige la carpeta "project/".
+3. Ve a Build -> Build Bundle(s) / APK(s) -> Build APK(s).
+
+OPCIÓN 3 (Compilación Automática en GitHub Releases):
+Cada vez que se publica una nueva versión, el flujo de GitHub Actions
+compila automáticamente "AnimeStream.apk" y lo adjunta a la pestaña
+de Releases para descargarlo en tu móvil con un solo clic.
 =================================================================
 `);
 
-console.log('  ✔ Paquete macOS creado en dist/exports/AnimeStream-macOS');
-
-// -----------------------------------------------------------------------------
-// 4. ANDROID PWA & STANDALONE BUNDLE
-// -----------------------------------------------------------------------------
-console.log('[4/4] Preparando paquete para Android (PWA & WebAPK)...');
-const androidDir = path.join(EXPORT_DIR, 'AnimeStream-Android');
-if (!fs.existsSync(androidDir)) fs.mkdirSync(androidDir, { recursive: true });
-
-// Copy public web app assets
-copyRecursiveSync(path.join(ROOT_DIR, 'public'), path.join(androidDir, 'app'));
-
-fs.writeFileSync(path.join(androidDir, 'COMO_USAR_EN_ANDROID.txt'),
-`=================================================================
-AnimeStream en Dispositivos Android (Móviles & Tablets)
-=================================================================
-
-MÉTODO 1 (Recomendado - Instalación Nativa 1-Clic PWA):
-1. Asegúrate de que AnimeStream esté iniciado en tu ordenador.
-2. Abre la app en el PC y pulsa en "Dispositivos" (en el menú superior)
-   para ver tu código QR o dirección IP local (ej. http://192.168.0.100:3000).
-3. Con tu móvil Android conectado al mismo Wi-Fi:
-   - Escanea el código QR con la cámara de tu móvil, O
-   - Abre Google Chrome / Brave en Android y entra a http://192.168.0.100:3000.
-4. Toca en el menú de Chrome (los 3 puntos arriba a la derecha) y selecciona:
-   👉 "Instalar aplicación" (o "Añadir a pantalla de inicio").
-5. ¡Listo! Se creará un icono nativo de AnimeStream en tu cajón de aplicaciones
-   de Android que se abre a pantalla completa como cualquier app descargada.
-
-MÉTODO 2 (Smart TV con Android TV):
-1. En tu televisor abre la app del Navegador web (como JioPages, Puffin o Downloader).
-2. Entra a tu IP local con el puerto 3000.
-3. Puedes navegar usando la cruceta y botones de colores de tu mando a distancia.
-=================================================================
-`);
-
-console.log('  ✔ Paquete Android creado en dist/exports/AnimeStream-Android');
+console.log('  ✔ Paquete Android (.apk project) creado en dist/exports/AnimeStream-Android');
 console.log('-----------------------------------------------------------------');
 console.log('🎉 ¡Todos los paquetes han sido exportados exitosamente en dist/exports/!');
 console.log('=================================================================');

@@ -11,10 +11,8 @@
     "build:win": "electron-builder --win --x64",
     "build:portable": "electron-builder --win portable --x64",
     "build:linux": "electron-builder --linux AppImage deb --x64",
-    "build:mac": "electron-builder --mac dmg zip",
-    "build:all": "electron-builder -mwl",
-    "export:all": "node scripts/export-all.js",
-    "export:android": "node scripts/export-android.js"
+    "build:all": "electron-builder --win --linux",
+    "export:all": "node scripts/export-all.js"
   },
   "keywords": [
     "anime",
@@ -64,13 +62,6 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "AnimeStream"
-    },
-    "mac": {
-      "target": [
-        "dmg",
-        "zip"
-      ],
-      "category": "public.app-category.entertainment"
     },
     "linux": {
       "target": [

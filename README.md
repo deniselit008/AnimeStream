@@ -53,22 +53,16 @@
 
 ## 🚀 Cómo Ejecutar la Aplicación
 
-Tienes dos opciones listas para usar de 1-clic:
-
-### Opción A: Modo Web (Navegador y Red Local / Smart TV)
+### Opción A: Inicio 100% Silencioso en Windows (SIN ventana de consola CMD)
 Haz doble clic sobre:
 ```cmd
-iniciar.bat
+AnimeStream.vbs
 ```
-O desde la consola:
-```bash
-npm start
-```
-Esto iniciará el servidor en `http://localhost:3000` y abrirá automáticamente tu navegador web por defecto. También mostrará en pantalla la dirección IP de tu red local (por ejemplo `http://192.168.1.XX:3000`) para ver el anime en tu Smart TV o móvil.
+Inicia Electron de forma instantánea y completamente silenciosa en segundo plano, sin dejar ninguna ventana negra de CMD abierta.
 
 ---
 
-### Opción B: Modo Escritorio Nativo (Electron App)
+### Opción B: Modo Escritorio Nativo (Electron App con verificación)
 Haz doble clic sobre:
 ```cmd
 iniciar_electron.bat
@@ -77,18 +71,85 @@ O desde la consola:
 ```bash
 npm run electron
 ```
-Esto levantará la aplicación nativa de escritorio con su propia ventana optimizada.
+Verifica que las dependencias estén instaladas, lanza la ventana de Electron en un proceso desacoplado y cierra la consola de inmediato.
 
 ---
 
-## 🏛️ Estructura del Código Reescrito
+### Opción C: Modo Servidor Web (Navegador y Red Local)
+Haz doble clic sobre:
+```cmd
+iniciar.bat
+```
+O desde la consola:
+```bash
+npm start
+```
+Inicia el servidor en `http://localhost:3000` y abre automáticamente tu navegador web por defecto.
+
+---
+
+## 📡 Conexión con Smart TV y Móviles (Sin Consola CMD)
+
+Ya no necesitas revisar la consola negra para saber la IP local. Una vez abierta la aplicación (en escritorio o navegador):
+1. Haz clic en el botón **"📡 Dispositivos"** situado en la barra de navegación superior.
+2. Se abrirá una tarjeta con:
+   - La **dirección URL local optimizada** (filtrando adaptadores virtuales de VMware, VirtualBox o VPNs como Radmin/Hamachi para garantizar la IP correcta de tu Wi-Fi/Ethernet).
+   - Un botón de **1-clic para copiar** el enlace.
+   - Un **código QR dinámico** para escanear con la cámara de tu móvil o tablet Android.
+   - Una guía paso a paso para mandos a distancia de Smart TV (LG WebOS, Samsung Tizen, Hisense VIDAA y Android TV).
+
+---
+
+## 📦 Soporte Multiplataforma (.exe, Binario ELF y .apk)
+
+AnimeStream soporta de manera nativa y oficial las tres principales plataformas:
+
+| Plataforma | Formato de Salida | Método de Compilación |
+|---|---|---|
+| **Windows** | Ejecutable `.exe` (Instalador NSIS y Portable) | `npm run build:win` |
+| **Linux** | Binario ELF independiente (`.AppImage` y `.deb`) | `npm run build:linux` |
+| **Android** | Paquete instalador nativo (`.apk`) | `cd android && ./gradlew assembleDebug` |
+
+> [!NOTE]
+> **Compatibilidad con macOS:** La compatibilidad con sistemas macOS ha sido formalmente retirada para enfocar todos los recursos en Windows (.exe), Linux (ELF) y Android (.apk).
+
+### Generación de Instaladores y Exportación Local
+Para generar todos los paquetes de exportación en tu propio equipo en un solo paso:
+```cmd
+exportar_todo.bat
+```
+O con Node:
+```bash
+npm run export:all
+```
+Los archivos e instrucciones listos para cada sistema se guardarán en la carpeta `dist/exports/`.
+
+### Automatización en GitHub Releases
+Cada vez que se crea una etiqueta de versión (`v*`) o se ejecuta el flujo `.github/workflows/build-all-platforms.yml` en GitHub Actions, se compilan automáticamente:
+- `AnimeStream.Setup.exe` y `AnimeStream.exe` (Windows)
+- `AnimeStream.AppImage` (Linux ELF)
+- `AnimeStream.apk` (Android)
+Y se adjuntan directamente al Release oficial de GitHub, actualizando automáticamente los botones de la página web.
+
+---
+
+## 🏛️ Estructura del Proyecto
 
 ```
-prueba/
+AnimeStream/
+├── android/                      # Proyecto nativo Gradle para compilar AnimeStream.apk
+│   ├── app/
+│   │   ├── build.gradle          # Configuración SDK 34, min SDK 21
+│   │   └── src/main/java/        # MainActivity con WebView y soporte pantalla completa
+│   ├── gradlew & gradlew.bat     # Wrappers de compilación Gradle
+│   └── settings.gradle
+├── electron/
+│   ├── main.js                   # Proceso principal de Electron (ventanas y menú)
+│   └── preload.js                # Context bridge seguro
 ├── server/
-│   ├── index.js                  # Servidor Express, socket pooling y fallback SPA
-│   ├── config.js                 # Constantes, Cloudflare Anycast unblocking y UTF-8 repair
-│   ├── cache.js                  # Caché thread-safe en memoria con TTL de 15 min
+│   ├── index.js                  # Servidor Express, socket pooling y detección de IP LAN
+│   ├── config.js                 # Constantes y Cloudflare Anycast unblocking
+│   ├── cache.js                  # Caché thread-safe en memoria con TTL
 │   ├── providers/
 │   │   ├── animeav1.js           # Scraper concurrente de AnimeAV1
 │   │   ├── jkanime.js            # Scraper estructurado de JKAnime
@@ -96,42 +157,39 @@ prueba/
 │   │   └── index.js              # Registro y detector de proveedores
 │   ├── services/
 │   │   ├── malService.js         # Extractor de franquicias audiovisuales MyAnimeList
-│   │   ├── streamProxy.js        # Proxy y reescritor de manifiestos HLS y segmentos MPEG-TS
-│   │   ├── playerSanitizer.js    # Sanitizador anti-anuncios y deshabilitador de restricciones iframe
-│   │   └── malXmlParser.js       # Parser de archivos exportados de MyAnimeList (.xml/.xml.gz)
+│   │   ├── streamProxy.js        # Proxy y reescritor de manifiestos HLS
+│   │   ├── playerSanitizer.js    # Sanitizador anti-anuncios
+│   │   └── malXmlParser.js       # Parser de listas MyAnimeList (.xml/.xml.gz)
 │   └── routes/
-│       └── api.js                # Endpoints REST unificados (/api/*)
-├── electron/
-│   ├── main.js                   # Proceso principal de Electron (gestión de ventanas y menú)
-│   └── preload.js                # Context bridge seguro
+│       └── api.js                # Endpoints REST y /api/network-info
 ├── public/                       # Frontend SPA moderno
-│   ├── index.html                # Plantilla HTML con tipografía Google Fonts
+│   ├── index.html                # Plantilla HTML con manifest PWA y Service Worker
+│   ├── manifest.json             # Manifiesto standalone para Android y escritorio
+│   ├── sw.js                     # Service Worker con caché offline
 │   ├── css/
-│   │   └── style.css             # Estilos de diseño streaming, glassmorphism y modo cine
-│   ├── js/
-│   │   ├── app.js                # Enrutador por hash (#/, #/watch, #/anime, etc.)
-│   │   ├── api.js                # Cliente asíncrono hacia el backend
-│   │   ├── adblock.js            # Motor AdBlock integrado
-│   │   ├── tvNavigation.js       # Motor de navegación espacial 2D para mandos de TV
-│   │   ├── storage.js            # Persistencia de biblioteca, historial y favoritos
-│   │   ├── utils.js              # Iconos SVG y funciones auxiliares
-│   │   └── components/
-│   │       ├── navbar.js         # Barra superior con autocompletado en vivo
-│   │       ├── homeView.js       # Hero banner dinámico y últimos episodios
-│   │       ├── searchView.js     # Búsqueda multifuente
-│   │       ├── animeView.js      # Ficha técnica y lista interactiva de capítulos
-│   │       ├── watchView.js      # Sala de streaming con Modo Cine y atajos de teclado
-│   │       ├── directoryView.js  # Directorio con filtros avanzados
-│   │       ├── libraryView.js    # Gestor de biblioteca ("Mi Lista")
-│   │       ├── favoritesView.js  # Colección de favoritos
-│   │       └── historyView.js    # Historial de reproducción
-│   └── vendor/
-│       └── hls.min.js            # Reproductor HLS local offline
-├── run.js                        # Lanzador de consola con apertura automática de navegador
-├── iniciar.bat                   # Lanzador para Windows (Modo Web)
-├── iniciar_electron.bat          # Lanzador para Windows (Modo Electron)
-├── package.json                  # Dependencias y scripts npm
-└── README.md                     # Esta documentación
+│   │   └── style.css             # Estilos glassmorphism, modo cine y modal de dispositivos
+│   └── js/
+│       ├── app.js                # Enrutador por hash
+│       ├── api.js                # Cliente asíncrono
+│       ├── adblock.js            # Motor AdBlock
+│       ├── tvNavigation.js       # Navegación 2D para Smart TV
+│       └── components/
+│           ├── navbar.js         # Barra con autocompletado y botón "📡 Dispositivos"
+│           ├── networkModal.js   # Modal interactivo con IP y código QR
+│           └── ...               # Vistas (home, search, anime, watch, library, etc.)
+├── scripts/
+│   └── export-all.js             # Exportador a Windows (.exe), Linux (ELF) y Android (.apk)
+├── website/                      # Landing page oficial alojada en GitHub Pages
+│   ├── index.html                # Centro de descargas multi-plataforma
+│   ├── css/style.css             # Tarjetas de descarga responsivas
+│   └── js/download.js            # Conector dinámico a GitHub Releases API
+├── AnimeStream.vbs               # Lanzador silencioso sin consola CMD
+├── iniciar.bat                   # Lanzador servidor web
+├── iniciar_electron.bat          # Lanzador aplicación Electron desacoplada
+├── iniciar_linux.sh              # Lanzador nativo para Linux
+├── exportar_todo.bat             # Asistente de exportación multi-plataforma
+├── package.json                  # Scripts de compilación (.exe, .AppImage) y dependencias
+└── README.md                     # Documentación general
 ```
 
 ---

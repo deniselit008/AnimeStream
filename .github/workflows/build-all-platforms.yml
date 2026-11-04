@@ -1,34 +1,26 @@
-name: Compilar Binarios Multiplataforma (Windows, Linux, macOS)
+name: Compilar Ejecutables e Instaladores (Windows .exe, Linux ELF, Android .apk)
 
 on:
   workflow_dispatch:
   push:
     tags:
       - 'v*'
+    paths:
+      - 'package.json'
+      - '.github/workflows/build-all-platforms.yml'
 
 permissions:
   contents: write
 
 jobs:
-  build-desktop:
-    name: Compilar para ${{ matrix.os-name }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            os-name: Windows (x64)
-            build-cmd: npm run build:win
-          - os: ubuntu-latest
-            os-name: Linux (AppImage & deb)
-            build-cmd: npm run build:linux
-          - os: macos-latest
-            os-name: macOS (dmg & zip)
-            build-cmd: npm run build:mac
-
+  # ============================================================================
+  # 1. COMPILACIÓN WINDOWS (.exe)
+  # ============================================================================
+  build-windows:
+    name: Compilar Windows (.exe)
+    runs-on: windows-latest
     steps:
-      - name: Checkout del código
+      - name: Checkout del repositorio
         uses: actions/checkout@v4
 
       - name: Configurar Node.js LTS
@@ -40,16 +32,125 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      - name: Compilar binario nativo de escritorio
-        run: ${{ matrix.build-cmd }}
+      - name: Compilar instalador y portable de Windows
+        run: npm run build:win
 
-      - name: Subir artefacto compilado
+      - name: Subir binarios .exe de Windows
         uses: actions/upload-artifact@v4
         with:
-          name: AnimeStream-${{ matrix.os-name }}
+          name: AnimeStream-Windows-exe
           path: |
             dist/*.exe
+
+  # ============================================================================
+  # 2. COMPILACIÓN LINUX (Binario ELF / .AppImage)
+  # ============================================================================
+  build-linux:
+    name: Compilar Linux (Binario ELF & AppImage)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Compilar binario ELF de Linux
+        run: npm run build:linux
+
+      - name: Subir binario ELF y AppImage de Linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnimeStream-Linux-ELF
+          path: |
             dist/*.AppImage
             dist/*.deb
-            dist/*.dmg
-            dist/*.zip
+
+  # ============================================================================
+  # 3. COMPILACIÓN ANDROID (.apk)
+  # ============================================================================
+  build-android:
+    name: Compilar Android (.apk)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Sincronizar activos web en el proyecto Android
+        run: |
+          mkdir -p android/app/src/main/assets/public
+          cp -r public/* android/app/src/main/assets/public/
+
+      - name: Otorgar permisos a gradlew
+        run: chmod +x android/gradlew
+
+      - name: Compilar APK con Gradle
+        run: |
+          cd android
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Renombrar y preparar APK
+        run: |
+          mkdir -p dist/android
+          cp android/app/build/outputs/apk/debug/*.apk dist/android/AnimeStream.apk || true
+
+      - name: Subir paquete .apk de Android
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnimeStream-Android-apk
+          path: |
+            dist/android/AnimeStream.apk
+            android/app/build/outputs/apk/**/*.apk
+
+  # ============================================================================
+  # 4. PUBLICAR EN GITHUB RELEASES (.exe, .AppImage, .apk)
+  # ============================================================================
+  release:
+    name: Publicar Release Multiplataforma
+    needs: [build-windows, build-linux, build-android]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar artefactos de Windows
+        uses: actions/download-artifact@v4
+        with:
+          name: AnimeStream-Windows-exe
+          path: release-assets/windows
+
+      - name: Descargar artefactos de Linux
+        uses: actions/download-artifact@v4
+        with:
+          name: AnimeStream-Linux-ELF
+          path: release-assets/linux
+
+      - name: Descargar artefactos de Android
+        uses: actions/download-artifact@v4
+        with:
+          name: AnimeStream-Android-apk
+          path: release-assets/android
+
+      - name: Publicar en GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-assets/windows/*.exe
+            release-assets/linux/*.AppImage
+            release-assets/linux/*.deb
+            release-assets/android/*.apk
+          generate_release_notes: true
+
