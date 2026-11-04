@@ -7,7 +7,14 @@
     "start": "node run.js",
     "electron": "electron electron/main.js",
     "dev": "node --watch run.js",
-    "server": "node server/index.js"
+    "server": "node server/index.js",
+    "build:win": "electron-builder --win --x64",
+    "build:portable": "electron-builder --win portable --x64",
+    "build:linux": "electron-builder --linux AppImage deb --x64",
+    "build:mac": "electron-builder --mac dmg zip",
+    "build:all": "electron-builder -mwl",
+    "export:all": "node scripts/export-all.js",
+    "export:android": "node scripts/export-android.js"
   },
   "keywords": [
     "anime",
@@ -28,6 +35,49 @@
     "open": "^11.0.4"
   },
   "devDependencies": {
-    "electron": "^45.2.2"
+    "electron": "^45.2.2",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.animestream.app",
+    "productName": "AnimeStream",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "server/**/*",
+      "public/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AnimeStream"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.entertainment"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "AudioVideo"
+    }
   }
 }

@@ -79,6 +79,20 @@
     });
   </script>
 
+  <!-- QR Code Generator for Mobile Device Sync -->
+  <script src="/js/vendor/qrcode.js"></script>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js').catch(function(err) {
+          console.warn('[PWA] Service Worker registration failed:', err);
+        });
+      });
+    }
+  </script>
+
   <!-- Main JavaScript App Module -->
   <script type="module" src="/js/app.js?v=4.0"></script>
 </body>

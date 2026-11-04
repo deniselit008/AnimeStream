@@ -457,4 +457,55 @@ router.get('/health', (req, res) => {
   });
 });
 
+router.get('/network-info', (req, res) => {
+  const os = require('os');
+  const interfaces = os.networkInterfaces();
+  const ips = [];
+  const port = req.socket.localPort || process.env.PORT || 3000;
+
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        ips.push({
+          name: name,
+          ip: iface.address,
+          url: `http://${iface.address}:${port}`
+        });
+      }
+    }
+  }
+
+  // Prioritize real LAN IP (192.168.x, 10.x, or 172.16-31.x) over VPNs like Radmin/Hamachi/VirtualBox
+  let primaryLanIp = '127.0.0.1';
+  const realLan = ips.find(i => 
+    !i.name.toLowerCase().includes('virtual') &&
+    !i.name.toLowerCase().includes('radmin') &&
+    !i.name.toLowerCase().includes('hamachi') &&
+    !i.name.toLowerCase().includes('vmware') &&
+    !i.name.toLowerCase().includes('wsl') &&
+    !i.ip.startsWith('192.168.56.') &&
+    (i.ip.startsWith('192.168.') || i.ip.startsWith('10.') || i.ip.startsWith('172.'))
+  );
+
+  if (realLan) {
+    primaryLanIp = realLan.ip;
+  } else if (ips.length > 0) {
+    primaryLanIp = ips[0].ip;
+  }
+
+  return res.json({
+    status: 'ok',
+    port: port,
+    localUrl: `http://localhost:${port}`,
+    lanIp: primaryLanIp,
+    lanUrl: `http://${primaryLanIp}:${port}`,
+    interfaces: ips,
+    platform: process.platform,
+    hostname: os.hostname(),
+    nodeVersion: process.version,
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString()
+  });
+});
+
 module.exports = router;

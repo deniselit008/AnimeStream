@@ -5,6 +5,7 @@ import { Icons, escapeHtml, getSourceBadgeClass } from '../utils.js?v=4.0';
 import { AdBlock } from '../adblock.js?v=4.0';
 import { TVNavigation } from '../tvNavigation.js?v=4.0';
 import { Api } from '../api.js?v=4.0';
+import { openNetworkModal } from './networkModal.js?v=4.0';
 
 let navbarInitialized = false;
 let autocompleteDebounceTimer = null;
@@ -95,6 +96,16 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
             >
               <span>📺</span>
               <span id="nav-tv-label">Smart TV</span>
+            </button>
+
+            <!-- Network & Device Cast IPs Button -->
+            <button 
+              id="nav-btn-network" 
+              class="nav-network-btn" 
+              title="Dispositivos &amp; Red Local: Ver IPs para conectar Smart TV o Móvil"
+            >
+              <span class="network-radar-icon">📡</span>
+              <span>Dispositivos</span>
             </button>
           </div>
         </div>
@@ -225,6 +236,15 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
       tvBtn.addEventListener('click', (e) => {
         e.preventDefault();
         TVNavigation.toggle();
+      });
+    }
+
+    // Network & Devices Modal Trigger
+    const netBtn = container.querySelector('#nav-btn-network');
+    if (netBtn) {
+      netBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openNetworkModal();
       });
     }
 

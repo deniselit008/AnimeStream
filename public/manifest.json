@@ -1,10 +1,33 @@
 {
-  "name": "AnimeStream - Catálogo & Reproductor",
+  "name": "AnimeStream - Streaming de Anime en Tiempo Real",
   "short_name": "AnimeStream",
-  "start_url": "/",
+  "description": "Agregador y reproductor de anime unificado en tiempo real para PC, Smart TV y dispositivos móviles Android.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
-  "orientation": "landscape",
-  "background_color": "#0b0f19",
-  "theme_color": "#0b0f19",
-  "description": "Plataforma de streaming agregadora de AnimeAV1, JKAnime y TioAnime adaptada para PC y Smart TV con AdBlocker integrado."
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#07090e",
+  "theme_color": "#ff6b00",
+  "categories": ["entertainment", "multimedia", "video"],
+  "icons": [
+    {
+      "src": "/assets/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }

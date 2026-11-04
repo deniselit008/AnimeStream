@@ -11,13 +11,25 @@ const apiRouter = require('./routes/api');
 
 function getLanIp() {
   const interfaces = os.networkInterfaces();
+  const candidates = [];
   for (const name of Object.keys(interfaces)) {
     for (const iface of interfaces[name]) {
       if (iface.family === 'IPv4' && !iface.internal) {
-        return iface.address;
+        candidates.push({ name, ip: iface.address });
       }
     }
   }
+  const realLan = candidates.find(c => 
+    !c.name.toLowerCase().includes('virtual') &&
+    !c.name.toLowerCase().includes('radmin') &&
+    !c.name.toLowerCase().includes('hamachi') &&
+    !c.name.toLowerCase().includes('vmware') &&
+    !c.name.toLowerCase().includes('wsl') &&
+    !c.ip.startsWith('192.168.56.') &&
+    (c.ip.startsWith('192.168.') || c.ip.startsWith('10.') || c.ip.startsWith('172.'))
+  );
+  if (realLan) return realLan.ip;
+  if (candidates.length > 0) return candidates[0].ip;
   return '127.0.0.1';
 }
 

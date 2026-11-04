@@ -1,0 +1,55 @@
+name: Compilar Binarios Multiplataforma (Windows, Linux, macOS)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-desktop:
+    name: Compilar para ${{ matrix.os-name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            os-name: Windows (x64)
+            build-cmd: npm run build:win
+          - os: ubuntu-latest
+            os-name: Linux (AppImage & deb)
+            build-cmd: npm run build:linux
+          - os: macos-latest
+            os-name: macOS (dmg & zip)
+            build-cmd: npm run build:mac
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Compilar binario nativo de escritorio
+        run: ${{ matrix.build-cmd }}
+
+      - name: Subir artefacto compilado
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnimeStream-${{ matrix.os-name }}
+          path: |
+            dist/*.exe
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.dmg
+            dist/*.zip
