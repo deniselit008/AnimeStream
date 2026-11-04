@@ -152,6 +152,7 @@ class AdBlockEngine {
 
     styleEl.textContent = `
       /* AnimeStream AdBlock Cosmetic Filtering */
+      #overlayads, .overlayads, [id*="overlayad"], [class*="overlayad"],
       [id*="ad-"], [class*="ad-"]:not(.anime-card):not(.active),
       [id*="ads-"], [class*="ads-"],
       [id*="banner-ad"], [class*="banner-ad"],

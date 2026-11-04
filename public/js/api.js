@@ -2,11 +2,24 @@
  * API Client for Anime Aggregator Backend
  */
 
-const API_BASE = '/api';
+export function getApiBase() {
+  if (typeof window !== 'undefined') {
+    // When served over HTTP/HTTPS from a real web server (PC, Smart TV, or custom domain)
+    if (window.location.protocol.startsWith('http') && !window.location.host.includes('appassets.androidplatform.net')) {
+      return '/api';
+    }
+    // When running inside Android assets or standalone mobile container
+    const saved = localStorage.getItem('animestream_server_url') || (window.AndroidBridge && window.AndroidBridge.getServerUrl && window.AndroidBridge.getServerUrl());
+    if (saved && typeof saved === 'string' && saved.startsWith('http')) {
+      return saved.replace(/\/+$/, '') + '/api';
+    }
+  }
+  return '/api';
+}
 
 export const Api = {
   async getLatest(source = 'all') {
-    const res = await fetch(`${API_BASE}/latest?source=${encodeURIComponent(source)}`);
+    const res = await fetch(`${getApiBase()}/latest?source=${encodeURIComponent(source)}`);
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || 'Error al obtener los últimos episodios');
@@ -15,7 +28,7 @@ export const Api = {
   },
 
   async search(query, source = 'all') {
-    const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}&source=${encodeURIComponent(source)}`);
+    const res = await fetch(`${getApiBase()}/search?q=${encodeURIComponent(query)}&source=${encodeURIComponent(source)}`);
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || 'Error en la búsqueda');
@@ -24,7 +37,7 @@ export const Api = {
   },
 
   async getAnime(url) {
-    const res = await fetch(`${API_BASE}/anime?url=${encodeURIComponent(url)}`);
+    const res = await fetch(`${getApiBase()}/anime?url=${encodeURIComponent(url)}`);
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || 'No se pudo cargar la información del anime');
@@ -33,7 +46,7 @@ export const Api = {
   },
 
   async getRelations(title) {
-    const res = await fetch(`${API_BASE}/anime/relations?title=${encodeURIComponent(title)}`);
+    const res = await fetch(`${getApiBase()}/anime/relations?title=${encodeURIComponent(title)}`);
     if (!res.ok) {
       return [];
     }
@@ -41,7 +54,7 @@ export const Api = {
   },
 
   async getWatch(url) {
-    const res = await fetch(`${API_BASE}/watch?url=${encodeURIComponent(url)}`);
+    const res = await fetch(`${getApiBase()}/watch?url=${encodeURIComponent(url)}`);
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || 'No se pudo cargar la sala de reproducción');
@@ -64,7 +77,7 @@ export const Api = {
     if (params.page && params.page > 1) query.set('page', params.page);
 
     const qs = query.toString();
-    const url = qs ? `${API_BASE}/directory?${qs}` : `${API_BASE}/directory`;
+    const url = qs ? `${getApiBase()}/directory?${qs}` : `${getApiBase()}/directory`;
     const res = await fetch(url);
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -76,7 +89,7 @@ export const Api = {
   async parseMalUpload(file) {
     const formData = new FormData();
     formData.append('file', file);
-    const res = await fetch(`${API_BASE}/library/parse-mal`, {
+    const res = await fetch(`${getApiBase()}/library/parse-mal`, {
       method: 'POST',
       body: formData
     });
@@ -89,7 +102,7 @@ export const Api = {
 
   async detectLocalMalFile() {
     try {
-      const res = await fetch(`${API_BASE}/library/local-file`);
+      const res = await fetch(`${getApiBase()}/library/local-file`);
       if (!res.ok) return { found: false };
       return res.json();
     } catch (e) {

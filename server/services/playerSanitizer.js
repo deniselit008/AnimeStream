@@ -8,7 +8,8 @@ const AD_DOMAINS = [
   'monetag', 'clickadu', 'histats', 'doubleclick', 'googlesyndication',
   'bet365', '1xbet', 'mgid', 'onclickperformance', 'trafficfactory',
   'juicyads', 'hilltopads', 'ad-maven', 'ezmob', 'realsrv', 'zeroredirect',
-  'deloton', 'adsco', 'creativecdn', 'tsyndicate', 'adtrue', 'vidoomy'
+  'deloton', 'adsco', 'creativecdn', 'tsyndicate', 'adtrue', 'vidoomy',
+  'cortahewt', 'dirdumaigre', 'sxlzbz', 'adkeeper', 'adrun', 'adserver', 'syndication'
 ];
 
 function sanitizePlayerHtml(html, baseHref = null, active = true) {
@@ -39,8 +40,19 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
       cleaned = cleaned.replace(scriptRegex, '').replace(scriptSelfClose, '').replace(iframeRegex, '');
     }
 
-    // 4. Inject non-destructive protective shield
-    const shieldScript = `<script>
+    // 4. Inject non-destructive protective shield and cosmetic suppression styles
+    const shieldScript = `<style>
+      #overlayads, .overlayads, [id*="overlayad"], [class*="overlayad"],
+      .ad-banner, .advertisement, [id*="popunder"], [class*="popunder"],
+      div[style*="z-index: 2147483647"], div[style*="z-index: 9999999"] {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+    </style>
+    <script>
     (function() {
       try {
         window.open = function(url) {
@@ -59,6 +71,12 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
 
         function purgeClickjacking() {
           try {
+            // Remove explicit overlay ad containers (like Mp4Upload #overlayads)
+            var overlays = document.querySelectorAll('#overlayads, .overlayads, [id*="overlayad"], [class*="overlayad"]');
+            for (var o = 0; o < overlays.length; o++) {
+              overlays[o].remove();
+            }
+
             var traps = document.querySelectorAll('a[target="_blank"], a[href^="http"], div');
             for (var i = 0; i < traps.length; i++) {
               var el = traps[i];

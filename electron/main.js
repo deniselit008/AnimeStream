@@ -103,13 +103,78 @@ async function createWindow(serverUrl) {
     }
   }, 1500);
 
-  // Forward external links to OS default browser if appropriate
+  // 🛡️ NATIVE POPUP BLOCKER: Strictly deny any popup window from embedded video players (VOE, Mp4Upload, etc.)
+  // Never allow third-party ad networks to launch external browser tabs in Edge/Chrome
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('http') && !url.includes('localhost') && !url.includes('127.0.0.1')) {
-      shell.openExternal(url);
-      return { action: 'deny' };
-    }
-    return { action: 'allow' };
+    logDebug(`[AdBlock Native] Bloqueado window.open emergente: ${url}`);
+    return { action: 'deny' };
+  });
+
+  // 🛡️ NATIVE AD NETWORK & TRACKER BLOCKER (Network-Level WebRequest Filtering)
+  const adBlockPatterns = [
+    '*://*/*popads*',
+    '*://*/*popcash*',
+    '*://*/*adcash*',
+    '*://*/*adsterra*',
+    '*://*/*propellerads*',
+    '*://*/*exoclick*',
+    '*://*/*monetag*',
+    '*://*/*clickadu*',
+    '*://*/*trafficfactory*',
+    '*://*/*juicyads*',
+    '*://*/*hilltopads*',
+    '*://*/*ad-maven*',
+    '*://*/*adtrue*',
+    '*://*/*vidoomy*',
+    '*://*/*onclickperformance*',
+    '*://*/*histats*',
+    '*://*/*doubleclick.net/*',
+    '*://*/*googlesyndication.com/*',
+    '*://*/*zeroredirect*',
+    '*://*/*deloton*',
+    '*://*/*adsco*',
+    '*://*/*creativecdn*',
+    '*://*/*tsyndicate*',
+    '*://*/*bet365*',
+    '*://*/*1xbet*',
+    '*://*/*adnxs*',
+    '*://*/*outbrain*',
+    '*://*/*taboola*',
+    '*://*/*mgid.com/*',
+    '*://*/*yandex.ru/ads*',
+    '*://*.cortahewt.com/*',
+    '*://*.dirdumaigre.com/*',
+    '*://*.sxlzbz.com/*',
+    '*://*/*cortahewt*',
+    '*://*/*dirdumaigre*',
+    '*://*/*sxlzbz*',
+    '*://*/*adkeeper*',
+    '*://*/*adrun*',
+    '*://*/*adserver*',
+    '*://*/*syndication*'
+  ];
+
+  const ses = mainWindow.webContents.session;
+  ses.webRequest.onBeforeRequest({ urls: adBlockPatterns }, (details, callback) => {
+    logDebug(`[AdBlock WebRequest] Cancelada petición publicitaria: ${details.url}`);
+    callback({ cancel: true });
+  });
+
+  // Eliminate overlay clickjacking traps (e.g. Mp4Upload #overlayads) in all frames
+  mainWindow.webContents.on('did-frame-finish-load', async () => {
+    try {
+      await mainWindow.webContents.insertCSS(`
+        #overlayads, .overlayads, [id*="overlayad"], [class*="overlayad"],
+        .ad-banner, .advertisement, [id*="popunder"], [class*="popunder"],
+        div[style*="z-index: 2147483647"], div[style*="z-index: 9999999"] {
+          display: none !important;
+          visibility: hidden !important;
+          pointer-events: none !important;
+          width: 0 !important;
+          height: 0 !important;
+        }
+      `);
+    } catch (e) {}
   });
 
   mainWindow.on('maximize', () => {

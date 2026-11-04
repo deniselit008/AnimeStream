@@ -10,6 +10,7 @@ import { renderFavorites } from './components/favoritesView.js?v=3.0';
 import { renderHistory } from './components/historyView.js?v=3.0';
 import { renderDirectory } from './components/directoryView.js?v=3.0';
 import { renderLibrary } from './components/libraryView.js?v=3.0';
+import { renderMobileConnect } from './components/mobileConnectView.js?v=4.0';
 import { AdBlock } from './adblock.js?v=3.0';
 import { TVNavigation } from './tvNavigation.js?v=3.2';
 
@@ -50,6 +51,29 @@ async function handleRoute() {
     }
 
     // Route Dispatcher
+    const urlParams = new URLSearchParams(window.location.search);
+    const isStandaloneAssets = window.location.host.includes('appassets.androidplatform.net') || window.location.protocol === 'file:';
+    const isUnreachable = urlParams.get('error') === 'unreachable';
+    const savedServer = localStorage.getItem('animestream_server_url') || 
+                        (window.AndroidBridge && typeof window.AndroidBridge.getServerUrl === 'function' && window.AndroidBridge.getServerUrl());
+
+    if (path === '/connect' || isUnreachable || (isStandaloneAssets && !savedServer)) {
+      renderMobileConnect(contentMount, {
+        error: isUnreachable ? 'unreachable' : params.get('error'),
+        server: urlParams.get('server') || params.get('server') || savedServer
+      });
+      return;
+    }
+
+    if (isStandaloneAssets && savedServer && savedServer.startsWith('http')) {
+      if (window.AndroidBridge && typeof window.AndroidBridge.connectToServer === 'function') {
+        window.AndroidBridge.connectToServer(savedServer);
+      } else {
+        window.location.href = savedServer;
+      }
+      return;
+    }
+
     if (path === '' || path === '/') {
       await renderHome(contentMount);
     } else if (path === '/directory') {

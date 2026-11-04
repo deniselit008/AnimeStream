@@ -142,6 +142,11 @@ function renderNetworkModalContent(modal, data) {
               <span>📲</span> <span>Instalar en Android</span>
             </button>
           ` : ''}
+          ${(typeof window !== 'undefined' && ((window.AndroidBridge && window.AndroidBridge.isAndroidApp) || localStorage.getItem('animestream_server_url'))) ? `
+            <button class="btn btn-outline btn-sm" id="btn-change-mobile-server" style="color: #f87171; border-color: rgba(239, 68, 68, 0.4);" title="Desconectar o cambiar IP del servidor">
+              <span>🔄</span> <span>Cambiar Servidor</span>
+            </button>
+          ` : ''}
         </div>
       </div>
 
@@ -243,6 +248,20 @@ function renderNetworkModalContent(modal, data) {
         deferredInstallPrompt = null;
         installBtn.style.display = 'none';
       }
+    });
+  }
+
+  // Change Mobile Server button
+  const changeServerBtn = modal.querySelector('#btn-change-mobile-server');
+  if (changeServerBtn) {
+    changeServerBtn.addEventListener('click', () => {
+      localStorage.removeItem('animestream_server_url');
+      if (window.AndroidBridge && typeof window.AndroidBridge.resetServer === 'function') {
+        window.AndroidBridge.resetServer();
+      } else {
+        window.location.hash = '#/connect';
+      }
+      closeNetworkModal();
     });
   }
 }

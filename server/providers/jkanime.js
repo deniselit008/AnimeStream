@@ -29,8 +29,12 @@ class JKAnimeProvider {
     const items = [];
     const seen = new Set();
 
-    $('a').each((_, el) => {
+    // Focus on the genuine latest episodes section (avoiding unreleased hero banners and external affiliate links)
+    $('section.contenido a, .maxilist a, .anime__item a').each((_, el) => {
       const href = $(el).attr('href') || '';
+      // Exclude external domains (e.g. adult affiliate sites like hentaijk)
+      if (href.startsWith('http') && !href.includes('jkanime.net')) return;
+
       const m = href.match(/(?:https:\/\/jkanime\.net)?\/([^/]+)\/(\d+)\/?$/);
       if (!m) return;
 

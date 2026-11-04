@@ -2,7 +2,7 @@
  * Video Player View Component (Sala de Reproducción)
  * 16:9 adaptable player, multiple server switcher, next/prev controls, and fallbacks.
  */
-import { Api } from '../api.js?v=3.0';
+import { Api, getApiBase } from '../api.js?v=3.0';
 import { Storage } from '../storage.js?v=3.0';
 import { Icons, escapeHtml, showToast, getSourceBadgeClass, fixEncoding } from '../utils.js?v=3.0';
 import { AdBlock } from '../adblock.js?v=3.0';
@@ -56,15 +56,46 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
       source: watchData.source
     });
 
+    function shouldApplySandbox(serverUrl, serverName) {
+      // In Electron desktop app, native Chromium request filtering & setWindowOpenHandler
+      // provide 100% popup & ad blocking without breaking video players.
+      if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.isElectron) {
+        return false;
+      }
+      if (!AdBlock.isEnabled()) {
+        return false;
+      }
+      const url = String(serverUrl || '').toLowerCase();
+      const name = String(serverName || '').toLowerCase();
+      // VOE explicitly fails with "no permite modo sandbox" if sandbox attribute is present
+      if (url.includes('voe.') || name.includes('voe')) {
+        return false;
+      }
+      return true;
+    }
+
+    function updateIframeSandbox(iframe, serverUrl, serverName) {
+      if (!iframe) return;
+      if (shouldApplySandbox(serverUrl, serverName)) {
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation allow-downloads allow-fullscreen');
+      } else {
+        iframe.removeAttribute('sandbox');
+      }
+    }
+
     function getEmbedUrl(rawEmbedUrl) {
       if (!rawEmbedUrl) return '';
-      // Local endpoints (such as /api/hls/player/...) don't need proxying
+      // Local endpoints (such as /api/hls/player/...) resolved via getApiBase()
+      if (rawEmbedUrl.startsWith('/api/')) {
+        const base = getApiBase();
+        return rawEmbedUrl.replace('/api', base);
+      }
       if (rawEmbedUrl.startsWith('/') || rawEmbedUrl.startsWith('data:')) {
         return rawEmbedUrl;
       }
       if (useProxy) {
         const adb = AdBlock.isEnabled() ? '1' : '0';
-        return `/api/proxy-player?url=${encodeURIComponent(rawEmbedUrl)}&ref=${encodeURIComponent(watchData.animeUrl || watchData.url)}&adblock=${adb}`;
+        return `${getApiBase()}/proxy-player?url=${encodeURIComponent(rawEmbedUrl)}&ref=${encodeURIComponent(watchData.animeUrl || watchData.url)}&adblock=${adb}`;
       }
       return rawEmbedUrl;
     }
@@ -115,7 +146,7 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
               mozallowfullscreen="true" 
               allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
               referrerpolicy="no-referrer"
-              ${AdBlock.isEnabled() ? 'sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-downloads allow-fullscreen"' : ''}
+              ${shouldApplySandbox(currentServer?.embed, currentServer?.name) ? 'sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-downloads allow-fullscreen"' : ''}
             ></iframe>
           ` : `
             <div class="player-loading-spinner">
@@ -295,6 +326,7 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
             currentServerIndex = idx;
             const iframe = container.querySelector('#main-player-iframe');
             if (iframe) {
+              updateIframeSandbox(iframe, vServers[idx].embed, vServers[idx].name);
               iframe.src = getEmbedUrl(vServers[idx].embed);
               serverBtns.forEach(b => b.classList.remove('active'));
               btn.classList.add('active');
@@ -356,11 +388,12 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
             }
             btn.innerHTML = `${isAct ? Icons.shieldCheck : Icons.shield} <span>AdBlock ${isAct ? 'ON' : 'OFF'}</span>`;
 
-            // If proxy mode is active, reload iframe with updated adblock policy
-            if (useProxy) {
-              const iframe = container.querySelector('#main-player-iframe');
-              const vServers = getVisibleServers();
-              if (iframe && vServers[currentServerIndex]) {
+            // Update iframe sandbox and reload if proxy is active
+            const iframe = container.querySelector('#main-player-iframe');
+            const vServers = getVisibleServers();
+            if (iframe && vServers[currentServerIndex]) {
+              updateIframeSandbox(iframe, vServers[currentServerIndex].embed, vServers[currentServerIndex].name);
+              if (useProxy) {
                 iframe.src = getEmbedUrl(vServers[currentServerIndex].embed);
               }
             }

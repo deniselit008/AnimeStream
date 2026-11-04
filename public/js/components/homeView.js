@@ -291,11 +291,17 @@ async function loadLatestEpisodes(container, source = 'all') {
 
   } catch (err) {
     grid.innerHTML = `
-      <div class="alert-banner error" style="grid-column: 1/-1;">
-        <div>
-          <strong>Error de conexión con el proveedor:</strong> ${escapeHtml(err.message)}
+      <div class="alert-banner error" style="grid-column: 1/-1; padding: 20px; border-radius: var(--radius-md); text-align: center;">
+        <div style="margin-bottom: 8px;">
+          <strong>Error de conexión con el catálogo:</strong> ${escapeHtml(err.message)}
         </div>
-        <button class="btn btn-secondary" onclick="window.location.reload()">Reintentar</button>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 14px;">
+          Si estás en el móvil, comprueba que el servidor de AnimeStream esté iniciado en tu PC en la misma red Wi-Fi.
+        </p>
+        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+          <button class="btn btn-secondary" onclick="window.location.reload()">Reintentar</button>
+          <a href="#/connect" class="btn btn-primary" style="font-size: 0.88rem; text-decoration: none;">⚙️ Configurar / Cambiar Servidor</a>
+        </div>
       </div>
     `;
   }
