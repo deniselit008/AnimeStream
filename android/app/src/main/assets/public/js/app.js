@@ -52,25 +52,16 @@ async function handleRoute() {
 
     // Route Dispatcher
     const urlParams = new URLSearchParams(window.location.search);
-    const isStandaloneAssets = window.location.host.includes('appassets.androidplatform.net') || window.location.protocol === 'file:';
     const isUnreachable = urlParams.get('error') === 'unreachable';
     const savedServer = localStorage.getItem('animestream_server_url') || 
                         (window.AndroidBridge && typeof window.AndroidBridge.getServerUrl === 'function' && window.AndroidBridge.getServerUrl());
 
-    if (path === '/connect' || isUnreachable || (isStandaloneAssets && !savedServer)) {
+    // Only show manual connection screen if explicitly requested or if a configured remote server is unreachable
+    if (path === '/connect' || (isUnreachable && savedServer)) {
       renderMobileConnect(contentMount, {
         error: isUnreachable ? 'unreachable' : params.get('error'),
         server: urlParams.get('server') || params.get('server') || savedServer
       });
-      return;
-    }
-
-    if (isStandaloneAssets && savedServer && savedServer.startsWith('http')) {
-      if (window.AndroidBridge && typeof window.AndroidBridge.connectToServer === 'function') {
-        window.AndroidBridge.connectToServer(savedServer);
-      } else {
-        window.location.href = savedServer;
-      }
       return;
     }
 

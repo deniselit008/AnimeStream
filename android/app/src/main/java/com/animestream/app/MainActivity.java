@@ -26,6 +26,17 @@ import android.widget.FrameLayout;
 
 import androidx.webkit.WebViewAssetLoader;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+import java.util.zip.GZIPInputStream;
+
+import org.json.JSONObject;
+
 public class MainActivity extends Activity {
 
     private WebView webView;
@@ -94,6 +105,96 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public boolean isAndroidApp() {
             return true;
+        }
+
+        @JavascriptInterface
+        public String fetchUrl(String urlString, String headersJson) {
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL(urlString);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(12000);
+                conn.setReadTimeout(15000);
+                conn.setInstanceFollowRedirects(true);
+
+                // Default realistic mobile browser headers
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36");
+                conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
+                conn.setRequestProperty("Accept-Language", "es-ES,es;q=0.9,en;q=0.8");
+                conn.setRequestProperty("Accept-Encoding", "gzip, deflate");
+
+                // Apply custom headers if passed
+                if (headersJson != null && !headersJson.trim().isEmpty() && !headersJson.equals("{}")) {
+                    try {
+                        JSONObject headers = new JSONObject(headersJson);
+                        Iterator<String> keys = headers.keys();
+                        while (keys.hasNext()) {
+                            String key = keys.next();
+                            conn.setRequestProperty(key, headers.getString(key));
+                        }
+                    } catch (Exception ignored) {}
+                }
+
+                int status = conn.getResponseCode();
+
+                // Handle HTTP redirects manually if response code is 301, 302, 303, 307, 308
+                if (status == HttpURLConnection.HTTP_MOVED_TEMP || 
+                    status == HttpURLConnection.HTTP_MOVED_PERM || 
+                    status == HttpURLConnection.HTTP_SEE_OTHER ||
+                    status == 307 || status == 308) {
+                    String location = conn.getHeaderField("Location");
+                    if (location != null && !location.isEmpty()) {
+                        conn.disconnect();
+                        if (!location.startsWith("http://") && !location.startsWith("https://")) {
+                            URL base = new URL(urlString);
+                            location = new URL(base, location).toString();
+                        }
+                        return fetchUrl(location, headersJson);
+                    }
+                }
+
+                InputStream is = (status >= 400) ? conn.getErrorStream() : conn.getInputStream();
+                if (is == null) {
+                    JSONObject res = new JSONObject();
+                    res.put("status", status);
+                    res.put("body", "");
+                    return res.toString();
+                }
+
+                String encoding = conn.getHeaderField("Content-Encoding");
+                if (encoding != null && encoding.equalsIgnoreCase("gzip")) {
+                    is = new GZIPInputStream(is);
+                }
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+                StringBuilder sb = new StringBuilder();
+                char[] buffer = new char[8192];
+                int charsRead;
+                while ((charsRead = reader.read(buffer, 0, buffer.length)) > 0) {
+                    sb.append(buffer, 0, charsRead);
+                }
+                reader.close();
+
+                JSONObject res = new JSONObject();
+                res.put("status", status);
+                res.put("body", sb.toString());
+                return res.toString();
+
+            } catch (Exception e) {
+                try {
+                    JSONObject err = new JSONObject();
+                    err.put("status", 500);
+                    err.put("error", e.getMessage() != null ? e.getMessage() : e.toString());
+                    err.put("body", "");
+                    return err.toString();
+                } catch (Exception ex) {
+                    return "{\"status\":500,\"error\":\"Network error\",\"body\":\"\"}";
+                }
+            } finally {
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
         }
     }
 

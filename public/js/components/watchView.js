@@ -2,7 +2,7 @@
  * Video Player View Component (Sala de Reproducción)
  * 16:9 adaptable player, multiple server switcher, next/prev controls, and fallbacks.
  */
-import { Api, getApiBase } from '../api.js?v=3.0';
+import { Api, getApiBase, isStandaloneMode } from '../api.js?v=4.2';
 import { Storage } from '../storage.js?v=3.0';
 import { Icons, escapeHtml, showToast, getSourceBadgeClass, fixEncoding } from '../utils.js?v=3.0';
 import { AdBlock } from '../adblock.js?v=3.0';
@@ -249,7 +249,8 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
                 <span>AdBlock ${AdBlock.isEnabled() ? 'ON' : 'OFF'}</span>
               </button>
 
-              <!-- Proxy Mode Toggle -->
+              <!-- Proxy Mode Toggle (Visible solo con servidor PC/Remoto) -->
+              ${!isStandaloneMode() ? `
               <button 
                 id="btn-toggle-proxy" 
                 class="btn btn-outline ${useProxy ? 'active' : ''}" 
@@ -258,6 +259,7 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
               >
                 ${useProxy ? 'Proxy ON' : 'Proxy OFF'}
               </button>
+              ` : ''}
             </div>
           ` : ''}
         </div>
@@ -344,6 +346,10 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
       const proxyBtn = container.querySelector('#btn-toggle-proxy');
       if (proxyBtn) {
         proxyBtn.addEventListener('click', () => {
+          if (isStandaloneMode()) {
+            showToast('El modo Proxy requiere conexión con un servidor PC. En móvil autónomo se reproduce directamente.', 'info');
+            return;
+          }
           useProxy = !useProxy;
           proxyBtn.textContent = useProxy ? 'Proxy ON' : 'Proxy OFF';
           if (useProxy) {
