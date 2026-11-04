@@ -227,10 +227,10 @@ class TVNavigationEngine {
   }
 
   handleBackButton() {
-    // A. Check if modal overlay is open (AdBlock modal, etc.)
-    const modal = document.querySelector('.modal-backdrop');
+    // A. Check if modal overlay is open (AdBlock modal, Network modal, etc.)
+    const modal = document.querySelector('.modal-backdrop, .modal-overlay, #network-modal');
     if (modal) {
-      const closeBtn = modal.querySelector('.modal-close-btn, #btn-modal-close');
+      const closeBtn = modal.querySelector('.modal-close-btn, #btn-modal-close, #btn-close-network-modal-footer, .btn-close-modal-action');
       if (closeBtn) closeBtn.click();
       else modal.remove();
       return;
@@ -298,7 +298,7 @@ class TVNavigationEngine {
 
   getFocusableElements() {
     // If modal is open, scope strictly inside modal
-    const modal = document.querySelector('.modal-backdrop');
+    const modal = document.querySelector('.modal-backdrop, .modal-overlay, #network-modal');
     const container = modal || document;
 
     const selector = `

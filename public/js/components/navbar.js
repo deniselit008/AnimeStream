@@ -5,7 +5,7 @@ import { Icons, escapeHtml, getSourceBadgeClass } from '../utils.js?v=4.0';
 import { AdBlock } from '../adblock.js?v=4.0';
 import { TVNavigation } from '../tvNavigation.js?v=4.0';
 import { Api } from '../api.js?v=4.0';
-import { openNetworkModal } from './networkModal.js?v=4.0';
+import { openNetworkModal } from './networkModal.js?v=4.1';
 
 let navbarInitialized = false;
 let autocompleteDebounceTimer = null;

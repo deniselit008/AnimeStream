@@ -5,6 +5,7 @@
 import { escapeHtml } from '../utils.js?v=4.0';
 
 let deferredInstallPrompt = null;
+let escHandler = null;
 
 // Capture PWA install prompt event if available on mobile/desktop
 if (typeof window !== 'undefined') {
@@ -15,34 +16,35 @@ if (typeof window !== 'undefined') {
 }
 
 export function openNetworkModal() {
-  let modal = document.getElementById('network-modal');
+  // Always clean up any existing modal instance
+  closeNetworkModal();
 
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'network-modal';
-    modal.className = 'modal-overlay';
-    modal.setAttribute('role', 'dialog');
-    modal.setAttribute('aria-modal', 'true');
-    document.body.appendChild(modal);
+  const modal = document.createElement('div');
+  modal.id = 'network-modal';
+  modal.className = 'modal-overlay open';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  document.body.appendChild(modal);
 
-    // Event listeners to close
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal || e.target.closest('.modal-close-btn')) {
-        closeNetworkModal();
-      }
-    });
+  // Unified click handler to close on backdrop or any close button
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal || e.target.closest('.modal-close-btn') || e.target.closest('.btn-close-modal-action')) {
+      closeNetworkModal();
+    }
+  });
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modal.classList.contains('open')) {
-        closeNetworkModal();
-      }
-    });
-  }
+  // Global ESC key listener
+  escHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeNetworkModal();
+    }
+  };
+  document.addEventListener('keydown', escHandler);
 
   // Show loading state
   modal.innerHTML = `
     <div class="network-modal-card">
-      <button class="modal-close-btn" aria-label="Cerrar ventana">✕</button>
+      <button class="modal-close-btn" aria-label="Cerrar ventana" title="Cerrar">✕</button>
       <div class="modal-header-row">
         <div class="modal-icon-badge">📡</div>
         <div>
@@ -56,36 +58,48 @@ export function openNetworkModal() {
     </div>
   `;
 
-  modal.classList.add('open');
-
   // Fetch from server
   fetch('/api/network-info')
     .then(r => r.json())
     .then(data => {
-      renderNetworkModalContent(modal, data);
+      // Check if modal is still in DOM (user might have closed it while fetching)
+      if (document.getElementById('network-modal')) {
+        renderNetworkModalContent(modal, data);
+      }
     })
     .catch(err => {
-      modal.querySelector('.network-modal-card').innerHTML = `
-        <button class="modal-close-btn" aria-label="Cerrar ventana">✕</button>
-        <div class="modal-header-row">
-          <div class="modal-icon-badge" style="background:rgba(239,68,68,0.2); color:#ef4444;">⚠️</div>
-          <div>
-            <h2 class="modal-title">Error al consultar red local</h2>
-            <p class="modal-subtitle">${escapeHtml(err.message)}</p>
+      const card = modal.querySelector('.network-modal-card');
+      if (card) {
+        card.innerHTML = `
+          <button class="modal-close-btn" aria-label="Cerrar ventana" title="Cerrar">✕</button>
+          <div class="modal-header-row">
+            <div class="modal-icon-badge" style="background:rgba(239,68,68,0.2); color:#ef4444;">⚠️</div>
+            <div>
+              <h2 class="modal-title">Error al consultar red local</h2>
+              <p class="modal-subtitle">${escapeHtml(err.message)}</p>
+            </div>
           </div>
-        </div>
-        <p style="margin-top:16px; color:var(--text-muted); font-size:0.9rem;">
-          Asegúrate de que el servidor local de AnimeStream esté activo. Puedes acceder directamente en: 
-          <code>http://localhost:3000</code>
-        </p>
-      `;
+          <p style="margin-top:16px; color:var(--text-muted); font-size:0.9rem;">
+            Asegúrate de que el servidor local de AnimeStream esté activo. Puedes acceder directamente en: 
+            <code>http://localhost:3000</code>
+          </p>
+          <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+            <button class="btn btn-secondary btn-close-modal-action" style="padding: 8px 24px; cursor: pointer;">Cerrar</button>
+          </div>
+        `;
+      }
     });
 }
 
 export function closeNetworkModal() {
+  if (escHandler) {
+    document.removeEventListener('keydown', escHandler);
+    escHandler = null;
+  }
   const modal = document.getElementById('network-modal');
   if (modal) {
     modal.classList.remove('open');
+    modal.remove();
   }
 }
 
@@ -177,12 +191,17 @@ function renderNetworkModalContent(modal, data) {
         </div>
       </div>
 
-      <div class="modal-footer-status">
-        <span>🟢 Servidor activo en puerto <strong>${data.port || 3000}</strong></span>
-        <span>•</span>
-        <span>Node.js ${escapeHtml(data.nodeVersion || '')}</span>
-        <span>•</span>
-        <span>Escudo AdBlock y Proxy HLS Activos</span>
+      <div class="network-modal-footer">
+        <div class="modal-footer-status">
+          <span>🟢 Servidor activo en puerto <strong>${data.port || 3000}</strong></span>
+          <span>•</span>
+          <span>Node.js ${escapeHtml(data.nodeVersion || '')}</span>
+          <span>•</span>
+          <span>Escudo AdBlock y Proxy HLS Activos</span>
+        </div>
+        <button class="btn btn-secondary btn-close-modal-action" id="btn-close-network-modal-footer" title="Cerrar ventana">
+          Cerrar
+        </button>
       </div>
     </div>
   `;
