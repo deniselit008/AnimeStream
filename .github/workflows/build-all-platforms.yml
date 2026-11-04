@@ -2,6 +2,8 @@ name: Compilar Ejecutables e Instaladores (Windows .exe, Linux ELF, Android .apk
 
 on:
   workflow_dispatch:
+  release:
+    types: [published, created]
   push:
     tags:
       - 'v*'
@@ -32,6 +34,8 @@ jobs:
 
       - name: Compilar instalador y portable de Windows
         run: npm run build:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Subir binarios .exe de Windows
         uses: actions/upload-artifact@v4
@@ -61,6 +65,8 @@ jobs:
 
       - name: Compilar binario ELF de Linux
         run: npm run build:linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Subir binario ELF y AppImage de Linux
         uses: actions/upload-artifact@v4
@@ -85,9 +91,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 17
-
-      - name: Configurar Android SDK
-        uses: android-actions/setup-android@v3
+          cache: 'gradle'
 
       - name: Sincronizar activos web en el proyecto Android
         run: |
@@ -121,23 +125,26 @@ jobs:
   release:
     name: Publicar Release Multiplataforma
     needs: [build-windows, build-linux, build-android]
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    if: always() && !cancelled() && (needs.build-windows.result == 'success' || needs.build-linux.result == 'success' || needs.build-android.result == 'success')
     runs-on: ubuntu-latest
     steps:
       - name: Descargar artefactos de Windows
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: AnimeStream-Windows-exe
           path: release-assets/windows
 
       - name: Descargar artefactos de Linux
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: AnimeStream-Linux-ELF
           path: release-assets/linux
 
       - name: Descargar artefactos de Android
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: AnimeStream-Android-apk
           path: release-assets/android
@@ -151,4 +158,3 @@ jobs:
             release-assets/linux/*.deb
             release-assets/android/*.apk
           generate_release_notes: true
-

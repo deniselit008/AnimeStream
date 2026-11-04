@@ -17,6 +17,7 @@ venv/
 .venv/
 ENV/
 build/
+!build/icon.png
 develop-eggs/
 dist/
 downloads/
