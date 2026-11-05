@@ -55,7 +55,7 @@
         "priceCurrency": "USD"
       },
       "softwareVersion": "1.2.0",
-      "fileSize": "24.3 MB",
+      "fileSize": "369 MB instalado (123 MB instalador)",
       "downloadUrl": "https://github.com/deniselit008/AnimeStream/releases/latest",
       "featureList": [
         "Agregación simultánea de AnimeAV1, JKAnime y TioAnime",
@@ -297,14 +297,21 @@
           </a>
         </div>
 
-        <!-- Opción Portable destacada en Hero -->
-        <div style="text-align:center; margin-top:14px; margin-bottom:12px;">
+        <!-- Opciones adicionales destacadas en Hero: Portable y Paquete Debian -->
+        <div style="display:flex; justify-content:center; gap:14px; flex-wrap:wrap; margin-top:14px; margin-bottom:12px;">
           <a href="https://github.com/deniselit008/AnimeStream/releases/latest" 
              class="js-download-win-portable" 
              data-platform="windows-portable" 
-             style="font-size:0.9rem; color:var(--text-muted); text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:6px 16px; border-radius:999px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); transition:all 0.2s;"
+             style="font-size:0.88rem; color:var(--text-muted); text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:999px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); transition:all 0.2s;"
              title="Descargar versión portable de AnimeStream (.exe sin instalador)">
-            <span>📦 ¿Prefieres no instalar? <strong>Descargar Versión Portable (.exe)</strong> (<span class="js-file-size-win-portable">~111 MB</span>)</span>
+            <span>📦 Windows Portable <strong>(.exe)</strong> (<span class="js-file-size-win-portable">~111 MB</span>)</span>
+          </a>
+          <a href="https://github.com/deniselit008/AnimeStream/releases/download/1.2.0/animestream-node_1.2.0_amd64.deb" 
+             class="js-download-linux-deb" 
+             data-platform="linux-deb" 
+             style="font-size:0.88rem; color:var(--text-muted); text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:999px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); transition:all 0.2s;"
+             title="Descargar paquete para Debian, Ubuntu y Linux Mint (.deb)">
+            <span>🐧 Debian / Ubuntu <strong>(.deb)</strong> (<span class="js-file-size-linux-deb">~103 MB</span>)</span>
           </a>
         </div>
 
@@ -767,15 +774,15 @@
               </li>
               <li class="req-item">
                 <span class="req-item-label">Memoria RAM:</span>
-                <span class="req-item-val">2 GB (consume ~60 MB)</span>
+                <span class="req-item-val">2 GB (consume ~250 MB en reproducción)</span>
               </li>
               <li class="req-item">
                 <span class="req-item-label">Almacenamiento:</span>
-                <span class="req-item-val">80 MB libres</span>
+                <span class="req-item-val">500 MB libres (el programa instalado pesa 369 MB)</span>
               </li>
               <li class="req-item">
                 <span class="req-item-label">Formato:</span>
-                <span class="req-item-val">Instalador .exe &amp; Portable</span>
+                <span class="req-item-val">Instalador .exe &amp; Versión Portable</span>
               </li>
             </ul>
           </div>
@@ -797,11 +804,11 @@
               </li>
               <li class="req-item">
                 <span class="req-item-label">Memoria RAM:</span>
-                <span class="req-item-val">1 GB de RAM libre</span>
+                <span class="req-item-val">1-2 GB (consume ~200-250 MB)</span>
               </li>
               <li class="req-item">
                 <span class="req-item-label">Almacenamiento:</span>
-                <span class="req-item-val">35 MB de espacio</span>
+                <span class="req-item-val">100 MB libres (el APK pesa ~6.1 MB)</span>
               </li>
               <li class="req-item">
                 <span class="req-item-label">Formato:</span>
@@ -827,11 +834,11 @@
               </li>
               <li class="req-item">
                 <span class="req-item-label">Memoria RAM:</span>
-                <span class="req-item-val">2 GB de RAM</span>
+                <span class="req-item-val">2 GB (consume ~250 MB en reproducción)</span>
               </li>
               <li class="req-item">
                 <span class="req-item-label">Almacenamiento:</span>
-                <span class="req-item-val">100 MB libres</span>
+                <span class="req-item-val">500 MB libres (el programa instalado pesa 369 MB)</span>
               </li>
               <li class="req-item">
                 <span class="req-item-label">Formato:</span>
@@ -873,6 +880,7 @@
                 <a href="#descargar" class="btn btn-primary btn-sm js-download-btn">Windows (.exe)</a>
                 <a href="#descargar" class="btn btn-secondary btn-sm js-download-android">Android (.apk)</a>
                 <a href="#descargar" class="btn btn-secondary btn-sm js-download-linux">Linux (.AppImage)</a>
+                <a href="https://github.com/deniselit008/AnimeStream/releases/download/1.2.0/animestream-node_1.2.0_amd64.deb" class="btn btn-secondary btn-sm js-download-linux-deb" data-platform="linux-deb">Debian/Ubuntu (.deb)</a>
               </div>
             </div>
           </article>
@@ -919,8 +927,11 @@
               <!-- Linux -->
               <div style="padding-top:16px; border-top:1px solid var(--border-subtle);">
                 <h4 style="color:var(--text-white); font-size:1.05rem; margin-bottom:6px;">🐧 En Linux (.AppImage / .deb):</h4>
+                <p style="font-size:0.92rem; color:var(--text-muted); margin-bottom:6px;">
+                  <strong>Opción AppImage:</strong> Abre una terminal en la carpeta donde descargaste el archivo, concede permisos de ejecución con <code>chmod +x AnimeStream-1.2.0.AppImage</code> y ejecuta <code>./AnimeStream-1.2.0.AppImage</code>.
+                </p>
                 <p style="font-size:0.92rem; color:var(--text-muted);">
-                  Abre tu terminal y concede permisos de ejecución: <code>chmod +x AnimeStream-1.2.0.AppImage</code> y ejecuta <code>./AnimeStream-1.2.0.AppImage</code>. O si usas Debian/Ubuntu, instala el paquete con <code>sudo dpkg -i AnimeStream-1.2.0.deb</code>.
+                  <strong>Opción paquete Debian / Ubuntu (.deb):</strong> Haz doble clic sobre el archivo descargado para instalarlo con tu gestor gráfico, o ejecuta en la terminal: <code>sudo dpkg -i animestream-node_1.2.0_amd64.deb</code>.
                 </p>
               </div>
 
@@ -1036,13 +1047,13 @@
               <div>
                 <div class="platform-card-header">
                   <div class="platform-icon-box linux" aria-hidden="true">🐧</div>
-                  <span class="platform-badge linux">Linux ELF</span>
+                  <span class="platform-badge linux">Linux ELF &amp; DEB</span>
                 </div>
                 <h3 class="platform-title">Linux</h3>
-                <p class="platform-meta">Binario ELF autónomo (.AppImage) compatible con todas las distribuciones.</p>
+                <p class="platform-meta">Binario ELF autónomo (.AppImage) y paquete nativo (.deb) para Debian y Ubuntu.</p>
                 <ul class="platform-features-list">
-                  <li><span class="bullet">✓</span> Binario ELF estándar universal</li>
-                  <li><span class="bullet">✓</span> Ubuntu, Debian, Fedora, Arch &amp; más</li>
+                  <li><span class="bullet">✓</span> AppImage universal para cualquier distribución</li>
+                  <li><span class="bullet">✓</span> Paquete oficial para Debian, Ubuntu y Mint (.deb)</li>
                   <li><span class="bullet">✓</span> Tamaño: <strong class="js-file-size-linux">~129 MB</strong></li>
                 </ul>
               </div>
@@ -1053,6 +1064,15 @@
                    title="Descargar AnimeStream para Linux (Binario ELF AppImage)">
                   <span>Descargar .AppImage</span>
                 </a>
+                <div style="margin-top:10px; text-align:center;">
+                  <a href="https://github.com/deniselit008/AnimeStream/releases/download/1.2.0/animestream-node_1.2.0_amd64.deb" 
+                     class="js-download-linux-deb" 
+                     data-platform="linux-deb"
+                     style="font-size:0.84rem; color:var(--text-muted); text-decoration:underline; display:inline-block; padding:4px 0;" 
+                     title="Descargar paquete para Debian, Ubuntu y Linux Mint (.deb)">
+                    📦 O descargar paquete Debian / Ubuntu (<span class="js-file-size-linux-deb">~103 MB</span>) .deb
+                  </a>
+                </div>
               </div>
             </div>
 

@@ -43,7 +43,10 @@
         defaultName: 'AnimeStream-1.2.0.AppImage',
         fallbackSize: '129 MB',
         fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.2.0/AnimeStream-1.2.0.AppImage',
-        systemLabel: 'Linux x64 (Binario ELF AppImage)'
+        debName: 'animestream-node_1.2.0_amd64.deb',
+        debSize: '103 MB',
+        debUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.2.0/animestream-node_1.2.0_amd64.deb',
+        systemLabel: 'Linux x64 (Binario ELF AppImage & paquete .deb)'
       }
     }
   };
@@ -151,8 +154,9 @@
       
       const androidAsset = assets.find(a => a.name.toLowerCase().endsWith('.apk'));
 
-      const linuxAsset = assets.find(a => a.name.toLowerCase().endsWith('.appimage'))
-                      || assets.find(a => a.name.toLowerCase().endsWith('.deb'));
+      const linuxAppImageAsset = assets.find(a => a.name.toLowerCase().endsWith('.appimage'));
+      const linuxDebAsset = assets.find(a => a.name.toLowerCase().endsWith('.deb'));
+      const linuxAsset = linuxAppImageAsset || linuxDebAsset;
 
       releaseCache = {
         tag: cleanTag,
@@ -180,7 +184,11 @@
           url: linuxAsset ? linuxAsset.browser_download_url : GITHUB_CONFIG.platforms.linux.fallbackUrl,
           name: linuxAsset ? linuxAsset.name : GITHUB_CONFIG.platforms.linux.defaultName,
           size: linuxAsset && linuxAsset.size ? formatBytes(linuxAsset.size) : GITHUB_CONFIG.platforms.linux.fallbackSize,
-          count: linuxAsset ? linuxAsset.download_count : 0
+          count: linuxAsset ? linuxAsset.download_count : 0,
+          debUrl: linuxDebAsset ? linuxDebAsset.browser_download_url : GITHUB_CONFIG.platforms.linux.debUrl,
+          debName: linuxDebAsset ? linuxDebAsset.name : GITHUB_CONFIG.platforms.linux.debName,
+          debSize: linuxDebAsset && linuxDebAsset.size ? formatBytes(linuxDebAsset.size) : GITHUB_CONFIG.platforms.linux.debSize,
+          debCount: linuxDebAsset ? linuxDebAsset.download_count : 0
         },
         fetchedAt: Date.now()
       };
@@ -222,7 +230,11 @@
             url: GITHUB_CONFIG.platforms.linux.fallbackUrl,
             name: GITHUB_CONFIG.platforms.linux.defaultName,
             size: GITHUB_CONFIG.platforms.linux.fallbackSize,
-            count: 0
+            count: 0,
+            debUrl: GITHUB_CONFIG.platforms.linux.debUrl,
+            debName: GITHUB_CONFIG.platforms.linux.debName,
+            debSize: GITHUB_CONFIG.platforms.linux.debSize,
+            debCount: 0
           },
           fetchedAt: Date.now()
         };
@@ -285,18 +297,27 @@
       }
     });
 
-    // 5. Update Linux Download Buttons
+    // 5. Update Linux Download Buttons (.AppImage)
     const linuxBtns = document.querySelectorAll('.js-download-linux');
     linuxBtns.forEach(btn => {
       btn.href = data.linux.url;
       btn.setAttribute('download', data.linux.name);
       btn.setAttribute('data-platform', 'linux');
-      btn.setAttribute('title', `Descargar AnimeStream ${displayTag} para Linux (Binario ELF)`);
+      btn.setAttribute('title', `Descargar AnimeStream ${displayTag} para Linux (Binario ELF AppImage)`);
 
       const subText = btn.querySelector('.download-btn-sub');
       if (subText) {
         subText.innerHTML = `Versión <strong>${displayTag}</strong> • ${data.linux.size} • Linux ELF AppImage`;
       }
+    });
+
+    // 5.1. Update Linux Debian / Ubuntu (.deb) Links & Buttons
+    const linuxDebBtns = document.querySelectorAll('.js-download-linux-deb');
+    linuxDebBtns.forEach(btn => {
+      btn.href = data.linux.debUrl;
+      btn.setAttribute('download', data.linux.debName);
+      btn.setAttribute('data-platform', 'linux-deb');
+      btn.setAttribute('title', `Descargar paquete para Debian/Ubuntu (${data.linux.debName})`);
     });
 
     // 6. Update platform file sizes in pills/cards
@@ -311,6 +332,9 @@
     });
     document.querySelectorAll('.js-file-size-linux').forEach(el => {
       el.textContent = data.linux.size;
+    });
+    document.querySelectorAll('.js-file-size-linux-deb').forEach(el => {
+      el.textContent = data.linux.debSize;
     });
 
     // 7. Update links to GitHub
@@ -336,7 +360,7 @@
 
     // Attach click listeners to all download triggers
     document.addEventListener('click', function (e) {
-      const btn = e.target.closest('.js-download-btn, .js-download-win, .js-download-win-portable, .js-download-android, .js-download-linux');
+      const btn = e.target.closest('.js-download-btn, .js-download-win, .js-download-win-portable, .js-download-android, .js-download-linux, .js-download-linux-deb');
       if (!btn) return;
       if (btn.closest('#downloadModal')) return; // ignore modal's internal button
 
@@ -360,6 +384,26 @@
         if (retryBtn && releaseCache) {
           retryBtn.href = releaseCache.android.url;
           retryBtn.textContent = 'Reintentar Descarga APK';
+        }
+      } else if (platform === 'linux-deb') {
+        if (titleEl) titleEl.textContent = '¡Descargando paquete Debian / Ubuntu (.deb)!';
+        const debName = releaseCache ? releaseCache.linux.debName : 'animestream-node_1.2.0_amd64.deb';
+        if (descEl) descEl.innerHTML = `Tu descarga de <strong>${debName}</strong> (${tag}) ha comenzado.`;
+        if (tipEl) {
+          tipEl.innerHTML = `
+            <p><strong>📦 Cómo instalar el paquete .deb en Ubuntu/Debian/Mint:</strong></p>
+            <ol style="margin-top:6px; padding-left:18px; line-height:1.5;">
+              <li>Haz doble clic sobre el archivo <code>.deb</code> descargado para abrirlo con el Centro de Software.</li>
+              <li>O desde la terminal en tu carpeta de descargas, ejecuta:
+                <br><code style="display:inline-block; margin-top:4px; padding:3px 8px; background:rgba(0,0,0,0.3); border-radius:4px;">sudo dpkg -i ${debName}</code>
+              </li>
+              <li>Si te solicita dependencias faltantes, corrígelas con: <code>sudo apt-get install -f</code></li>
+            </ol>
+          `;
+        }
+        if (retryBtn && releaseCache) {
+          retryBtn.href = releaseCache.linux.debUrl;
+          retryBtn.textContent = 'Reintentar Descarga paquete .deb';
         }
       } else if (platform === 'linux') {
         if (titleEl) titleEl.textContent = '¡Descargando AnimeStream para Linux (ELF)!';
