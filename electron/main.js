@@ -2,7 +2,7 @@
  * Electron Main Process for AnimeStream
  * Manages native desktop window, tray, and auto-starts local Express server.
  */
-const { app, BrowserWindow, ipcMain, shell, Menu, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, Menu, dialog, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -19,6 +19,11 @@ function logDebug(msg) {
 }
 
 logDebug('Electron main script loaded');
+
+// On Linux, disable sandbox if running as root (e.g. inside containers or CI)
+if (process.platform === 'linux' && process.getuid && process.getuid() === 0) {
+  app.commandLine.appendSwitch('no-sandbox');
+}
 
 let mainWindow = null;
 let serverInstance = null;
@@ -43,6 +48,14 @@ if (!gotLock) {
 
 async function createWindow(serverUrl) {
   logDebug(`Creating BrowserWindow for ${serverUrl}...`);
+  const iconPath = path.join(__dirname, '..', 'build', 'icon.png');
+  let appIcon;
+  try {
+    if (fs.existsSync(iconPath)) {
+      appIcon = nativeImage.createFromPath(iconPath);
+    }
+  } catch (_) {}
+
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
@@ -52,6 +65,7 @@ async function createWindow(serverUrl) {
     backgroundColor: '#07090e',
     show: false,
     frame: true,
+    icon: appIcon || (fs.existsSync(iconPath) ? iconPath : undefined),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

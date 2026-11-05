@@ -1,6 +1,6 @@
 {
   "name": "animestream-node",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "AnimeStream - Agregador y Reproductor de Anime en Tiempo Real en Node.js y Electron",
   "main": "electron/main.js",
   "scripts": {
@@ -47,6 +47,7 @@
       "electron/**/*",
       "server/**/*",
       "public/**/*",
+      "build/**/*",
       "package.json"
     ],
     "asar": true,
@@ -69,6 +70,7 @@
         "AppImage",
         "deb"
       ],
+      "icon": "build/icon.png",
       "category": "AudioVideo",
       "maintainer": "AnimeStream <deniselit008@github.com>"
     }

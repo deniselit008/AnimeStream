@@ -41,7 +41,7 @@ console.log('[1/3] Preparando paquete para Windows (.exe y modo silencioso)...')
 const winDir = path.join(EXPORT_DIR, 'AnimeStream-Windows');
 if (!fs.existsSync(winDir)) fs.mkdirSync(winDir, { recursive: true });
 
-['electron', 'server', 'public'].forEach(folder => {
+['electron', 'server', 'public', 'build'].forEach(folder => {
   copyRecursiveSync(path.join(ROOT_DIR, folder), path.join(winDir, folder), ['.git']);
 });
 
@@ -75,7 +75,7 @@ console.log('[2/3] Preparando paquete para Linux (Binario ELF & AppImage)...');
 const linuxDir = path.join(EXPORT_DIR, 'AnimeStream-Linux');
 if (!fs.existsSync(linuxDir)) fs.mkdirSync(linuxDir, { recursive: true });
 
-['electron', 'server', 'public'].forEach(folder => {
+['electron', 'server', 'public', 'build'].forEach(folder => {
   copyRecursiveSync(path.join(ROOT_DIR, folder), path.join(linuxDir, folder), ['.git']);
 });
 

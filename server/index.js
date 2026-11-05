@@ -25,6 +25,9 @@ function getLanIp() {
     !c.name.toLowerCase().includes('hamachi') &&
     !c.name.toLowerCase().includes('vmware') &&
     !c.name.toLowerCase().includes('wsl') &&
+    !c.name.toLowerCase().includes('docker') &&
+    !c.name.toLowerCase().includes('virbr') &&
+    !c.name.toLowerCase().includes('veth') &&
     !c.ip.startsWith('192.168.56.') &&
     (c.ip.startsWith('192.168.') || c.ip.startsWith('10.') || c.ip.startsWith('172.'))
   );

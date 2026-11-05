@@ -16,30 +16,30 @@
   const GITHUB_CONFIG = {
     owner: 'deniselit008',
     repo: 'AnimeStream',
-    fallbackVersion: '1.1.0',
-    storageKey: 'animestream_release_cache_v4',
+    fallbackVersion: '1.2.0',
+    storageKey: 'animestream_release_cache_v5',
     fallbackReleaseUrl: 'https://github.com/deniselit008/AnimeStream/releases/latest',
     fallbackZipUrl: 'https://github.com/deniselit008/AnimeStream/archive/refs/heads/main.zip',
     platforms: {
       windows: {
         ext: '.exe',
-        defaultName: 'AnimeStream.1.1.0.exe',
+        defaultName: 'AnimeStream.1.2.0.exe',
         fallbackSize: '24.3 MB',
-        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/v1.1.0/AnimeStream.1.1.0.exe',
+        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/v1.2.0/AnimeStream.1.2.0.exe',
         systemLabel: 'Windows 10 / 11 (64-bit)'
       },
       android: {
         ext: '.apk',
         defaultName: 'AnimeStream.apk',
         fallbackSize: '14.2 MB',
-        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/v1.1.0/AnimeStream.apk',
+        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/v1.2.0/AnimeStream.apk',
         systemLabel: 'Android 7.0+ (Móvil, Tablet & TV)'
       },
       linux: {
         ext: '.AppImage',
-        defaultName: 'AnimeStream-1.1.0.AppImage',
+        defaultName: 'AnimeStream-1.2.0.AppImage',
         fallbackSize: '48.6 MB',
-        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/v1.1.0/AnimeStream-1.1.0.AppImage',
+        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/v1.2.0/AnimeStream-1.2.0.AppImage',
         systemLabel: 'Linux x64 (Binario ELF AppImage)'
       }
     }
