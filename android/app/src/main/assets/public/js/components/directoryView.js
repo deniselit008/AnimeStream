@@ -373,7 +373,7 @@ async function loadCatalog(container, filters) {
 
   try {
     const res = await Api.getDirectory(filters);
-    const items = res.items || [];
+    const items = Array.isArray(res) ? res : (res && res.items ? res.items : []);
 
     if (items.length === 0) {
       infoMount.innerHTML = `0 animes encontrados`;

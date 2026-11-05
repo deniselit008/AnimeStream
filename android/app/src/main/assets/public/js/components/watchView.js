@@ -62,6 +62,13 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
       if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.isElectron) {
         return false;
       }
+      // In Android APK, native WebView client blocks all popup windows, external redirects,
+      // and intrusive ad domains at the Java layer.
+      // Do NOT apply HTML sandbox attribute on Android so players (VOE, Mega, Mp4Upload, Streamtape, YourUpload, Zilla)
+      // can decrypt, load media, and run smoothly without "no permite modo sandbox" or security errors!
+      if (typeof window !== 'undefined' && window.AndroidBridge) {
+        return false;
+      }
       if (!AdBlock.isEnabled()) {
         return false;
       }

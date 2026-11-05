@@ -313,12 +313,42 @@ export const ClientAnimeAV1 = {
   },
 
   async getDirectory(genre = null, type = null, year = null, status = null, page = 1) {
+    const typeMap = {
+      tv: 'serie',
+      serie: 'serie',
+      movie: 'pelicula',
+      pelicula: 'pelicula',
+      ova: 'ova',
+      special: 'especial',
+      especial: 'especial',
+      ona: 'ona'
+    };
+    const statusMap = {
+      emision: 'emision',
+      finalizado: 'finalizado',
+      finalizados: 'finalizado'
+    };
+
     const params = new URLSearchParams();
-    if (genre && genre !== 'all') params.set('genre', genre);
-    if (type && type !== 'all') params.set('type', type);
-    if (year && year !== 'all') params.set('year', year);
-    if (status && status !== 'all') params.set('status', status === 'finalizado' ? '1' : '0');
-    if (page && page > 1) params.set('page', page);
+    if (genre && genre !== 'all') {
+      const gList = genre.split(',').map(g => g.trim().toLowerCase()).filter(g => g && g !== 'all');
+      if (gList.length > 0) params.set('genre', gList.join(','));
+    }
+    if (type && type !== 'all') {
+      const mapped = typeMap[type.toLowerCase().trim()] || type.toLowerCase().trim();
+      params.set('category', mapped);
+    }
+    if (status && status !== 'all') {
+      const mapped = statusMap[status.toLowerCase().trim()] || status.toLowerCase().trim();
+      params.set('status', mapped);
+    }
+    if (year && year !== 'all') {
+      params.set('minYear', String(year).trim());
+      params.set('maxYear', String(year).trim());
+    }
+    if (page && page > 1) {
+      params.set('page', String(page));
+    }
 
     const qs = params.toString();
     const url = `${this.baseUrl}/catalogo${qs ? '?' + qs : ''}`;
@@ -327,18 +357,18 @@ export const ClientAnimeAV1 = {
     const results = [];
     const seen = new Set();
 
-    doc.querySelectorAll('a').forEach(a => {
+    doc.querySelectorAll('a[href^="/media/"]').forEach(a => {
       const href = a.getAttribute('href') || '';
-      const m = href.match(/^\/media\/([^/]+)$/);
-      if (!m) return;
-      const slug = m[1];
-      if (seen.has(slug) || ['catalogo', 'horario'].includes(slug)) return;
-      seen.add(slug);
+      if (!href.match(/^\/media\/[^/]+$/) || seen.has(href)) return;
+      seen.add(href);
 
       const parent = a.closest('article, [class*="group"], .card, .item, .media') || a.parentElement;
       const titleEl = parent ? parent.querySelector('h3, h4, h5, .title') : null;
-      let title = titleEl ? titleEl.textContent.trim() : a.textContent.trim();
-      if (!title) title = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      let rawTitle = titleEl ? titleEl.textContent : a.textContent;
+      let title = rawTitle.replace(/\s+/g, ' ').replace(/^Ver\s+/i, '').trim();
+      if (!title) {
+        title = href.replace('/media/', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      }
 
       const img = parent ? parent.querySelector('img') : null;
       let image = img ? (img.getAttribute('src') || img.getAttribute('data-src')) : null;
@@ -549,40 +579,79 @@ export const ClientTioAnime = {
   },
 
   async getDirectory(genre = null, type = null, year = null, status = null, page = 1) {
-    const params = new URLSearchParams();
-    if (genre && genre !== 'all') params.set('genero', genre.toLowerCase());
-    if (type && type !== 'all') params.set('tipo', type.toLowerCase());
-    if (year && year !== 'all') params.set('year', year);
-    if (status && status !== 'all') params.set('status', status === 'finalizado' ? '2' : '1');
-    if (page && page > 1) params.set('p', page);
+    const typeMap = {
+      tv: '0',
+      serie: '0',
+      movie: '1',
+      pelicula: '1',
+      ova: '2',
+      special: '3',
+      especial: '3'
+    };
+    const statusMap = {
+      emision: '1',
+      finalizado: '2',
+      finalizados: '2'
+    };
 
-    const qs = params.toString();
-    const url = `${this.baseUrl}/directorio${qs ? '?' + qs : ''}`;
+    const params = [];
+    if (genre && genre !== 'all') {
+      const gList = genre.split(',').map(g => g.trim().toLowerCase()).filter(g => g && g !== 'all');
+      for (const g of gList) {
+        params.push(['genero[]', g]);
+      }
+    }
+    if (type && type !== 'all') {
+      const mapped = typeMap[type.toLowerCase().trim()];
+      if (mapped !== undefined) params.push(['type[]', mapped]);
+    }
+    if (status && status !== 'all') {
+      const mapped = statusMap[status.toLowerCase().trim()];
+      if (mapped !== undefined) params.push(['status', mapped]);
+    }
+    if (year && year !== 'all') {
+      const yInt = parseInt(year, 10);
+      if (!isNaN(yInt)) {
+        params.push(['year', `${yInt},${yInt + 1}`]);
+      } else {
+        params.push(['year', String(year)]);
+      }
+    }
+    if (page && page > 1) {
+      params.push(['p', String(page)]);
+    }
+
+    const qs = params.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+    const url = qs ? `${this.baseUrl}/directorio?${qs}` : `${this.baseUrl}/directorio`;
     const html = await fetchHtml(url);
     const doc = parseDocument(html);
     const results = [];
     const seen = new Set();
 
-    doc.querySelectorAll('a[href^="/anime/"]').forEach(a => {
+    doc.querySelectorAll('article.anime, .anime, a[href^="/anime/"]').forEach(el => {
+      let a = el.tagName === 'A' ? el : el.querySelector('a');
+      if (!a) return;
       const href = a.getAttribute('href') || '';
       const slug = href.replace(/\/+$/, '').split('/').pop();
       if (!slug || seen.has(slug) || ['directorio', 'programacion'].includes(slug)) return;
       seen.add(slug);
 
-      const parent = a.closest('article, .col, .item, .anime, .card') || a.parentElement;
-      const titleEl = parent ? parent.querySelector('h3, h4, h5, span.title, .title') : null;
+      const titleEl = el.querySelector('h3.title, .title') || a;
       let title = titleEl ? titleEl.textContent.trim() : slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
-      const img = parent ? parent.querySelector('img') : null;
+      const img = el.querySelector('img');
       let imgSrc = img ? img.getAttribute('src') : null;
       if (imgSrc && !imgSrc.startsWith('http')) imgSrc = this.formatUrl(imgSrc);
+
+      const typeEl = el.querySelector('span.type, .badge');
+      const tipo = typeEl ? typeEl.textContent.trim() : 'Anime';
 
       results.push({
         title: fixText(title),
         url: this.formatUrl(href),
         image: imgSrc || null,
         source: this.name,
-        type: 'Anime'
+        type: tipo
       });
     });
 
@@ -832,43 +901,112 @@ export const ClientJKAnime = {
   },
 
   async getDirectory(genre = null, type = null, year = null, status = null, page = 1) {
+    const typeMap = {
+      tv: 'animes',
+      serie: 'animes',
+      movie: 'peliculas',
+      pelicula: 'peliculas',
+      ova: 'ovas',
+      special: 'especiales',
+      especial: 'especiales',
+      ona: 'onas'
+    };
+    const statusMap = {
+      emision: 'emision',
+      finalizado: 'finalizados',
+      finalizados: 'finalizados'
+    };
+
     const params = new URLSearchParams();
-    if (genre && genre !== 'all') params.set('genero', genre.toLowerCase());
-    if (page && page > 1) params.set('page', page);
+    if (genre && genre !== 'all') {
+      const gList = genre.split(',').map(g => g.trim().toLowerCase()).filter(g => g && g !== 'all');
+      if (gList.length > 0) params.set('genero', gList[0]);
+    }
+    if (type && type !== 'all') {
+      const mapped = typeMap[type.toLowerCase().trim()] || type.toLowerCase().trim();
+      params.set('tipo', mapped);
+    }
+    if (status && status !== 'all') {
+      const mapped = statusMap[status.toLowerCase().trim()] || status.toLowerCase().trim();
+      params.set('estado', mapped);
+    }
+    if (year && year !== 'all') {
+      params.set('fecha', String(year).trim());
+    }
+    if (page && page > 1) {
+      params.set('p', String(page));
+    }
 
     const qs = params.toString();
     const url = `${this.baseUrl}/directorio/${qs ? '?' + qs : ''}`;
     const html = await fetchHtml(url);
-    const doc = parseDocument(html);
     const results = [];
     const seen = new Set();
 
-    doc.querySelectorAll('.anime__item').forEach(item => {
-      const a = item.querySelector('a[href*="jkanime.net/"], a[href^="/"]');
-      if (!a) return;
-      const href = a.getAttribute('href') || '';
-      const m = href.match(/(?:https:\/\/jkanime\.net)?\/([^/]+)\/?$/);
-      if (!m) return;
+    // 1. Parse JSON object embedded in var animes = ({...});
+    const m = html.match(/var animes = ({.*?});/s);
+    if (m) {
+      try {
+        const data = JSON.parse(m[1]);
+        const list = data.data || [];
+        for (const a of list) {
+          const title = a.title || '';
+          const slug = a.slug || '';
+          if (!slug || seen.has(slug)) continue;
+          seen.add(slug);
 
-      const slug = m[1];
-      if (seen.has(slug) || ['buscar', 'directorio', 'horario', 'top'].includes(slug)) return;
-      seen.add(slug);
+          const animeUrl = a.url || `${this.baseUrl}/${slug}/`;
+          const image = a.image || `https://cdn.jkdesa.com/assets/images/animes/image/${slug}.jpg`;
+          const rawTipo = a.tipo || a.type || 'TV Anime';
+          let tipoNorm = 'TV Anime';
+          if (rawTipo.toLowerCase().includes('pel')) tipoNorm = 'Película';
+          else if (rawTipo.toLowerCase().includes('ova')) tipoNorm = 'OVA';
+          else if (rawTipo.toLowerCase().includes('esp')) tipoNorm = 'Especial';
+          else if (rawTipo.toLowerCase().includes('ona')) tipoNorm = 'ONA';
 
-      const titleEl = item.querySelector('h5, h6, h4, .title');
-      let title = titleEl ? titleEl.textContent.trim() : slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          results.push({
+            title: fixText(title),
+            url: animeUrl,
+            image,
+            synopsis: fixText(a.synopsis || ''),
+            source: this.name,
+            type: tipoNorm,
+            status: a.estado || null
+          });
+        }
+      } catch (_) {}
+    }
 
-      const img = item.querySelector('.set-bg, img');
-      let image = img ? (img.getAttribute('data-setbg') || img.getAttribute('src')) : null;
-      if (!image) image = `https://cdn.jkdesa.com/assets/images/animes/image/${slug}.jpg`;
+    // 2. Fallback to DOM elements if var animes was not found
+    if (results.length === 0) {
+      const doc = parseDocument(html);
+      doc.querySelectorAll('.anime__item, .custom_item, article, .card').forEach(item => {
+        const a = item.querySelector('a[href*="jkanime.net/"], a[href^="/"]');
+        if (!a) return;
+        const href = a.getAttribute('href') || '';
+        const mSlug = href.match(/(?:https:\/\/jkanime\.net)?\/([^/]+)\/?$/);
+        if (!mSlug) return;
 
-      results.push({
-        title: fixText(title),
-        url: `https://jkanime.net/${slug}/`,
-        image,
-        source: this.name,
-        type: 'Anime'
+        const slug = mSlug[1];
+        if (seen.has(slug) || ['buscar', 'directorio', 'horario', 'top', 'aleatorio'].includes(slug)) return;
+        seen.add(slug);
+
+        const titleEl = item.querySelector('h5, h6, h4, .title');
+        let title = titleEl ? titleEl.textContent.trim() : slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+        const img = item.querySelector('.set-bg, img');
+        let image = img ? (img.getAttribute('data-setbg') || img.getAttribute('src')) : null;
+        if (!image) image = `https://cdn.jkdesa.com/assets/images/animes/image/${slug}.jpg`;
+
+        results.push({
+          title: fixText(title),
+          url: `https://jkanime.net/${slug}/`,
+          image,
+          source: this.name,
+          type: 'TV Anime'
+        });
       });
-    });
+    }
 
     return results;
   }
@@ -934,9 +1072,41 @@ export const ClientScraper = {
 
   async getDirectory(params = {}) {
     const source = (params.source || 'all').toLowerCase();
-    let provider = ClientAnimeAV1;
-    if (source === 'tioanime') provider = ClientTioAnime;
-    if (source === 'jkanime') provider = ClientJKAnime;
-    return provider.getDirectory(params.genre, params.type, params.year, params.status, params.page || 1);
+    const providers = [];
+    if (['all', 'animeav1', 'av1'].includes(source)) providers.push(ClientAnimeAV1);
+    if (['all', 'tioanime', 'tio'].includes(source)) providers.push(ClientTioAnime);
+    if (['all', 'jkanime', 'jk'].includes(source)) providers.push(ClientJKAnime);
+
+    const settled = await Promise.allSettled(
+      providers.map(p => p.getDirectory(params.genre, params.type, params.year, params.status, params.page || 1))
+    );
+
+    const validLists = [];
+    settled.forEach(res => {
+      if (res.status === 'fulfilled' && Array.isArray(res.value) && res.value.length > 0) {
+        validLists.push(res.value);
+      }
+    });
+
+    let combined = [];
+    if (validLists.length > 1) {
+      const maxLen = Math.max(...validLists.map(l => l.length));
+      for (let i = 0; i < maxLen; i++) {
+        for (const list of validLists) {
+          if (i < list.length) {
+            combined.push(list[i]);
+          }
+        }
+      }
+    } else if (validLists.length === 1) {
+      combined = validLists[0];
+    }
+
+    return {
+      items: combined,
+      page: parseInt(params.page, 10) || 1,
+      has_next: combined.length > 0,
+      total: combined.length
+    };
   }
 };

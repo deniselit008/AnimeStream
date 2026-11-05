@@ -233,6 +233,8 @@ public class MainActivity extends Activity {
         settings.setUseWideViewPort(true);
         settings.setSupportZoom(false);
         settings.setBuiltInZoomControls(false);
+        settings.setJavaScriptCanOpenWindowsAutomatically(false);
+        settings.setSupportMultipleWindows(false);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
@@ -244,6 +246,25 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                if (request != null && request.getUrl() != null) {
+                    Uri reqUri = request.getUrl();
+                    String host = reqUri.getHost();
+                    if (host != null) {
+                        String lowerHost = host.toLowerCase();
+                        // Block intrusive ad networks, clickjackers, and popunders that hijack video players
+                        if (lowerHost.contains("popads") || lowerHost.contains("adcash") ||
+                            lowerHost.contains("clickadu") || lowerHost.contains("exdynsrv") ||
+                            lowerHost.contains("syndication") || lowerHost.contains("adrun") ||
+                            lowerHost.contains("propeller") || lowerHost.contains("bet365") ||
+                            lowerHost.contains("onclick") || lowerHost.contains("trafficjunky") ||
+                            lowerHost.contains("adxprts") || lowerHost.contains("doubleclick") ||
+                            lowerHost.contains("adnxs") || lowerHost.contains("criteo") ||
+                            lowerHost.contains("bidgear") || lowerHost.contains("yllix") ||
+                            lowerHost.contains("adsterra") || lowerHost.contains("monetag")) {
+                            return new WebResourceResponse("text/plain", "UTF-8", new java.io.ByteArrayInputStream(new byte[0]));
+                        }
+                    }
+                }
                 if (assetLoader != null && request != null) {
                     return assetLoader.shouldInterceptRequest(request.getUrl());
                 }
@@ -252,19 +273,51 @@ public class MainActivity extends Activity {
 
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                if (request == null || request.getUrl() == null) return false;
+                Uri uri = request.getUrl();
+                String scheme = uri.getScheme();
+                String host = uri.getHost();
+
+                // Block intent:, market:, and non-web scheme redirects from crashing or taking over
+                if (scheme != null && !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https")) {
+                    return true;
+                }
+
+                // If request is for the main frame (top-level app window):
+                if (request.isForMainFrame()) {
+                    // Allow our local appassets domain
+                    if (host != null && host.equals("appassets.androidplatform.net")) {
+                        return false;
+                    }
+
+                    // If a custom remote PC server was configured, allow it
+                    SharedPreferences prefs = getSharedPreferences("animestream_prefs", MODE_PRIVATE);
+                    String serverUrl = prefs.getString("server_url", "");
+                    if (serverUrl != null && !serverUrl.isEmpty() && host != null && serverUrl.contains(host)) {
+                        return false;
+                    }
+
+                    // NEVER allow third-party player iframes or ad clicks to replace our main app window!
+                    return true;
+                }
+
+                // Subframes (video players): allow them to load their video player embeds
                 return false;
             }
 
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 super.onReceivedError(view, request, error);
+                // Only redirect to unreachable screen if explicitly failing to connect to a custom remote PC server:
                 if (request != null && request.isForMainFrame()) {
+                    SharedPreferences prefs = getSharedPreferences("animestream_prefs", MODE_PRIVATE);
+                    String serverUrl = prefs.getString("server_url", "");
                     Uri failingUri = request.getUrl();
-                    if (failingUri != null && !"appassets.androidplatform.net".equals(failingUri.getHost())) {
+                    if (serverUrl != null && !serverUrl.isEmpty() && failingUri != null && serverUrl.contains(failingUri.getHost())) {
                         webView.post(new Runnable() {
                             @Override
                             public void run() {
-                                String redirectUrl = "https://appassets.androidplatform.net/assets/public/index.html?error=unreachable&server=" + Uri.encode(failingUri.toString());
+                                String redirectUrl = "https://appassets.androidplatform.net/assets/public/index.html?error=unreachable&server=" + Uri.encode(serverUrl);
                                 webView.loadUrl(redirectUrl);
                             }
                         });
@@ -274,6 +327,11 @@ public class MainActivity extends Activity {
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, android.os.Message resultMsg) {
+                // Block all popup windows from video player iframes so they never hijack the app
+                return false;
+            }
             @Override
             public void onShowCustomView(View view, CustomViewCallback callback) {
                 if (mCustomView != null) {
