@@ -1,8 +1,11 @@
-# 🌐 AnimeStream — Landing Page Oficial de Descarga para Windows
+# 🌐 AnimeStream — Landing Page Oficial Multiplataforma (Windows, Android & Linux)
 
 Página web moderna, ultrarrápida y optimizada conforme a la **[Guía de optimización en motores de búsqueda (SEO) para principiantes de Google](https://developers.google.com/search/docs/fundamentals/seo-starter-guide?hl=es)**.
 
-Está configurada para consultar dinámicamente la **API de GitHub Releases** del repositorio [`deniselit008/AnimeStream`](https://github.com/deniselit008/AnimeStream) para ofrecer **siempre la última versión disponible** del ejecutable autónomo (`AnimeStream.exe`), mostrando automáticamente su número de versión, tamaño de descarga y fecha de lanzamiento con enlaces de respaldo (fallback) automáticos.
+Está configurada para consultar dinámicamente la **API de GitHub Releases** del repositorio [`deniselit008/AnimeStream`](https://github.com/deniselit008/AnimeStream) para ofrecer **siempre la última versión disponible** de los paquetes oficiales:
+- **Windows (.exe)**: Instalador y versión portable para Windows 10 y 11.
+- **Android (.apk)**: Aplicación móvil y Android TV 100% autónoma.
+- **Linux (.AppImage / .deb)**: Binario universal ELF e instalador para Ubuntu/Debian/Arch/Fedora.
 
 ---
 

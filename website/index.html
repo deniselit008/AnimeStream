@@ -17,17 +17,17 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="AnimeStream">
   <meta property="og:url" content="https://deniselit008.github.io/AnimeStream/">
-  <meta property="og:title" content="AnimeStream para Windows — Descarga Gratis la Última Versión">
-  <meta property="og:description" content="Disfruta de streaming de anime en tiempo real sin anuncios invasivos, multi-fuente (AnimeAV1, JKAnime, TioAnime), compatible con Smart TV y 100% portable.">
+  <meta property="og:title" content="AnimeStream v1.2.0 Multiplataforma — Windows (.exe), Android (.apk) y Linux (ELF)">
+  <meta property="og:description" content="Streaming de anime en tiempo real sin anuncios invasivos, multi-fuente (AnimeAV1, JKAnime, TioAnime), nuevo catálogo interactivo, reproductor blindado para Android y Smart TV.">
   <meta property="og:image" content="https://deniselit008.github.io/AnimeStream/assets/og-image.svg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="AnimeStream para Windows - Reproductor y Agregador de Anime en Tiempo Real">
+  <meta property="og:image:alt" content="AnimeStream v1.2.0 Multiplataforma - Reproductor y Agregador de Anime en Tiempo Real">
 
   <!-- Twitter Cards -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="AnimeStream para Windows — Descarga Gratis la Última Versión">
-  <meta name="twitter:description" content="Streaming de anime en tiempo real sin publicidad invasiva. Multi-fuente, portable y con soporte para Smart TV.">
+  <meta name="twitter:title" content="AnimeStream v1.2.0 Multiplataforma — Windows (.exe), Android (.apk) y Linux (ELF)">
+  <meta name="twitter:description" content="Streaming de anime en tiempo real sin publicidad invasiva. Multi-fuente, catálogo interactivo, reproductor blindado para Android, Linux y Windows.">
   <meta name="twitter:image" content="https://deniselit008.github.io/AnimeStream/assets/og-image.svg">
   <meta name="twitter:creator" content="@deniselit008">
 
@@ -46,7 +46,7 @@
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "AnimeStream",
-      "operatingSystem": "Windows 10, Windows 11 (64-bit), Linux (ELF AppImage), Android (APK)",
+      "operatingSystem": "Windows 10, Windows 11 (64-bit), Linux (ELF AppImage & .deb), Android (APK 7.0+)",
       "applicationCategory": "MultimediaApplication",
       "applicationSubCategory": "Video Streaming & Anime Aggregator",
       "offers": {
@@ -59,11 +59,14 @@
       "downloadUrl": "https://github.com/deniselit008/AnimeStream/releases/latest",
       "featureList": [
         "Agregación simultánea de AnimeAV1, JKAnime y TioAnime",
-        "Nueva interfaz Glassmorphism con Modo Cine y búsqueda predictiva",
-        "Bloqueador de anuncios nativo con escudo anti-clickjacking",
-        "Compatibilidad con mandos Smart TV (puerto 3000) y teclado",
-        "Integración con MyAnimeList para sagas y franquicias",
-        "Motor de alto rendimiento en Node.js y aplicación de escritorio Electron"
+        "Nuevo directorio de anime interactivo con filtros dinámicos por género, tipo, estado y año",
+        "Aplicación nativa para Android (.apk) autónoma sin necesidad de ordenador",
+        "Binario universal para Linux (.AppImage y .deb) con integración de escritorio e icono nativo",
+        "Ejecutable autónomo para Windows (.exe) instalable y portable sin consola",
+        "Escudo AdBlock 2.0 con desbloqueo de sandbox para servidores VOE, Mega y Mp4Upload",
+        "Buscador predictivo en tiempo real con carátulas en alta resolución",
+        "Conexión inalámbrica a Smart TV mediante código QR en red local (puerto 3000)",
+        "Interfaz Glassmorphism moderna con Modo Cine y navegación por mando o teclado"
       ],
       "author": {
         "@type": "Person",
@@ -183,6 +186,7 @@
       <!-- Menú de Navegación Semántico -->
       <nav aria-label="Menú principal de navegación">
         <ul class="nav-links" id="navLinks">
+          <li><a href="#novedades" class="nav-link" style="color:var(--accent-orange); font-weight:700;">Novedades v1.2.0</a></li>
           <li><a href="#caracteristicas" class="nav-link">Características</a></li>
           <li><a href="#fuentes" class="nav-link">Multi-Fuente</a></li>
           <li><a href="#comparativa" class="nav-link">Comparativa</a></li>
@@ -242,7 +246,7 @@
         <p class="hero-subtitle">
           Disfruta de tus animes favoritos con un catálogo unificado en tiempo real de 
           <strong>AnimeAV1</strong>, <strong>JKAnime</strong> y <strong>TioAnime</strong>. 
-          Nuevo motor ultra-rápido en <strong>Node.js y Electron</strong>, escudo <strong>AdBlock integrado</strong>, aplicación nativa para <strong>Android (.apk)</strong>, binario independiente para <strong>Linux (ELF)</strong>, ejecutable <strong>Windows (.exe)</strong> y soporte de conexión inalámbrica para <strong>Smart TV</strong>.
+          Nuevo directorio interactivo con filtros avanzados, reproductor blindado con <strong>AdBlock 2.0</strong> (desbloqueo de VOE, Mega y Mp4Upload), app nativa autónoma para <strong>Android (.apk)</strong>, binario universal para <strong>Linux (ELF AppImage / .deb)</strong>, ejecutable <strong>Windows (.exe)</strong> y sincronización inalámbrica para <strong>Smart TV</strong>.
         </p>
 
         <!-- Grupo de botones CTA Principales -->
@@ -356,9 +360,108 @@
           </div>
           <div class="stat-item">
             <div class="stat-number">100%</div>
-            <div class="stat-label">Código abierto y portátil para PC</div>
+            <div class="stat-label">Multiplataforma (Windows, Android &amp; Linux)</div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         NOVEDADES DE LA VERSIÓN 1.2.0 (Registro de Cambios & Mejoras Clave)
+         ======================================================================= -->
+    <section class="section" id="novedades" aria-labelledby="novedades-h2">
+      <div class="container">
+        
+        <header class="section-header">
+          <span class="section-tag">Lanzamiento Oficial v1.2.0</span>
+          <h2 class="section-title" id="novedades-h2">Novedades y Mejoras de la Versión 1.2.0</h2>
+          <p class="section-desc">
+            AnimeStream evoluciona con soporte 100% autónomo para dispositivos móviles Android, empaquetado nativo para Linux, nuevo catálogo interactivo con filtros avanzados y reproductor blindado contra anuncios.
+          </p>
+        </header>
+
+        <div class="features-grid">
+          
+          <!-- Novedad 1: Android Nativo y Autónomo -->
+          <article class="feature-card highlight-card">
+            <div class="feature-icon-wrapper" aria-hidden="true">📱</div>
+            <h3 class="feature-card-title">App Nativa para Android (.apk)</h3>
+            <p class="feature-card-text">
+              Nueva aplicación Android 100% autónoma que funciona por sí sola sin necesidad de tener un ordenador encendido. Interfaz vertical adaptativa, navegación táctil ergonómica y rotación automática para reproducción inmersiva.
+            </p>
+            <div class="feature-tags">
+              <span class="feature-tag-badge">100% Autónomo</span>
+              <span class="feature-tag-badge">Móvil &amp; Android TV</span>
+            </div>
+          </article>
+
+          <!-- Novedad 2: Nuevo Directorio Interactivo -->
+          <article class="feature-card highlight-card">
+            <div class="feature-icon-wrapper" aria-hidden="true">📂</div>
+            <h3 class="feature-card-title">Nuevo Directorio de Anime con Filtros</h3>
+            <p class="feature-card-text">
+              Explora más de 35.000 títulos mediante el nuevo directorio interactivo. Filtra al instante por género (Acción, Romance, Isekai, Shounen, etc.), formato (TV, Película, OVA, Especial), estado (En emisión o Finalizado) y año con paginación fluida.
+            </p>
+            <div class="feature-tags">
+              <span class="feature-tag-badge">Filtros Dinámicos</span>
+              <span class="feature-tag-badge">Multi-Fuente</span>
+            </div>
+          </article>
+
+          <!-- Novedad 3: Reproductor Blindado y Desbloqueo VOE -->
+          <article class="feature-card highlight-card">
+            <div class="feature-icon-wrapper" aria-hidden="true">🛡️</div>
+            <h3 class="feature-card-title">Reproductor Blindado &amp; AdBlock 2.0</h3>
+            <p class="feature-card-text">
+              Desbloqueo completo de sandbox para servidores populares como <strong>VOE</strong>, Mega, Mp4Upload, Streamtape, YourUpload y Zilla. Se eliminaron redirecciones forzadas y trampas de clickjacking que antes expulsaban a la pantalla de inicio.
+            </p>
+            <div class="feature-tags">
+              <span class="feature-tag-badge">VOE Sin Fallos</span>
+              <span class="feature-tag-badge">Cero Redirecciones</span>
+            </div>
+          </article>
+
+          <!-- Novedad 4: Soporte Completo para Linux -->
+          <article class="feature-card highlight-card">
+            <div class="feature-icon-wrapper" aria-hidden="true">🐧</div>
+            <h3 class="feature-card-title">Binario Universal Linux (.AppImage &amp; .deb)</h3>
+            <p class="feature-card-text">
+              Compilación nativa lista para usar en Ubuntu, Debian, Fedora, Arch Linux y Linux Mint. Incluye icono oficial en alta resolución de 512x512, entrada directa en el menú de aplicaciones del sistema y compatibilidad total con Wayland y X11.
+            </p>
+            <div class="feature-tags">
+              <span class="feature-tag-badge">AppImage &amp; .deb</span>
+              <span class="feature-tag-badge">Wayland &amp; X11</span>
+            </div>
+          </article>
+
+          <!-- Novedad 5: Buscador Predictivo con Carátulas HD -->
+          <article class="feature-card highlight-card">
+            <div class="feature-icon-wrapper" aria-hidden="true">🖼️</div>
+            <h3 class="feature-card-title">Buscador con Carátulas en Alta Definición</h3>
+            <p class="feature-card-text">
+              El buscador predictivo en tiempo real ahora carga carátulas nítidas tanto en la lista desplegable de sugerencias rápidas mientras escribes, como en la pantalla completa de resultados al presionar Enter.
+            </p>
+            <div class="feature-tags">
+              <span class="feature-tag-badge">Carátulas HD</span>
+              <span class="feature-tag-badge">Búsqueda Instantánea</span>
+            </div>
+          </article>
+
+          <!-- Novedad 6: Conexión Smart TV y LAN Inteligente -->
+          <article class="feature-card highlight-card">
+            <div class="feature-icon-wrapper" aria-hidden="true">📡</div>
+            <h3 class="feature-card-title">Conexión Inalámbrica Inteligente en Red Local</h3>
+            <p class="feature-card-text">
+              El servidor local detecta y filtra automáticamente interfaces de red virtuales (Docker, VMware, WSL, Hamachi) para que el código QR y el enlace LAN apunten siempre a la IP física real de tu Wi-Fi/Ethernet en el puerto 3000.
+            </p>
+            <div class="feature-tags">
+              <span class="feature-tag-badge">Código QR</span>
+              <span class="feature-tag-badge">Filtro Docker/WSL</span>
+            </div>
+          </article>
+
+        </div>
+
       </div>
     </section>
 
@@ -621,77 +724,107 @@
     </section>
 
     <!-- =======================================================================
-         REQUISITOS DEL SISTEMA
+         REQUISITOS DEL SISTEMA (Multiplataforma)
          ======================================================================= -->
     <section class="section" id="requisitos" aria-labelledby="requisitos-h2">
       <div class="container">
         
         <header class="section-header">
-          <span class="section-tag">Compatibilidad</span>
-          <h2 class="section-title" id="requisitos-h2">Requisitos del Sistema para Windows</h2>
+          <span class="section-tag">Compatibilidad Universal</span>
+          <h2 class="section-title" id="requisitos-h2">Requisitos del Sistema por Plataforma</h2>
           <p class="section-desc">
-            AnimeStream es sumamente ligero y eficiente. Consume menos de 60 MB de memoria RAM en reposo.
+            AnimeStream está optimizado para consumir la mínima cantidad de memoria RAM y CPU en cualquier dispositivo.
           </p>
         </header>
 
-        <div class="req-grid">
+        <div class="req-grid-multi">
           
-          <!-- Requisitos Mínimos -->
+          <!-- Requisitos Windows -->
           <div class="req-card">
             <div class="req-header">
-              <h3 class="req-title">Requisitos Mínimos</h3>
-              <span class="feature-tag-badge">Básico</span>
+              <h3 class="req-title">🪟 Windows</h3>
+              <span class="feature-tag-badge">Win 10 &amp; 11</span>
             </div>
             <ul class="req-list">
               <li class="req-item">
                 <span class="req-item-label">Sistema Operativo:</span>
-                <span class="req-item-val">Windows 10 (64-bit)</span>
+                <span class="req-item-val">Windows 10 / 11 (64-bit)</span>
               </li>
               <li class="req-item">
                 <span class="req-item-label">Procesador (CPU):</span>
-                <span class="req-item-val">Intel o AMD Dual-Core (1.8 GHz)</span>
+                <span class="req-item-val">Intel o AMD 1.6 GHz o superior</span>
               </li>
               <li class="req-item">
                 <span class="req-item-label">Memoria RAM:</span>
-                <span class="req-item-val">2 GB</span>
+                <span class="req-item-val">2 GB (consume ~60 MB)</span>
               </li>
               <li class="req-item">
                 <span class="req-item-label">Almacenamiento:</span>
-                <span class="req-item-val">80 MB de espacio libre</span>
+                <span class="req-item-val">80 MB libres</span>
               </li>
               <li class="req-item">
-                <span class="req-item-label">Conexión:</span>
-                <span class="req-item-val">Banda ancha 5 Mbps (Streaming 720p)</span>
+                <span class="req-item-label">Formato:</span>
+                <span class="req-item-val">Instalador .exe &amp; Portable</span>
               </li>
             </ul>
           </div>
 
-          <!-- Requisitos Recomendados -->
+          <!-- Requisitos Android -->
           <div class="req-card recommended">
             <div class="req-header">
-              <h3 class="req-title">Requisitos Recomendados</h3>
-              <span class="feature-tag-badge" style="background:rgba(244,117,33,0.2); color:var(--accent-orange);">Óptimo</span>
+              <h3 class="req-title">🤖 Android</h3>
+              <span class="feature-tag-badge" style="background:rgba(244,117,33,0.2); color:var(--accent-orange);">Móvil &amp; TV</span>
             </div>
             <ul class="req-list">
               <li class="req-item">
                 <span class="req-item-label">Sistema Operativo:</span>
-                <span class="req-item-val">Windows 11 (64-bit)</span>
+                <span class="req-item-val">Android 7.0 (Nougat) o superior</span>
               </li>
               <li class="req-item">
-                <span class="req-item-label">Procesador (CPU):</span>
-                <span class="req-item-val">Intel Core i3 / Ryzen 3 o superior</span>
+                <span class="req-item-label">Dispositivos:</span>
+                <span class="req-item-val">Smartphones, Tablets y Android TV</span>
               </li>
               <li class="req-item">
                 <span class="req-item-label">Memoria RAM:</span>
-                <span class="req-item-val">4 GB o más</span>
+                <span class="req-item-val">1 GB de RAM libre</span>
               </li>
               <li class="req-item">
                 <span class="req-item-label">Almacenamiento:</span>
-                <span class="req-item-val">150 MB (para caché local)</span>
+                <span class="req-item-val">35 MB de espacio</span>
               </li>
               <li class="req-item">
-                <span class="req-item-label">Conexión:</span>
-                <span class="req-item-val">Fibra Óptica 20+ Mbps (Full HD 1080p)</span>
+                <span class="req-item-label">Formato:</span>
+                <span class="req-item-val">Paquete APK Nativo</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Requisitos Linux -->
+          <div class="req-card">
+            <div class="req-header">
+              <h3 class="req-title">🐧 Linux</h3>
+              <span class="feature-tag-badge">x64 Universal</span>
+            </div>
+            <ul class="req-list">
+              <li class="req-item">
+                <span class="req-item-label">Distribución:</span>
+                <span class="req-item-val">Ubuntu, Debian, Fedora, Arch, Mint</span>
+              </li>
+              <li class="req-item">
+                <span class="req-item-label">Servidor Gráfico:</span>
+                <span class="req-item-val">Wayland o X11</span>
+              </li>
+              <li class="req-item">
+                <span class="req-item-label">Memoria RAM:</span>
+                <span class="req-item-val">2 GB de RAM</span>
+              </li>
+              <li class="req-item">
+                <span class="req-item-label">Almacenamiento:</span>
+                <span class="req-item-val">100 MB libres</span>
+              </li>
+              <li class="req-item">
+                <span class="req-item-label">Formato:</span>
+                <span class="req-item-val">AppImage (ELF) y paquete .deb</span>
               </li>
             </ul>
           </div>
@@ -702,7 +835,7 @@
     </section>
 
     <!-- =======================================================================
-         GUÍA DE INSTALACIÓN PASO A PASO (Con SmartScreen explicativo)
+         GUÍA DE INSTALACIÓN PASO A PASO (Multiplataforma)
          ======================================================================= -->
     <section class="section" id="instalacion" aria-labelledby="instalacion-h2">
       <div class="container">
@@ -711,7 +844,7 @@
           <span class="section-tag">Guía Rápida</span>
           <h2 class="section-title" id="instalacion-h2">Instalación en 3 Simples Pasos</h2>
           <p class="section-desc">
-            No necesitas instalar Python ni Node.js por separado, ni configurar bases de datos. Todo viene preparado para funcionar al instante.
+            Sin configuraciones complicadas ni bases de datos. Todo viene preparado para funcionar al instante en tu ordenador o dispositivo móvil.
           </p>
         </header>
 
@@ -721,54 +854,63 @@
           <article class="step-card">
             <div class="step-number-box">1</div>
             <div class="step-content">
-              <h3>Descarga el archivo ejecutable AnimeStream.exe</h3>
+              <h3>Descarga el paquete oficial para tu sistema</h3>
               <p>
-                Haz clic en el botón de descarga para obtener la última versión oficial directamente desde los servidores seguros de GitHub Releases.
+                Elige el formato adecuado según tu dispositivo: <strong>Windows (.exe)</strong>, <strong>Android (.apk)</strong> o <strong>Linux (.AppImage / .deb)</strong> directamente desde GitHub Releases.
               </p>
-              <a href="#descargar" class="btn btn-primary btn-sm js-download-btn">Descargar AnimeStream.exe (<span class="js-version-tag">v1.2.0</span>)</a>
+              <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+                <a href="#descargar" class="btn btn-primary btn-sm js-download-btn">Windows (.exe)</a>
+                <a href="#descargar" class="btn btn-secondary btn-sm js-download-android">Android (.apk)</a>
+                <a href="#descargar" class="btn btn-secondary btn-sm js-download-linux">Linux (.AppImage)</a>
+              </div>
             </div>
           </article>
 
-          <!-- Paso 2: Con aviso detallado de SmartScreen -->
+          <!-- Paso 2: Según Plataforma -->
           <article class="step-card">
             <div class="step-number-box">2</div>
             <div class="step-content">
-              <h3>Ejecuta el archivo (Aviso de Windows SmartScreen)</h3>
-              <p>
-                Haz doble clic sobre <code>AnimeStream.exe</code>. Dado que AnimeStream es un proyecto independiente de código abierto y no paga miles de dólares anuales por un certificado corporativo a Microsoft, Windows Defender SmartScreen puede mostrar una pantalla azul de aviso ("Windows protegió su PC").
-              </p>
-
-              <!-- Cuadro explicativo paso a paso -->
-              <div class="smartscreen-tip-box">
-                <strong>¿Cómo omitir la advertencia de SmartScreen en 2 clics?</strong>
-                <ol style="margin-top:8px; padding-left:20px; line-height:1.6;">
-                  <li>Haz clic en el enlace subrayado <strong>"Más información"</strong> en la ventana azul.</li>
-                  <li>Aparecerá un nuevo botón abajo a la izquierda: haz clic en <strong>"Ejecutar de todas formas"</strong>.</li>
-                </ol>
+              <h3>Ejecuta o instala según tu plataforma</h3>
+              
+              <!-- Windows SmartScreen -->
+              <div style="margin-bottom:20px;">
+                <h4 style="color:var(--text-white); font-size:1.05rem; margin-bottom:6px;">🪟 En Windows (Aviso de SmartScreen):</h4>
+                <p style="font-size:0.92rem; color:var(--text-muted); margin-bottom:8px;">
+                  Haz doble clic sobre <code>AnimeStream.exe</code>. Al ser código abierto comunitario sin certificado corporativo de pago, Windows SmartScreen puede mostrar una pantalla azul informativa.
+                </p>
+                <div class="smartscreen-tip-box" style="margin-bottom:14px;">
+                  <strong>Cómo omitir la advertencia de SmartScreen:</strong>
+                  <ol style="margin-top:6px; padding-left:20px; line-height:1.5;">
+                    <li>Haz clic en <strong>"Más información"</strong> en la ventana azul.</li>
+                    <li>Haz clic en el botón <strong>"Ejecutar de todas formas"</strong>.</li>
+                  </ol>
+                </div>
+                <div class="smartscreen-diagram-row">
+                  <div>
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;"><strong>Paso A:</strong> Clic en "Más información"</p>
+                    <img src="./assets/smartscreen-step1.svg" alt="Paso 1 Más Información SmartScreen" class="smartscreen-diagram-img" width="500" height="260" loading="lazy">
+                  </div>
+                  <div>
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;"><strong>Paso B:</strong> Clic en "Ejecutar de todas formas"</p>
+                    <img src="./assets/smartscreen-step2.svg" alt="Paso 2 Ejecutar SmartScreen" class="smartscreen-diagram-img" width="500" height="260" loading="lazy">
+                  </div>
+                </div>
               </div>
 
-              <!-- Diagramas ilustrativos de SmartScreen -->
-              <div class="smartscreen-diagram-row">
-                <div>
-                  <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:6px;"><strong>Paso A:</strong> Clic en "Más información"</p>
-                  <img src="./assets/smartscreen-step1.svg" 
-                       alt="Captura paso 1: Cómo hacer clic en Más Información en la ventana azul de Windows SmartScreen" 
-                       class="smartscreen-diagram-img" 
-                       width="500" 
-                       height="260" 
-                       loading="lazy" 
-                       decoding="async">
-                </div>
-                <div>
-                  <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:6px;"><strong>Paso B:</strong> Clic en "Ejecutar de todas formas"</p>
-                  <img src="./assets/smartscreen-step2.svg" 
-                       alt="Captura paso 2: Cómo pulsar Ejecutar de todas formas para iniciar AnimeStream en Windows" 
-                       class="smartscreen-diagram-img" 
-                       width="500" 
-                       height="260" 
-                       loading="lazy" 
-                       decoding="async">
-                </div>
+              <!-- Android -->
+              <div style="margin-bottom:20px; padding-top:16px; border-top:1px solid var(--border-subtle);">
+                <h4 style="color:var(--text-white); font-size:1.05rem; margin-bottom:6px;">🤖 En Android (.apk):</h4>
+                <p style="font-size:0.92rem; color:var(--text-muted);">
+                  Abre el archivo descargado <code>AnimeStream.apk</code> desde las notificaciones o tu administrador de archivos. Si el sistema te lo solicita, autoriza <em>"Instalar aplicaciones de fuentes desconocidas"</em> para tu navegador o gestor de archivos. ¡La app es 100% autónoma y no requiere PC!
+                </p>
+              </div>
+
+              <!-- Linux -->
+              <div style="padding-top:16px; border-top:1px solid var(--border-subtle);">
+                <h4 style="color:var(--text-white); font-size:1.05rem; margin-bottom:6px;">🐧 En Linux (.AppImage / .deb):</h4>
+                <p style="font-size:0.92rem; color:var(--text-muted);">
+                  Abre tu terminal y concede permisos de ejecución: <code>chmod +x AnimeStream-1.2.0.AppImage</code> y ejecuta <code>./AnimeStream-1.2.0.AppImage</code>. O si usas Debian/Ubuntu, instala el paquete con <code>sudo dpkg -i AnimeStream-1.2.0.deb</code>.
+                </p>
               </div>
 
             </div>
@@ -780,7 +922,7 @@
             <div class="step-content">
               <h3>¡A disfrutar de tu anime favorito!</h3>
               <p>
-                Al iniciarse, el servidor arrancará automáticamente y abrirá AnimeStream en tu navegador o ventana de Electron (en <code>http://localhost:3000</code>). ¡Ya puedes ver anime en tu PC o reproducirlo en tu Smart TV!
+                AnimeStream cargará inmediatamente el catálogo en tiempo real con las últimas emisiones de AnimeAV1, JKAnime y TioAnime. Puedes reproducir en tu pantalla, usar el nuevo directorio con filtros o proyectar a tu Smart TV escaneando el código QR.
               </p>
             </div>
           </article>
@@ -1038,12 +1180,12 @@
           <!-- Pregunta 8 -->
           <div class="faq-item">
             <button class="faq-question" aria-expanded="false" aria-controls="faq-ans-8">
-              <span>¿Qué novedades incluye la nueva versión de AnimeStream?</span>
+              <span>¿Qué novedades incluye la versión 1.2.0 de AnimeStream?</span>
               <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             <div class="faq-answer" id="faq-ans-8">
               <p>
-                Esta nueva edición reescribe por completo el motor a <strong>Node.js y Electron</strong>, introduciendo una interfaz cinematográfica con diseño <strong>Glassmorphism OLED</strong>, carrusel <strong>Hero Carousel</strong> con animes destacados, barra de <strong>búsqueda predictiva con autocompletado en vivo</strong> (miniaturas y sinopsis en tiempo real), <strong>Modo Cine</strong> con iluminación ambiental y atajos de teclado (<code>C</code> para cine, <code>F</code> para pantalla completa, <code>N</code>/<code>P</code> para capítulos).
+                La versión 1.2.0 incorpora: <strong>1) Aplicación Android (.apk) completamente autónoma</strong> sin necesidad de PC, con diseño vertical adaptativo y controles táctiles; <strong>2) Nuevo directorio de anime interactivo</strong> con filtros dinámicos por género, tipo, estado y año; <strong>3) Escudo AdBlock 2.0 y soporte desbloqueado de sandbox para VOE</strong>, Mega, Mp4Upload, Streamtape, YourUpload y Zilla, evitando redirecciones forzadas; <strong>4) Binario universal para Linux (.AppImage y .deb)</strong> con icono nativo y soporte para Wayland y X11; <strong>5) Buscador predictivo con carátulas en alta resolución</strong>; y <strong>6) Conexión Smart TV inteligente</strong> que filtra automáticamente interfaces de red virtuales (Docker, WSL).
               </p>
             </div>
           </div>
@@ -1051,12 +1193,12 @@
           <!-- Pregunta 9: Android APK -->
           <div class="faq-item">
             <button class="faq-question" aria-expanded="false" aria-controls="faq-ans-9">
-              <span>¿Cómo funciona la versión para Android (.apk)?</span>
+              <span>¿La aplicación de Android (.apk) necesita que mi ordenador esté encendido?</span>
               <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             <div class="faq-answer" id="faq-ans-9">
               <p>
-                AnimeStream para Android es una aplicación nativa empaquetada en formato <code>.apk</code>. Incluye aceleración por hardware, soporte para gestos táctiles, rotación horizontal inmersiva y reproducción de vídeo a pantalla completa con controles de avance y retroceso, compatible tanto con móviles y tablets como con cajas Android TV Box.
+                ¡No! A partir de la versión 1.2.0, AnimeStream para Android es <strong>100% independiente y autónomo</strong>. Incorpora su propio cliente de scraping multi-fuente directamente en el dispositivo móvil, permitiéndote ver anime en cualquier lugar con conexión a Internet sin necesidad de tener un ordenador encendido.
               </p>
             </div>
           </div>

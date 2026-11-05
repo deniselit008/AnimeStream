@@ -1410,3 +1410,49 @@ body {
   justify-content: center;
 }
 
+/* ==========================================================================
+   Version 1.2.0 Highlights & Multiplatform Styling
+   ========================================================================== */
+.highlight-card {
+  border-color: rgba(244, 117, 33, 0.28);
+  background: linear-gradient(180deg, rgba(244, 117, 33, 0.05) 0%, rgba(13, 19, 33, 0.8) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.highlight-card::after {
+  content: 'Novedad v1.2.0';
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(244, 117, 33, 0.2);
+  color: var(--accent-orange);
+  border: 1px solid rgba(244, 117, 33, 0.4);
+}
+
+.highlight-card:hover {
+  border-color: rgba(244, 117, 33, 0.55);
+  box-shadow: 0 10px 30px rgba(244, 117, 33, 0.15);
+}
+
+.req-grid-multi {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+  .req-grid-multi {
+    grid-template-columns: 1fr;
+  }
+}
+
+

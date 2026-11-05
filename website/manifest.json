@@ -1,7 +1,7 @@
 {
-  "name": "AnimeStream para Windows",
+  "name": "AnimeStream Multiplataforma",
   "short_name": "AnimeStream",
-  "description": "Agregador y reproductor de anime en tiempo real para Windows 10 y 11. Multi-fuente, sin publicidad invasiva y portable.",
+  "description": "Agregador y reproductor de anime en tiempo real para Windows, Android y Linux. Multi-fuente, sin publicidad invasiva y portable.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#070a12",
