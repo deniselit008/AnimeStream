@@ -17,29 +17,32 @@
     owner: 'deniselit008',
     repo: 'AnimeStream',
     fallbackVersion: '1.2.0',
-    storageKey: 'animestream_release_cache_v5',
+    storageKey: 'animestream_release_cache_v6',
     fallbackReleaseUrl: 'https://github.com/deniselit008/AnimeStream/releases/latest',
     fallbackZipUrl: 'https://github.com/deniselit008/AnimeStream/archive/refs/heads/main.zip',
     platforms: {
       windows: {
         ext: '.exe',
-        defaultName: 'AnimeStream.1.2.0.exe',
-        fallbackSize: '24.3 MB',
-        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/v1.2.0/AnimeStream.1.2.0.exe',
+        defaultName: 'AnimeStream.Setup.1.2.0.exe',
+        fallbackSize: '123 MB',
+        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.2.0/AnimeStream.Setup.1.2.0.exe',
+        portableName: 'AnimeStream.1.2.0.exe',
+        portableSize: '111 MB',
+        portableUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.2.0/AnimeStream.1.2.0.exe',
         systemLabel: 'Windows 10 / 11 (64-bit)'
       },
       android: {
         ext: '.apk',
         defaultName: 'AnimeStream.apk',
-        fallbackSize: '14.2 MB',
-        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/v1.2.0/AnimeStream.apk',
+        fallbackSize: '6.1 MB',
+        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.2.0/AnimeStream.apk',
         systemLabel: 'Android 7.0+ (Móvil, Tablet & TV)'
       },
       linux: {
         ext: '.AppImage',
         defaultName: 'AnimeStream-1.2.0.AppImage',
-        fallbackSize: '48.6 MB',
-        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/v1.2.0/AnimeStream-1.2.0.AppImage',
+        fallbackSize: '129 MB',
+        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.2.0/AnimeStream-1.2.0.AppImage',
         systemLabel: 'Linux x64 (Binario ELF AppImage)'
       }
     }
@@ -133,8 +136,18 @@
       const assets = Array.isArray(releaseObj.assets) ? releaseObj.assets : [];
 
       // Find platform assets
-      const winAsset = assets.find(a => a.name.toLowerCase().endsWith('.exe'))
-                    || assets.find(a => a.name.toLowerCase().endsWith('.msi'));
+      // 1. Windows Installer: prioritizes setup/installer .exe
+      const winInstallerAsset = assets.find(a => {
+        const n = a.name.toLowerCase();
+        return (n.includes('setup') || n.includes('installer')) && n.endsWith('.exe');
+      }) || assets.find(a => a.name.toLowerCase().endsWith('.msi'))
+         || assets.find(a => a.name.toLowerCase().endsWith('.exe'));
+
+      // 2. Windows Portable: .exe without setup/installer
+      const winPortableAsset = assets.find(a => {
+        const n = a.name.toLowerCase();
+        return !n.includes('setup') && !n.includes('installer') && n.endsWith('.exe');
+      });
       
       const androidAsset = assets.find(a => a.name.toLowerCase().endsWith('.apk'));
 
@@ -149,20 +162,23 @@
         releaseUrl: releaseObj.html_url || GITHUB_CONFIG.fallbackReleaseUrl,
         zipUrl: releaseObj.zipball_url || GITHUB_CONFIG.fallbackZipUrl,
         windows: {
-          url: winAsset ? winAsset.browser_download_url : `https://github.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/releases/download/${cleanTag}/AnimeStream.${cleanTag}.exe`,
-          name: winAsset ? winAsset.name : `AnimeStream.${cleanTag}.exe`,
-          size: winAsset && winAsset.size ? formatBytes(winAsset.size) : GITHUB_CONFIG.platforms.windows.fallbackSize,
-          count: winAsset ? winAsset.download_count : 0
+          url: winInstallerAsset ? winInstallerAsset.browser_download_url : GITHUB_CONFIG.platforms.windows.fallbackUrl,
+          name: winInstallerAsset ? winInstallerAsset.name : GITHUB_CONFIG.platforms.windows.defaultName,
+          size: winInstallerAsset && winInstallerAsset.size ? formatBytes(winInstallerAsset.size) : GITHUB_CONFIG.platforms.windows.fallbackSize,
+          count: winInstallerAsset ? winInstallerAsset.download_count : 0,
+          portableUrl: winPortableAsset ? winPortableAsset.browser_download_url : GITHUB_CONFIG.platforms.windows.portableUrl,
+          portableName: winPortableAsset ? winPortableAsset.name : GITHUB_CONFIG.platforms.windows.portableName,
+          portableSize: winPortableAsset && winPortableAsset.size ? formatBytes(winPortableAsset.size) : GITHUB_CONFIG.platforms.windows.portableSize
         },
         android: {
-          url: androidAsset ? androidAsset.browser_download_url : `https://github.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/releases/download/${cleanTag}/AnimeStream.apk`,
-          name: androidAsset ? androidAsset.name : 'AnimeStream.apk',
+          url: androidAsset ? androidAsset.browser_download_url : GITHUB_CONFIG.platforms.android.fallbackUrl,
+          name: androidAsset ? androidAsset.name : GITHUB_CONFIG.platforms.android.defaultName,
           size: androidAsset && androidAsset.size ? formatBytes(androidAsset.size) : GITHUB_CONFIG.platforms.android.fallbackSize,
           count: androidAsset ? androidAsset.download_count : 0
         },
         linux: {
-          url: linuxAsset ? linuxAsset.browser_download_url : `https://github.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/releases/download/${cleanTag}/AnimeStream-${cleanTag}.AppImage`,
-          name: linuxAsset ? linuxAsset.name : `AnimeStream-${cleanTag}.AppImage`,
+          url: linuxAsset ? linuxAsset.browser_download_url : GITHUB_CONFIG.platforms.linux.fallbackUrl,
+          name: linuxAsset ? linuxAsset.name : GITHUB_CONFIG.platforms.linux.defaultName,
           size: linuxAsset && linuxAsset.size ? formatBytes(linuxAsset.size) : GITHUB_CONFIG.platforms.linux.fallbackSize,
           count: linuxAsset ? linuxAsset.download_count : 0
         },
@@ -191,7 +207,10 @@
             url: GITHUB_CONFIG.platforms.windows.fallbackUrl,
             name: GITHUB_CONFIG.platforms.windows.defaultName,
             size: GITHUB_CONFIG.platforms.windows.fallbackSize,
-            count: 0
+            count: 0,
+            portableUrl: GITHUB_CONFIG.platforms.windows.portableUrl,
+            portableName: GITHUB_CONFIG.platforms.windows.portableName,
+            portableSize: GITHUB_CONFIG.platforms.windows.portableSize
           },
           android: {
             url: GITHUB_CONFIG.platforms.android.fallbackUrl,
@@ -229,18 +248,27 @@
       if (data.publishedAt) el.textContent = data.publishedAt;
     });
 
-    // 3. Update Windows Download Buttons
+    // 3. Update Windows Download Buttons (Installer)
     const winBtns = document.querySelectorAll('.js-download-btn, .js-download-win');
     winBtns.forEach(btn => {
       btn.href = data.windows.url;
       btn.setAttribute('download', data.windows.name);
       btn.setAttribute('data-platform', 'windows');
-      btn.setAttribute('title', `Descargar AnimeStream ${displayTag} para Windows (.exe)`);
+      btn.setAttribute('title', `Descargar Instalador de AnimeStream ${displayTag} para Windows (.exe)`);
 
       const subText = btn.querySelector('.download-btn-sub');
       if (subText) {
-        subText.innerHTML = `Versión <strong>${displayTag}</strong> • ${data.windows.size} • Windows 64-bit`;
+        subText.innerHTML = `Instalador <strong>${displayTag}</strong> • ${data.windows.size} • Windows 64-bit`;
       }
+    });
+
+    // 3.1. Update Windows Portable Links
+    const winPortableLinks = document.querySelectorAll('.js-download-win-portable');
+    winPortableLinks.forEach(link => {
+      link.href = data.windows.portableUrl;
+      link.setAttribute('download', data.windows.portableName);
+      link.setAttribute('data-platform', 'windows-portable');
+      link.setAttribute('title', `Descargar versión portable de AnimeStream ${displayTag} (.exe sin instalación)`);
     });
 
     // 4. Update Android Download Buttons
@@ -275,6 +303,9 @@
     document.querySelectorAll('.js-file-size, .js-file-size-win').forEach(el => {
       el.textContent = data.windows.size;
     });
+    document.querySelectorAll('.js-file-size-win-portable').forEach(el => {
+      el.textContent = data.windows.portableSize;
+    });
     document.querySelectorAll('.js-file-size-android').forEach(el => {
       el.textContent = data.android.size;
     });
@@ -305,7 +336,7 @@
 
     // Attach click listeners to all download triggers
     document.addEventListener('click', function (e) {
-      const btn = e.target.closest('.js-download-btn, .js-download-win, .js-download-android, .js-download-linux');
+      const btn = e.target.closest('.js-download-btn, .js-download-win, .js-download-win-portable, .js-download-android, .js-download-linux');
       if (!btn) return;
       if (btn.closest('#downloadModal')) return; // ignore modal's internal button
 
@@ -347,21 +378,41 @@
           retryBtn.href = releaseCache.linux.url;
           retryBtn.textContent = 'Reintentar Descarga Linux AppImage';
         }
-      } else {
-        // Windows
-        if (titleEl) titleEl.textContent = '¡Tu descarga para Windows ha comenzado!';
-        if (descEl) descEl.innerHTML = `Gracias por descargar <strong>AnimeStream para Windows (.exe)</strong> (${tag}).`;
+      } else if (platform === 'windows-portable') {
+        // Windows Portable
+        if (titleEl) titleEl.textContent = '¡Descargando AnimeStream Portable!';
+        const pName = releaseCache ? releaseCache.windows.portableName : 'AnimeStream.1.2.0.exe';
+        if (descEl) descEl.innerHTML = `Tu descarga de la versión portable <strong>${pName}</strong> (${tag}) ha comenzado.`;
         if (tipEl) {
           tipEl.innerHTML = `
-            <p><strong>💡 Aviso de Microsoft SmartScreen:</strong></p>
+            <p><strong>📦 Versión Portable (Sin instalación):</strong></p>
             <p style="margin-top:4px;">
-              Al abrir el archivo, si Windows muestra la pantalla azul <em>"Windows protegió su PC"</em>, haz clic en <strong>Más información</strong> y luego en <strong>Ejecutar de todas formas</strong>.
+              Este ejecutable es 100% portable y autónomo. No requiere instalación. Haz doble clic para abrirlo directamente. Si Windows Defender muestra la advertencia de SmartScreen, pulsa en <strong>Más información</strong> y luego en <strong>Ejecutar de todas formas</strong>.
             </p>
           `;
         }
         if (retryBtn && releaseCache) {
+          retryBtn.href = releaseCache.windows.portableUrl;
+          retryBtn.textContent = 'Reintentar Descarga Portable (.exe)';
+        }
+      } else {
+        // Windows Installer
+        if (titleEl) titleEl.textContent = '¡Descargando el Instalador de Windows!';
+        const iName = releaseCache ? releaseCache.windows.name : 'AnimeStream.Setup.1.2.0.exe';
+        if (descEl) descEl.innerHTML = `Tu descarga del instalador oficial <strong>${iName}</strong> (${tag}) ha comenzado.`;
+        if (tipEl) {
+          tipEl.innerHTML = `
+            <p><strong>💡 Pasos para el Instalador de Windows:</strong></p>
+            <ol style="margin-top:6px; padding-left:18px; line-height:1.5;">
+              <li>Haz doble clic sobre el instalador descargado.</li>
+              <li>Si aparece la pantalla azul de SmartScreen, haz clic en <strong>Más información</strong> y luego en <strong>Ejecutar de todas formas</strong>.</li>
+              <li>El asistente instalará AnimeStream y creará los accesos directos en el Menú Inicio y Escritorio automáticamente.</li>
+            </ol>
+          `;
+        }
+        if (retryBtn && releaseCache) {
           retryBtn.href = releaseCache.windows.url;
-          retryBtn.textContent = 'Reintentar Descarga AnimeStream.exe';
+          retryBtn.textContent = 'Reintentar Descarga Instalador (.exe)';
         }
       }
 

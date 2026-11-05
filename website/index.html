@@ -203,11 +203,11 @@
 
       <!-- Botón de acción rápida en el Navbar -->
       <div class="nav-actions">
-        <a href="#descargar" class="btn btn-primary btn-sm js-download-btn" title="Descargar AnimeStream para Windows">
+        <a href="#descargar" class="btn btn-primary btn-sm js-download-btn" title="Descargar Instalador de AnimeStream para Windows">
           <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path fill="currentColor" d="M0 3.449L9.75 2.1v9.451H0V3.449zm10.949-1.551L24 0v11.551H10.949V1.898zM0 12.45h9.75v9.451L0 20.551V12.45zm10.949 0H24V24l-13.051-1.898V12.45z"/>
           </svg>
-          <span>Descargar <span class="js-version-tag">v1.2.0</span></span>
+          <span>Instalador Windows <span class="js-version-tag">v1.2.0</span></span>
         </a>
 
         <!-- Botón de menú para móviles -->
@@ -251,18 +251,18 @@
 
         <!-- Grupo de botones CTA Principales -->
         <div class="hero-cta-group">
-          <!-- Botón Windows .exe -->
+          <!-- Botón Windows Instalador .exe -->
           <a href="https://github.com/deniselit008/AnimeStream/releases/latest" 
              class="btn btn-primary btn-lg js-download-win" 
              data-platform="windows"
              id="heroDownloadWinBtn" 
-             title="Descargar la última versión de AnimeStream para Windows (.exe)">
+             title="Descargar Instalador oficial de AnimeStream para Windows (.exe)">
             <svg class="btn-icon" style="width:26px; height:26px;" viewBox="0 0 24 24" aria-hidden="true">
               <path fill="currentColor" d="M0 3.449L9.75 2.1v9.451H0V3.449zm10.949-1.551L24 0v11.551H10.949V1.898zM0 12.45h9.75v9.451L0 20.551V12.45zm10.949 0H24V24l-13.051-1.898V12.45z"/>
             </svg>
             <div class="download-btn-content">
-              <span class="download-btn-main">Descargar Windows (.exe)</span>
-              <span class="download-btn-sub">Versión <span class="js-version-tag">v1.2.0</span> • <span class="js-file-size-win">~24.3 MB</span></span>
+              <span class="download-btn-main">Descargar Instalador (.exe)</span>
+              <span class="download-btn-sub">Windows Setup • <span class="js-file-size-win">~123 MB</span></span>
             </div>
           </a>
 
@@ -277,7 +277,7 @@
             </svg>
             <div class="download-btn-content">
               <span class="download-btn-main">Descargar Android (.apk)</span>
-              <span class="download-btn-sub">Móvil, Tablet &amp; TV • <span class="js-file-size-android">~14.2 MB</span></span>
+              <span class="download-btn-sub">Móvil, Tablet &amp; TV • <span class="js-file-size-android">~6.1 MB</span></span>
             </div>
           </a>
 
@@ -292,8 +292,19 @@
             </svg>
             <div class="download-btn-content">
               <span class="download-btn-main">Linux (Binario ELF)</span>
-              <span class="download-btn-sub">Universal .AppImage • <span class="js-file-size-linux">~48.6 MB</span></span>
+              <span class="download-btn-sub">Universal .AppImage • <span class="js-file-size-linux">~129 MB</span></span>
             </div>
+          </a>
+        </div>
+
+        <!-- Opción Portable destacada en Hero -->
+        <div style="text-align:center; margin-top:14px; margin-bottom:12px;">
+          <a href="https://github.com/deniselit008/AnimeStream/releases/latest" 
+             class="js-download-win-portable" 
+             data-platform="windows-portable" 
+             style="font-size:0.9rem; color:var(--text-muted); text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:6px 16px; border-radius:999px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); transition:all 0.2s;"
+             title="Descargar versión portable de AnimeStream (.exe sin instalador)">
+            <span>📦 ¿Prefieres no instalar? <strong>Descargar Versión Portable (.exe)</strong> (<span class="js-file-size-win-portable">~111 MB</span>)</span>
           </a>
         </div>
 
@@ -969,20 +980,29 @@
                   <span class="platform-badge win">Windows x64</span>
                 </div>
                 <h3 class="platform-title">Windows</h3>
-                <p class="platform-meta">Instalador &amp; Portable (.exe) para Windows 10 y Windows 11.</p>
+                <p class="platform-meta">Instalador oficial guiado (.exe) para Windows 10 y Windows 11.</p>
                 <ul class="platform-features-list">
-                  <li><span class="bullet">✓</span> Ejecutable autónomo sin consola CMD</li>
-                  <li><span class="bullet">✓</span> Aplicación de escritorio Electron</li>
-                  <li><span class="bullet">✓</span> Tamaño: <strong class="js-file-size-win">~24.3 MB</strong></li>
+                  <li><span class="bullet">✓</span> Instalador automático con accesos en Inicio y Escritorio</li>
+                  <li><span class="bullet">✓</span> Modo silencioso sin ventana de consola CMD</li>
+                  <li><span class="bullet">✓</span> Tamaño instalador: <strong class="js-file-size-win">~123 MB</strong></li>
                 </ul>
               </div>
               <div class="platform-download-footer">
                 <a href="https://github.com/deniselit008/AnimeStream/releases/latest" 
                    class="btn btn-primary btn-md js-download-win" 
                    data-platform="windows"
-                   title="Descargar AnimeStream para Windows (.exe)">
-                  <span>Descargar .exe</span>
+                   title="Descargar Instalador de AnimeStream para Windows (.exe)">
+                  <span>Descargar Instalador (.exe)</span>
                 </a>
+                <div style="margin-top:10px; text-align:center;">
+                  <a href="https://github.com/deniselit008/AnimeStream/releases/latest" 
+                     class="js-download-win-portable" 
+                     data-platform="windows-portable"
+                     style="font-size:0.84rem; color:var(--text-muted); text-decoration:underline; display:inline-block; padding:4px 0;" 
+                     title="Descargar versión portable autónoma (.exe sin instalador)">
+                    📦 O descargar Versión Portable (<span class="js-file-size-win-portable">~111 MB</span>)
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -996,9 +1016,9 @@
                 <h3 class="platform-title">Android</h3>
                 <p class="platform-meta">Paquete nativo (.apk) para móviles, tablets y TV Box con Android 7.0+.</p>
                 <ul class="platform-features-list">
-                  <li><span class="bullet">✓</span> App nativa a pantalla completa</li>
+                  <li><span class="bullet">✓</span> 100% autónomo (no necesita PC)</li>
                   <li><span class="bullet">✓</span> Gestos táctiles y rotación horizontal</li>
-                  <li><span class="bullet">✓</span> Tamaño: <strong class="js-file-size-android">~14.2 MB</strong></li>
+                  <li><span class="bullet">✓</span> Tamaño: <strong class="js-file-size-android">~6.1 MB</strong></li>
                 </ul>
               </div>
               <div class="platform-download-footer">
@@ -1023,7 +1043,7 @@
                 <ul class="platform-features-list">
                   <li><span class="bullet">✓</span> Binario ELF estándar universal</li>
                   <li><span class="bullet">✓</span> Ubuntu, Debian, Fedora, Arch &amp; más</li>
-                  <li><span class="bullet">✓</span> Tamaño: <strong class="js-file-size-linux">~48.6 MB</strong></li>
+                  <li><span class="bullet">✓</span> Tamaño: <strong class="js-file-size-linux">~129 MB</strong></li>
                 </ul>
               </div>
               <div class="platform-download-footer">
