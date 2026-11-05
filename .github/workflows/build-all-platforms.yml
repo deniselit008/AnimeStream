@@ -45,7 +45,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Subir binarios .exe de Windows
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: AnimeStream-Windows-exe
           path: |
@@ -76,7 +76,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Subir binario ELF y AppImage de Linux
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: AnimeStream-Linux-ELF
           path: |
@@ -125,7 +125,7 @@ jobs:
           cp android/app/build/outputs/apk/debug/*.apk dist-apk/AnimeStream.apk
 
       - name: Subir paquete .apk de Android
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: AnimeStream-Android-apk
           path: dist-apk/AnimeStream.apk
@@ -153,21 +153,21 @@ jobs:
           fi
 
       - name: Descargar artefactos de Windows
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         continue-on-error: true
         with:
           name: AnimeStream-Windows-exe
           path: release-assets/windows
 
       - name: Descargar artefactos de Linux
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         continue-on-error: true
         with:
           name: AnimeStream-Linux-ELF
           path: release-assets/linux
 
       - name: Descargar artefactos de Android
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         continue-on-error: true
         with:
           name: AnimeStream-Android-apk
