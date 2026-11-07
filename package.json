@@ -1,6 +1,6 @@
 {
   "name": "animestream-node",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "AnimeStream - Agregador y Reproductor de Anime en Tiempo Real en Node.js y Electron",
   "main": "electron/main.js",
   "scripts": {

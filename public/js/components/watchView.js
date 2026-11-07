@@ -8,12 +8,23 @@ import { Icons, escapeHtml, showToast, getSourceBadgeClass, fixEncoding } from '
 import { AdBlock } from '../adblock.js?v=3.0';
 
 let currentWatchKeyDownHandler = null;
+let currentIdleCursorTimer = null;
+let currentCursorListeners = null;
 
 export function cleanupWatchView() {
   if (currentWatchKeyDownHandler) {
     window.removeEventListener('keydown', currentWatchKeyDownHandler, true);
     currentWatchKeyDownHandler = null;
   }
+  if (currentIdleCursorTimer) {
+    clearTimeout(currentIdleCursorTimer);
+    currentIdleCursorTimer = null;
+  }
+  if (currentCursorListeners) {
+    currentCursorListeners.cleanup();
+    currentCursorListeners = null;
+  }
+  document.body.classList.remove('fullscreen-hide-cursor');
 }
 
 export async function renderWatch(container, episodeUrl, queryParams = null) {
@@ -472,17 +483,85 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
 
     attachEvents();
 
+    // Setup Cursor Auto-Hide for Player & Fullscreen
+    const playerWrapper = container.querySelector('.player-wrapper');
+    if (playerWrapper) {
+      const showCursor = () => {
+        playerWrapper.classList.remove('hide-cursor');
+        document.body.classList.remove('fullscreen-hide-cursor');
+        if (currentIdleCursorTimer) {
+          clearTimeout(currentIdleCursorTimer);
+        }
+        currentIdleCursorTimer = setTimeout(() => {
+          playerWrapper.classList.add('hide-cursor');
+          if (document.fullscreenElement) {
+            document.body.classList.add('fullscreen-hide-cursor');
+          }
+        }, 2500);
+      };
+
+      const onMouseLeave = () => {
+        if (!document.fullscreenElement) {
+          if (currentIdleCursorTimer) {
+            clearTimeout(currentIdleCursorTimer);
+            currentIdleCursorTimer = null;
+          }
+          playerWrapper.classList.remove('hide-cursor');
+          document.body.classList.remove('fullscreen-hide-cursor');
+        }
+      };
+
+      playerWrapper.addEventListener('mousemove', showCursor);
+      playerWrapper.addEventListener('mousedown', showCursor);
+      playerWrapper.addEventListener('touchstart', showCursor, { passive: true });
+      playerWrapper.addEventListener('mouseleave', onMouseLeave);
+
+      const onFullscreenChange = () => {
+        showCursor();
+        if (!document.fullscreenElement) {
+          document.body.classList.remove('fullscreen-hide-cursor');
+        }
+      };
+      document.addEventListener('fullscreenchange', onFullscreenChange);
+
+      currentCursorListeners = {
+        cleanup: () => {
+          playerWrapper.removeEventListener('mousemove', showCursor);
+          playerWrapper.removeEventListener('mousedown', showCursor);
+          playerWrapper.removeEventListener('touchstart', showCursor);
+          playerWrapper.removeEventListener('mouseleave', onMouseLeave);
+          document.removeEventListener('fullscreenchange', onFullscreenChange);
+        }
+      };
+
+      // Start initial cursor hide timer
+      showCursor();
+    }
+
     // Global keyboard listener for player controls (Volume ±5% & Seek ±10s)
     const handleKeyDown = (e) => {
-      // Don't intercept if user is typing in form controls
+      // 1. Never intercept if modifier keys are pressed (Ctrl, Alt, Meta/Windows/Command)
+      // This protects ALL system and browser shortcuts (Ctrl+C, Ctrl+F, Ctrl+N, Ctrl+P, Alt+Left, Alt+F4, Ctrl+W, etc.)
+      if (e.ctrlKey || e.altKey || e.metaKey) {
+        return;
+      }
+
+      // 2. Don't intercept if user is typing in form controls or editable areas
       const activeEl = document.activeElement;
-      if (activeEl && ['INPUT', 'TEXTAREA', 'SELECT'].indexOf(activeEl.tagName) !== -1) return;
+      if (activeEl && (['INPUT', 'TEXTAREA', 'SELECT'].indexOf(activeEl.tagName) !== -1 || activeEl.isContentEditable)) {
+        return;
+      }
 
       const k = e.key || e.code;
       const keyCode = e.keyCode || e.which;
 
       // Smart TV Remote Back key (VIDAA 461, Tizen 10009): delegate to TVNavigation
       if (keyCode === 461 || keyCode === 10009) {
+        return;
+      }
+
+      // Do not intercept F11 (let native browser/Electron menu handle fullscreen)
+      if (k === 'F11' || keyCode === 122) {
         return;
       }
 
@@ -511,20 +590,24 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
 
       // Keyboard shortcuts: C (Cinema Mode), F (Fullscreen), N (Next Ep), P (Prev Ep)
       if ((k === 'c' || k === 'C') && !isNavigatingUI) {
+        e.preventDefault();
         const cinemaBtn = container.querySelector('#btn-toggle-cinema');
         if (cinemaBtn) cinemaBtn.click();
         return;
       }
       if ((k === 'f' || k === 'F') && !isNavigatingUI) {
+        e.preventDefault();
         const fsBtn = container.querySelector('#btn-toggle-fullscreen');
         if (fsBtn) fsBtn.click();
         return;
       }
       if ((k === 'n' || k === 'N') && !isNavigatingUI && watchData.nextUrl) {
+        e.preventDefault();
         window.location.hash = `#/watch?url=${encodeURIComponent(watchData.nextUrl)}`;
         return;
       }
       if ((k === 'p' || k === 'P') && !isNavigatingUI && watchData.prevUrl) {
+        e.preventDefault();
         window.location.hash = `#/watch?url=${encodeURIComponent(watchData.prevUrl)}`;
         return;
       }

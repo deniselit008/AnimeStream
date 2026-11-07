@@ -1045,19 +1045,36 @@ export const ClientScraper = {
 
   async search(query, source = 'all') {
     const providers = [];
+    const labels = [];
     const src = String(source || 'all').toLowerCase();
-    if (['all', 'animeav1', 'av1'].includes(src)) providers.push(ClientAnimeAV1);
-    if (['all', 'tioanime', 'tio'].includes(src)) providers.push(ClientTioAnime);
-    if (['all', 'jkanime', 'jk'].includes(src)) providers.push(ClientJKAnime);
+    if (['all', 'animeav1', 'av1'].includes(src)) {
+      providers.push(ClientAnimeAV1);
+      labels.push('AnimeAV1');
+    }
+    if (['all', 'tioanime', 'tio'].includes(src)) {
+      providers.push(ClientTioAnime);
+      labels.push('TioAnime');
+    }
+    if (['all', 'jkanime', 'jk'].includes(src)) {
+      providers.push(ClientJKAnime);
+      labels.push('JKAnime');
+    }
 
     const settled = await Promise.allSettled(providers.map(p => p.search(query)));
     const results = [];
-    settled.forEach(res => {
+    const errors = [];
+    settled.forEach((res, idx) => {
       if (res.status === 'fulfilled' && Array.isArray(res.value)) {
         results.push(...res.value);
+      } else {
+        errors.push({ source: labels[idx] || 'Fuente', error: res.reason?.message || 'Error' });
       }
     });
-    return results;
+    return {
+      query,
+      results,
+      errors
+    };
   },
 
   async getAnime(url) {

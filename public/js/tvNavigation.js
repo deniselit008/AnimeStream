@@ -121,14 +121,22 @@ class TVNavigationEngine {
   }
 
   handleKeyDown(e) {
+    // 1. Never intercept if modifier keys are pressed (Ctrl, Alt, Meta/Command)
+    // Preserves all OS and browser shortcuts (Ctrl+R, Alt+Left, Alt+F4, Ctrl+W, etc.)
+    if (e.ctrlKey || e.altKey || e.metaKey) {
+      return;
+    }
+
     const keyCode = e.keyCode || e.which;
     const key = e.key || '';
 
-    // If TV Mode is disabled, auto-activate if user starts using TV Remote D-Pad / Back
-    const isTvRemoteKey = [37, 38, 39, 40, 461, 10009, 415, 19, 403, 404, 405, 406].includes(keyCode) ||
-                          ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'BrowserBack', 'MediaPlay', 'MediaPause'].includes(key);
+    // Auto-activate TV mode ONLY if running on an actual Smart TV browser OR if user presses dedicated TV remote hardware keys
+    // NEVER auto-activate on standard PC arrow keys (37-40) when on a desktop computer!
+    const isDedicatedTvKey = [461, 10009, 415, 19, 403, 404, 405, 406, 10252, 417, 412].includes(keyCode) ||
+                          ['ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue', 'BrowserBack', 'MediaPlay', 'MediaPause'].includes(key);
+    const isArrowKey = [37, 38, 39, 40].includes(keyCode) || ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key);
 
-    if (!this.enabled && isTvRemoteKey) {
+    if (!this.enabled && (isDedicatedTvKey || (this.isTv && isArrowKey))) {
       this.toggle(true);
     }
 
@@ -139,10 +147,24 @@ class TVNavigationEngine {
 
     // Check if user is typing in search bar or form inputs
     const activeEl = document.activeElement;
-    const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') && activeEl.type !== 'submit';
+    const isTyping = activeEl && (['INPUT', 'TEXTAREA', 'SELECT'].includes(activeEl.tagName) || activeEl.isContentEditable) && activeEl.type !== 'submit';
+
+    // When typing in an input, allow normal typing, Backspace (delete chars), Escape and Left/Right navigation
+    if (isTyping) {
+      if (keyCode === 13) return; // Enter submits search
+      if (keyCode === 8 || keyCode === 27) return; // Allow normal Backspace & Escape
+      if (keyCode === 38 || keyCode === 40) { // Up/Down escapes input
+        activeEl.blur();
+      } else {
+        return; // Allow Left/Right cursor movement in input text
+      }
+    }
 
     // 1. Back / Return buttons (VIDAA 461, Tizen 10009, Backspace 8, Escape 27)
     if (keyCode === 461 || keyCode === 10009 || keyCode === 8 || keyCode === 27 || key === 'Back' || key === 'BrowserBack' || key === 'GoBack') {
+      if (!this.isTv && (keyCode === 8 || keyCode === 27)) {
+        return; // On PC, don't hijack standard Backspace or Escape
+      }
       e.preventDefault();
       e.stopPropagation();
       this.handleBackButton();

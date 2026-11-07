@@ -1215,6 +1215,14 @@ button {
   margin-bottom: 20px;
 }
 
+/* Auto-hide cursor on player inactivity or fullscreen */
+.player-wrapper.hide-cursor,
+.player-wrapper.hide-cursor *,
+body.fullscreen-hide-cursor,
+body.fullscreen-hide-cursor * {
+  cursor: none !important;
+}
+
 .player-iframe {
   position: absolute;
   top: 0;

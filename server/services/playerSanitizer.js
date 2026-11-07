@@ -40,7 +40,7 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
       cleaned = cleaned.replace(scriptRegex, '').replace(scriptSelfClose, '').replace(iframeRegex, '');
     }
 
-    // 4. Inject non-destructive protective shield and cosmetic suppression styles
+    // 4. Inject non-destructive protective shield, cosmetic suppression styles and cursor auto-hide
     const shieldScript = `<style>
       #overlayads, .overlayads, [id*="overlayad"], [class*="overlayad"],
       .ad-banner, .advertisement, [id*="popunder"], [class*="popunder"],
@@ -51,10 +51,26 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
         width: 0 !important;
         height: 0 !important;
       }
+      body.hide-cursor, body.hide-cursor * {
+        cursor: none !important;
+      }
     </style>
     <script>
     (function() {
       try {
+        var idleT = null;
+        function resetC() {
+          document.body.classList.remove('hide-cursor');
+          if (idleT) clearTimeout(idleT);
+          idleT = setTimeout(function() {
+            document.body.classList.add('hide-cursor');
+          }, 2500);
+        }
+        window.addEventListener('mousemove', resetC);
+        window.addEventListener('mousedown', resetC);
+        window.addEventListener('touchstart', resetC, { passive: true });
+        resetC();
+
         window.open = function(url) {
           console.warn('[AnimeStream AdBlock] Bloqueado popup publicitario:', url);
           return {

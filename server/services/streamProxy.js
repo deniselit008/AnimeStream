@@ -71,6 +71,9 @@ function getHlsPlayerHtml(hashId) {
       border-radius: 4px;
       transition: width 0.08s ease;
     }
+    body.hide-cursor, body.hide-cursor * {
+      cursor: none !important;
+    }
   </style>
 </head>
 <body>
@@ -98,6 +101,19 @@ function getHlsPlayerHtml(hashId) {
     const source = '/api/hls/m3u8/${hashId}';
     const STORAGE_KEY_VOLUME = 'animestream_player_volume';
     let hudTimer = null;
+    let idleCursorTimer = null;
+
+    function resetIdleCursor() {
+      document.body.classList.remove('hide-cursor');
+      if (idleCursorTimer) clearTimeout(idleCursorTimer);
+      idleCursorTimer = setTimeout(() => {
+        document.body.classList.add('hide-cursor');
+      }, 2500);
+    }
+    window.addEventListener('mousemove', resetIdleCursor);
+    window.addEventListener('mousedown', resetIdleCursor);
+    window.addEventListener('touchstart', resetIdleCursor, { passive: true });
+    resetIdleCursor();
 
     try {
       const savedVol = localStorage.getItem(STORAGE_KEY_VOLUME);

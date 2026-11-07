@@ -3,7 +3,22 @@
  * Seamlessly switches between Node.js backend endpoints (PC/Web/TV) and
  * the native autonomous client scraper on Android mobile (100% standalone without PC).
  */
-import { ClientScraper } from './clientScraper.js?v=4.0';
+import { ClientScraper, fetchHtml } from './clientScraper.js?v=4.0';
+
+const RELATION_MAP = {
+  'sequel': 'Secuela',
+  'prequel': 'Precuela',
+  'side story': 'Historia paralela',
+  'spin-off': 'Spin-off',
+  'spin off': 'Spin-off',
+  'alternative setting': 'Ambientación alternativa',
+  'alternative version': 'Versión alternativa',
+  'summary': 'Resumen / Película',
+  'parent story': 'Historia principal',
+  'full story': 'Historia completa',
+  'character': 'Especial de personaje',
+  'other': 'Especial / Otro'
+};
 
 export function isStandaloneMode() {
   if (typeof window === 'undefined') return false;
@@ -53,7 +68,11 @@ export const Api = {
 
   async search(query, source = 'all') {
     if (isStandaloneMode()) {
-      return ClientScraper.search(query, source);
+      const data = await ClientScraper.search(query, source);
+      if (Array.isArray(data)) {
+        return { query, results: data, errors: [] };
+      }
+      return data || { query, results: [], errors: [] };
     }
     const res = await fetch(`${getApiBase()}/search?q=${encodeURIComponent(query)}&source=${encodeURIComponent(source)}`);
     if (!res.ok) {
@@ -77,38 +96,66 @@ export const Api = {
 
   async getRelations(title) {
     if (!title) return [];
+    const cleanTitle = title
+      .replace(/[\(\[\{](audio\s+latino|latino|castellano|español|sub\s*español|sub|dub|doblaje|uncensored|sin\s+censura)[^\)\]\}]*[\)\]\}]/gi, '')
+      .replace(/\b(audio\s+latino|español\s+latino|en\s+emision|finalizado|hd|fhd)\b/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // 1. If not standalone (PC/server mode), query backend relations endpoint first
+    if (!isStandaloneMode()) {
+      try {
+        const res = await fetch(`${getApiBase()}/anime/relations?title=${encodeURIComponent(cleanTitle)}`);
+        if (res.ok) {
+          const list = await res.json();
+          if (Array.isArray(list) && list.length > 0) return list;
+        }
+      } catch (_) {}
+    }
+
+    // 2. Query Jikan API (using fetchHtml to bypass Android CORS via AndroidBridge)
     try {
-      const res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(title)}&limit=1`);
-      if (res.ok) {
-        const data = await res.json();
-        const malId = data.data?.[0]?.mal_id;
-        if (malId) {
-          const relRes = await fetch(`https://api.jikan.moe/v4/anime/${malId}/relations`);
-          if (relRes.ok) {
-            const relData = await relRes.json();
-            const rels = [];
-            (relData.data || []).forEach(r => {
-              (r.entry || []).forEach(e => {
-                if (e.type === 'anime') {
-                  rels.push({
-                    title: e.name,
-                    relation: r.relation,
-                    url: `#/search?q=${encodeURIComponent(e.name)}`
-                  });
-                }
+      const searchRaw = await fetchHtml(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(cleanTitle)}&limit=1`);
+      const searchData = typeof searchRaw === 'string' ? JSON.parse(searchRaw) : searchRaw;
+      const malId = searchData?.data?.[0]?.mal_id;
+      if (malId) {
+        const relRaw = await fetchHtml(`https://api.jikan.moe/v4/anime/${malId}/relations`);
+        const relData = typeof relRaw === 'string' ? JSON.parse(relRaw) : relRaw;
+        const rels = [];
+        const seen = new Set();
+        (relData?.data || []).forEach(r => {
+          const rawRel = r.relation || '';
+          const normRel = rawRel.toLowerCase();
+          const relLabel = RELATION_MAP[normRel] || rawRel;
+
+          (r.entry || []).forEach(e => {
+            if (e.type === 'anime' && e.name) {
+              const lowerName = e.name.toLowerCase();
+              if (seen.has(lowerName)) return;
+              seen.add(lowerName);
+
+              const cleanTerm = e.name.replace(/\s*\(TV\)|\s*\(Movie\)|\s*\(OVA\)/gi, '').trim();
+              rels.push({
+                title: e.name,
+                relation: relLabel,
+                raw_relation: rawRel,
+                type: 'Anime',
+                mal_id: e.mal_id || null,
+                mal_url: e.url || (e.mal_id ? `https://myanimelist.net/anime/${e.mal_id}` : null),
+                image: null,
+                url: `#/search?q=${encodeURIComponent(cleanTerm)}`
               });
-            });
-            return rels;
-          }
+            }
+          });
+        });
+        if (rels.length > 0) {
+          return rels;
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      console.debug('[Api.getRelations] Fallback relations error:', e.message || e);
+    }
 
-    // Fallback to PC API if available
-    try {
-      const res = await fetch(`${getApiBase()}/anime/relations?title=${encodeURIComponent(title)}`);
-      if (res.ok) return res.json();
-    } catch (_) {}
     return [];
   },
 

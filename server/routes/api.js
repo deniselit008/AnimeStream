@@ -347,10 +347,23 @@ router.get('/proxy-player', async (req, res) => {
   <style>
     html, body { margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; display:flex; align-items:center; justify-content:center; }
     video { width:100%; height:100%; object-fit:contain; }
+    body.hide-cursor, body.hide-cursor * { cursor: none !important; }
   </style>
 </head>
 <body>
   <video src="${targetUrl}" controls autoplay playsinline></video>
+  <script>
+    let idleT = null;
+    function resetC() {
+      document.body.classList.remove('hide-cursor');
+      if (idleT) clearTimeout(idleT);
+      idleT = setTimeout(() => document.body.classList.add('hide-cursor'), 2500);
+    }
+    window.addEventListener('mousemove', resetC);
+    window.addEventListener('mousedown', resetC);
+    window.addEventListener('touchstart', resetC, { passive: true });
+    resetC();
+  </script>
 </body>
 </html>`;
       res.set({

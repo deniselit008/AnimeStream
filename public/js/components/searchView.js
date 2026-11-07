@@ -56,6 +56,13 @@ export async function renderSearch(container, query, source = 'all') {
   const inlineForm = container.querySelector('#search-view-inline-form');
   const inlineInput = container.querySelector('#search-view-inline-input');
   if (inlineForm && inlineInput) {
+    inlineInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        inlineForm.dispatchEvent(new Event('submit'));
+      }
+    });
+
     inlineForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const newQuery = inlineInput.value.trim();
@@ -109,8 +116,8 @@ export async function renderSearch(container, query, source = 'all') {
 
   try {
     const data = await Api.search(query, source);
-    const results = data.results || [];
-    const errors = data.errors || [];
+    const results = Array.isArray(data) ? data : (data?.results || []);
+    const errors = Array.isArray(data?.errors) ? data.errors : [];
 
     // Show warnings if one provider had issues
     if (errors.length > 0) {

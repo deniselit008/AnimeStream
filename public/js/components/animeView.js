@@ -34,24 +34,32 @@ export async function renderAnime(container, animeUrl) {
       if (filter === 'sequel_prequel') {
         return items.filter(it => {
           const raw = (it.raw_relation || '').toLowerCase();
-          return raw.includes('sequel') || raw.includes('prequel') || raw.includes('parent');
+          const rel = (it.relation || '').toLowerCase();
+          return raw.includes('sequel') || raw.includes('prequel') || raw.includes('parent') ||
+                 rel.includes('secuela') || rel.includes('precuela') || rel.includes('principal');
         });
       } else if (filter === 'movies') {
         return items.filter(it => {
           const raw = (it.raw_relation || '').toLowerCase();
+          const rel = (it.relation || '').toLowerCase();
           const t = (it.type || '').toLowerCase();
-          return raw.includes('summary') || t.includes('película') || t.includes('movie');
+          return raw.includes('summary') || rel.includes('resumen') || rel.includes('película') ||
+                 t.includes('película') || t.includes('movie');
         });
       } else if (filter === 'spin_side') {
         return items.filter(it => {
           const raw = (it.raw_relation || '').toLowerCase();
+          const rel = (it.relation || '').toLowerCase();
           const t = (it.type || '').toLowerCase();
-          return raw.includes('spin') || raw.includes('side') || t.includes('ova') || t.includes('special');
+          return raw.includes('spin') || raw.includes('side') || rel.includes('paralela') || rel.includes('spin') ||
+                 t.includes('ova') || t.includes('special') || t.includes('especial');
         });
       } else if (filter === 'other') {
         return items.filter(it => {
           const raw = (it.raw_relation || '').toLowerCase();
-          return raw.includes('other') || raw.includes('character') || raw.includes('alternative');
+          const rel = (it.relation || '').toLowerCase();
+          return raw.includes('other') || raw.includes('character') || raw.includes('alternative') ||
+                 rel.includes('otro') || rel.includes('personaje') || rel.includes('alternativa');
         });
       }
       return items;
@@ -67,17 +75,23 @@ export async function renderAnime(container, animeUrl) {
       // Check available categories to show filter pills only when relevant
       const hasSequelPrequel = items.some(it => {
         const raw = (it.raw_relation || '').toLowerCase();
-        return raw.includes('sequel') || raw.includes('prequel') || raw.includes('parent');
+        const rel = (it.relation || '').toLowerCase();
+        return raw.includes('sequel') || raw.includes('prequel') || raw.includes('parent') ||
+               rel.includes('secuela') || rel.includes('precuela') || rel.includes('principal');
       });
       const hasMovies = items.some(it => {
         const raw = (it.raw_relation || '').toLowerCase();
+        const rel = (it.relation || '').toLowerCase();
         const t = (it.type || '').toLowerCase();
-        return raw.includes('summary') || t.includes('película') || t.includes('movie');
+        return raw.includes('summary') || rel.includes('resumen') || rel.includes('película') ||
+               t.includes('película') || t.includes('movie');
       });
       const hasSpinSide = items.some(it => {
         const raw = (it.raw_relation || '').toLowerCase();
+        const rel = (it.relation || '').toLowerCase();
         const t = (it.type || '').toLowerCase();
-        return raw.includes('spin') || raw.includes('side') || t.includes('ova') || t.includes('special');
+        return raw.includes('spin') || raw.includes('side') || rel.includes('paralela') || rel.includes('spin') ||
+               t.includes('ova') || t.includes('special') || t.includes('especial');
       });
 
       return `

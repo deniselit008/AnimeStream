@@ -85,7 +85,7 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
                 <option value="jkanime">JKAnime</option>
                 <option value="tioanime">TioAnime</option>
               </select>
-              <button type="submit" class="search-btn" title="Buscar">
+              <button type="submit" class="search-btn" id="nav-search-btn" title="Buscar">
                 <span>Buscar</span>
               </button>
             </form>
@@ -185,7 +185,7 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
       autocompleteDebounceTimer = setTimeout(async () => {
         try {
           const res = await Api.search(q, sourceSelect ? sourceSelect.value : 'all');
-          const results = res.results || [];
+          const results = Array.isArray(res) ? res : (res?.results || []);
           if (results.length === 0) {
             suggestionsDropdown.innerHTML = `
               <div class="suggestion-empty">No se encontraron animes para "${escapeHtml(q)}"</div>
@@ -243,18 +243,33 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
       }, 250);
     });
 
-    // Close suggestions when clicking outside or pressing Escape
+    // Close suggestions when clicking outside, navigating or pressing Escape
     document.addEventListener('click', (e) => {
       if (!form.contains(e.target) && !suggestionsDropdown.contains(e.target)) {
         closeSuggestions();
       }
     });
 
+    window.addEventListener('hashchange', () => {
+      closeSuggestions();
+    });
+
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        form.dispatchEvent(new Event('submit'));
+      } else if (e.key === 'Escape') {
         closeSuggestions();
       }
     });
+
+    const searchBtn = container.querySelector('#nav-search-btn');
+    if (searchBtn) {
+      searchBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        form.dispatchEvent(new Event('submit'));
+      });
+    }
 
     // AdBlock Modal Trigger
     const adblockBtn = container.querySelector('#nav-btn-adblock');
