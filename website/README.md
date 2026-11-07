@@ -11,14 +11,17 @@ Está configurada para consultar dinámicamente la **API de GitHub Releases** de
 
 ## 🚀 Vista Previa Local Inmediata
 
-Puedes probar la página web en tu equipo en 1 segundo con:
+Puedes probar la página web en tu equipo ejecutando desde la terminal:
 
-1. **Doble clic en `preview_website.bat`** (en la raíz del repositorio).
-2. O ejecutando desde la terminal:
-   ```bash
-   python -m http.server 8080 --directory website
-   ```
-3. Abre en tu navegador: [**`http://localhost:8080`**](http://localhost:8080)
+```bash
+# Con Python:
+python -m http.server 8080 --directory website
+
+# O con Node.js / npx:
+npx serve website
+```
+
+Abre en tu navegador: [**`http://localhost:8080`**](http://localhost:8080)
 
 ---
 
