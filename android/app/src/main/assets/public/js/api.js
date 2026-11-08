@@ -113,14 +113,34 @@ export const Api = {
       } catch (_) {}
     }
 
-    // 2. Query Jikan API (using fetchHtml to bypass Android CORS via AndroidBridge)
+    // Helper to query Jikan API with dual network strategy (Direct CORS fetch + AndroidBridge fallback)
+    async function queryJikanApi(endpoint) {
+      const jikanUrl = `https://api.jikan.moe/v4/${endpoint}`;
+      // Direct browser fetch first (Jikan supports public CORS)
+      try {
+        const res = await fetch(jikanUrl, {
+          headers: { 'Accept': 'application/json' }
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (_) {}
+
+      // Fallback via fetchHtml / AndroidBridge
+      try {
+        const raw = await fetchHtml(jikanUrl, { 'Accept': 'application/json' });
+        return typeof raw === 'string' ? JSON.parse(raw) : raw;
+      } catch (_) {}
+
+      return null;
+    }
+
+    // 2. Query Jikan API
     try {
-      const searchRaw = await fetchHtml(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(cleanTitle)}&limit=1`);
-      const searchData = typeof searchRaw === 'string' ? JSON.parse(searchRaw) : searchRaw;
+      const searchData = await queryJikanApi(`anime?q=${encodeURIComponent(cleanTitle)}&limit=1`);
       const malId = searchData?.data?.[0]?.mal_id;
       if (malId) {
-        const relRaw = await fetchHtml(`https://api.jikan.moe/v4/anime/${malId}/relations`);
-        const relData = typeof relRaw === 'string' ? JSON.parse(relRaw) : relRaw;
+        const relData = await queryJikanApi(`anime/${malId}/relations`);
         const rels = [];
         const seen = new Set();
         (relData?.data || []).forEach(r => {

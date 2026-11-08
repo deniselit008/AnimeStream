@@ -405,6 +405,19 @@ export async function renderAnime(container, animeUrl) {
           }
         });
       });
+
+      // Relation cards navigation (Prequels & Sequels click on mobile & PC)
+      const relCards = relMount.querySelectorAll('.relation-card');
+      relCards.forEach(card => {
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.relation-mal-link')) return;
+          e.preventDefault();
+          const href = card.getAttribute('href');
+          if (href) {
+            window.location.hash = href;
+          }
+        });
+      });
     }
 
     attachRelationsEvents();

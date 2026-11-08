@@ -82,10 +82,11 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
 
           <!-- Modern Search Bar with Live Suggestions Dropdown -->
           <div class="search-wrapper">
-            <form class="search-form" id="nav-search-form" autocomplete="off">
-              <span class="search-icon-inside">${Icons.search}</span>
+            <form class="search-form" id="nav-search-form" autocomplete="off" action="#">
+              <span class="search-icon-inside" style="cursor: pointer;" title="Buscar">${Icons.search}</span>
               <input 
-                type="text" 
+                type="search" 
+                enterkeyhint="search"
                 class="search-input" 
                 id="nav-search-input" 
                 placeholder="Buscar anime en tiempo real (ej. Frieren, One Piece...)" 
@@ -170,6 +171,7 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
       e.preventDefault();
       closeSuggestions();
       const q = input.value.trim();
+      if (input) input.blur(); // Dismiss mobile on-screen keyboard
       if (q) {
         const src = sourceSelect ? sourceSelect.value : 'all';
         const targetHash = `#/search?q=${encodeURIComponent(q)}&source=${src}`;
@@ -184,6 +186,18 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
         }
       }
     });
+
+    // Allow tapping the search icon inside the form to trigger search or focus
+    const searchIconInside = form.querySelector('.search-icon-inside');
+    if (searchIconInside) {
+      searchIconInside.addEventListener('click', () => {
+        if (input.value.trim()) {
+          form.dispatchEvent(new Event('submit'));
+        } else {
+          input.focus();
+        }
+      });
+    }
 
     // Real-time Autocomplete Debounce
     input.addEventListener('input', () => {

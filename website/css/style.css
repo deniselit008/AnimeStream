@@ -1555,7 +1555,7 @@ body {
 }
 
 /* ==========================================================================
-   Version 1.2.0 Highlights & Multiplatform Styling
+   Version 1.2.1 Highlights & Multiplatform Styling
    ========================================================================== */
 .highlight-card {
   border-color: rgba(244, 117, 33, 0.28);
@@ -1565,7 +1565,7 @@ body {
 }
 
 .highlight-card::after {
-  content: 'Novedad v1.2.0';
+  content: 'Novedad v1.2.1';
   position: absolute;
   top: 14px;
   right: 14px;

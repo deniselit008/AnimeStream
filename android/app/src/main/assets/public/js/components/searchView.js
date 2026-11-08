@@ -19,9 +19,10 @@ export async function renderSearch(container, query, source = 'all') {
         </div>
 
         <!-- Inline Re-Search Form on Search Page -->
-        <form id="search-view-inline-form" style="display: flex; gap: 8px; flex: 1; max-width: 440px; min-width: 240px;">
+        <form id="search-view-inline-form" action="#" style="display: flex; gap: 8px; flex: 1; max-width: 440px; min-width: 240px;">
           <input 
-            type="text" 
+            type="search" 
+            enterkeyhint="search"
             id="search-view-inline-input" 
             class="search-input" 
             value="${escapeHtml(query)}" 
@@ -66,6 +67,7 @@ export async function renderSearch(container, query, source = 'all') {
     inlineForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const newQuery = inlineInput.value.trim();
+      if (inlineInput) inlineInput.blur(); // Dismiss mobile on-screen keyboard
       if (newQuery) {
         const navInput = document.querySelector('#nav-search-input');
         if (navInput) navInput.value = newQuery;
