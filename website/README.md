@@ -61,7 +61,7 @@ La página implementa el 100% de los estándares recomendados por Google Search 
 - Compatible con dispositivos móviles (Touch targets >= 48px y diseño 100% responsivo).
 
 ### 7. Open Graph y Twitter Cards
-- Tarjetas de previsualización social (`og:title`, `og:description`, `og:image`, `twitter:card="summary_large_image"`). Diseñadas para que al compartir el enlace en WhatsApp, Telegram, Discord, Twitter o Facebook, se muestre una portada con la interfaz y descripción oficial.
+- Tarjetas de previsualización social (`og:title`, `og:description`, `og:image`, `twitter:card="summary_large_image"`). Diseñadas para que al compartir el enlace en WhatsApp, Telegram, X (Twitter) o Facebook, se muestre una portada con la interfaz y descripción oficial.
 
 ---
 

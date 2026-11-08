@@ -118,9 +118,9 @@ async function createWindow(serverUrl) {
   }, 1500);
 
   // 🛡️ NATIVE POPUP BLOCKER: Strictly deny any popup window from embedded video players (VOE, Mp4Upload, etc.)
-  // Never allow third-party ad networks to launch external browser tabs in Edge/Chrome, but allow legitimate community links (Discord, GitHub) to open in system browser.
+  // Never allow third-party ad networks to launch external browser tabs in Edge/Chrome, but allow legitimate community links (X/Twitter, GitHub) to open in system browser.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https://discord.gg/') || url.startsWith('https://discord.com/') || url.startsWith('https://github.com/')) {
+    if (url.startsWith('https://x.com/') || url.startsWith('https://twitter.com/') || url.startsWith('https://github.com/')) {
       shell.openExternal(url);
       return { action: 'deny' };
     }
@@ -129,7 +129,7 @@ async function createWindow(serverUrl) {
   });
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (url.startsWith('https://discord.gg/') || url.startsWith('https://discord.com/') || url.startsWith('https://github.com/')) {
+    if (url.startsWith('https://x.com/') || url.startsWith('https://twitter.com/') || url.startsWith('https://github.com/')) {
       event.preventDefault();
       shell.openExternal(url);
     }

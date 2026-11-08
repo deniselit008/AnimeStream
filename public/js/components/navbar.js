@@ -65,17 +65,17 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
                 <span class="nav-network-label">Dispositivos</span>
               </button>
 
-              <!-- Official Discord Server Link -->
+              <!-- Official X Account Link -->
               <a 
-                href="https://discord.gg/MR6E6YHe3z" 
+                href="https://x.com/animestreaem7f" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                class="nav-discord-btn" 
-                id="nav-btn-discord" 
-                title="Servidor oficial de Discord: Únete a la comunidad"
+                class="nav-x-btn" 
+                id="nav-btn-x" 
+                title="Síguenos en X (Twitter): @animestreaem7f"
               >
-                <span class="discord-icon-svg">${Icons.discord}</span>
-                <span class="nav-discord-label">Discord</span>
+                <span class="x-icon-svg">${Icons.x}</span>
+                <span class="nav-x-label">X</span>
               </a>
             </div>
           </div>

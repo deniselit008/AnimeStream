@@ -2375,15 +2375,15 @@ body {
 }
 
 /* ==========================================================================
-   Discord Community Nav Button & Badges
+   Official X Account (Twitter) Nav Button & Badges
    ========================================================================== */
-.nav-discord-btn {
+.nav-x-btn {
   display: flex;
   align-items: center;
   gap: 7px;
-  background: rgba(88, 101, 242, 0.15);
-  border: 1px solid rgba(88, 101, 242, 0.4);
-  color: #8ea1e1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f1f5f9;
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 0.82rem;
@@ -2394,43 +2394,43 @@ body {
   position: relative;
 }
 
-.nav-discord-btn:hover {
-  background: rgba(88, 101, 242, 0.28);
-  border-color: #5865F2;
+.nav-x-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #ffffff;
   color: #ffffff;
-  box-shadow: 0 0 16px rgba(88, 101, 242, 0.35);
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.25);
   transform: translateY(-1px);
 }
 
-.discord-icon-svg {
+.x-icon-svg {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.discord-icon-svg svg {
-  width: 17px;
-  height: 17px;
+.x-icon-svg svg {
+  width: 15px;
+  height: 15px;
   fill: currentColor;
 }
 
-.discord-footer-link {
-  color: #8ea1e1;
+.x-footer-link {
+  color: #e2e8f0;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
   transition: color 0.2s ease;
 }
 
-.discord-footer-link:hover {
+.x-footer-link:hover {
   color: #ffffff;
   text-decoration: underline;
 }
 
-/* Discord Banner in Network Modal */
-.network-discord-banner {
+/* X Banner in Network Modal */
+.network-x-banner {
   margin: 14px 0 6px 0;
-  background: rgba(88, 101, 242, 0.12);
-  border: 1px solid rgba(88, 101, 242, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 10px;
   padding: 10px 14px;
   display: flex;
@@ -2441,20 +2441,22 @@ body {
   color: #cbd5e1;
 }
 
-.btn-discord-mini {
-  background: #5865F2;
+.btn-x-mini {
+  background: #000000;
   color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   text-decoration: none;
   padding: 5px 12px;
   border-radius: 6px;
   font-size: 0.78rem;
   font-weight: 600;
   white-space: nowrap;
-  transition: background 0.2s ease, transform 0.15s ease;
+  transition: all 0.2s ease;
 }
 
-.btn-discord-mini:hover {
-  background: #4752c4;
+.btn-x-mini:hover {
+  background: #1e293b;
+  border-color: #ffffff;
   transform: translateY(-1px);
 }
 
@@ -2839,7 +2841,7 @@ body {
   .nav-links,
   #nav-btn-tv-mode,
   .nav-network-label,
-  .nav-discord-label {
+  .nav-x-label {
     display: none !important;
   }
 
@@ -2857,7 +2859,7 @@ body {
   }
 
   .nav-network-btn,
-  .nav-discord-btn {
+  .nav-x-btn {
     padding: 4px 8px !important;
     font-size: 0.74rem !important;
     height: 30px !important;

@@ -196,9 +196,9 @@ function renderNetworkModalContent(modal, data) {
         </div>
       </div>
 
-      <div class="network-discord-banner">
-        <span>💬 ¿Dudas, sugerencias o reporte de errores?</span>
-        <a href="https://discord.gg/MR6E6YHe3z" target="_blank" rel="noopener noreferrer" class="btn-discord-mini">Únete a nuestro Discord</a>
+      <div class="network-x-banner">
+        <span>💬 ¿Dudas, sugerencias o novedades? Síguenos en X</span>
+        <a href="https://x.com/animestreaem7f" target="_blank" rel="noopener noreferrer" class="btn-x-mini">@animestreaem7f</a>
       </div>
 
       <div class="network-modal-footer">

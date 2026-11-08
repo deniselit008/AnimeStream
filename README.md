@@ -219,6 +219,6 @@ AnimeStream/
 
 ## 💬 Comunidad y Soporte
 
-¿Tienes dudas, sugerencias o quieres compartir con otros usuarios y desarrolladores de AnimeStream?
-- **Servidor Oficial de Discord**: [https://discord.gg/MR6E6YHe3z](https://discord.gg/MR6E6YHe3z)
+¿Tienes dudas, sugerencias o quieres enterarte de las últimas novedades de AnimeStream?
+- **Cuenta Oficial en X (Twitter)**: [@animestreaem7f (https://x.com/animestreaem7f)](https://x.com/animestreaem7f)
 - **Reporte de Errores**: Abre un [Issue en GitHub](https://github.com/deniselit008/AnimeStream/issues)
