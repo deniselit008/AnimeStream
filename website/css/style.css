@@ -174,18 +174,36 @@ body {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: clamp(10px, 1.4vw, 22px);
   list-style: none;
 }
 
 .nav-link {
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
   transition: color var(--transition-fast);
   padding: 8px 0;
   position: relative;
+  white-space: nowrap;
+}
+
+.nav-link-discord {
+  color: #8ea1e1 !important;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nav-link-discord:hover {
+  color: #ffffff !important;
+}
+
+.nav-link-discord svg {
+  width: 15px;
+  height: 15px;
 }
 
 .nav-link:hover, .nav-link:focus-visible {
@@ -353,7 +371,52 @@ body {
   justify-content: center;
   gap: 18px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
+}
+
+/* Secondary Download Pills (Portable, .deb & Discord) */
+.hero-sub-downloads {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  margin-bottom: 24px;
+}
+
+.hero-pill-link {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-pill-link:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: var(--text-white);
+  transform: translateY(-2px);
+}
+
+.hero-pill-discord {
+  color: #8ea1e1;
+  background: rgba(88, 101, 242, 0.12);
+  border-color: rgba(88, 101, 242, 0.35);
+}
+
+.hero-pill-discord:hover {
+  background: rgba(88, 101, 242, 0.28);
+  border-color: #5865F2;
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(88, 101, 242, 0.35);
 }
 
 /* Download Dynamic Button details */
@@ -379,11 +442,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 16px 26px;
   flex-wrap: wrap;
   font-size: 0.85rem;
   color: var(--text-dim);
-  margin-bottom: 40px;
+  margin-top: 24px;
+  margin-bottom: 52px;
 }
 
 .hero-meta-item {
@@ -394,7 +458,7 @@ body {
 
 /* Hero Showcase Mockup */
 .hero-mockup-wrapper {
-  margin-top: 30px;
+  margin-top: 48px;
   position: relative;
   max-width: 1040px;
   margin-left: auto;
@@ -840,8 +904,8 @@ body {
   background: linear-gradient(135deg, #151d32 0%, #0d1424 100%);
   border: 1px solid var(--border-accent);
   border-radius: var(--radius-lg);
-  padding: 48px;
-  max-width: 900px;
+  padding: 56px 40px;
+  max-width: 1140px;
   margin: 0 auto;
   box-shadow: var(--shadow-glow);
   text-align: center;
@@ -853,8 +917,8 @@ body {
   justify-content: center;
   gap: 24px;
   flex-wrap: wrap;
-  margin: 20px 0 32px 0;
-  padding: 14px 20px;
+  margin: 24px 0 36px 0;
+  padding: 14px 24px;
   background: rgba(11, 15, 25, 0.6);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
@@ -1190,7 +1254,7 @@ body {
 /* ==========================================================================
    Responsive Breakpoints
    ========================================================================== */
-@media (max-width: 960px) {
+@media (max-width: 1060px) {
   .nav-links {
     display: none;
   }
@@ -1267,14 +1331,15 @@ body {
 .platform-cards-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin: 32px 0 28px 0;
+  gap: 28px;
+  margin: 36px 0 32px 0;
   text-align: left;
 }
 
 @media (max-width: 900px) {
   .platform-cards-grid {
     grid-template-columns: 1fr;
+    gap: 24px;
   }
 }
 
@@ -1282,7 +1347,7 @@ body {
   background: rgba(15, 23, 42, 0.7);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 28px;
+  padding: 32px 26px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -1403,11 +1468,56 @@ body {
 
 .platform-download-footer {
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .platform-download-footer .btn {
   width: 100%;
   justify-content: center;
+}
+
+.platform-secondary-link {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  min-height: 38px;
+}
+
+.platform-secondary-link:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--text-white);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.platform-secondary-note {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  min-height: 38px;
 }
 
 /* ==========================================================================
@@ -1444,15 +1554,125 @@ body {
 .req-grid-multi {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  max-width: 1100px;
+  gap: 28px;
+  max-width: 1140px;
   margin: 0 auto;
 }
 
 @media (max-width: 900px) {
   .req-grid-multi {
     grid-template-columns: 1fr;
+    gap: 24px;
   }
 }
+
+/* Step Installation Blocks & Buttons Spacing */
+.step-download-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.step-platform-block {
+  margin-bottom: 24px;
+}
+
+.step-platform-block.with-divider {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ==========================================================================
+   Discord Community Callout Banner on Website
+   ========================================================================== */
+.discord-community-banner {
+  background: linear-gradient(135deg, rgba(88, 101, 242, 0.16) 0%, rgba(13, 20, 38, 0.95) 100%);
+  border: 1px solid rgba(88, 101, 242, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 44px;
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  max-width: 1040px;
+  margin: 0 auto;
+  box-shadow: 0 12px 36px rgba(88, 101, 242, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.discord-banner-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: rgba(88, 101, 242, 0.2);
+  border: 1px solid rgba(88, 101, 242, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5865F2;
+  flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(88, 101, 242, 0.25);
+}
+
+.discord-banner-icon svg {
+  width: 42px;
+  height: 42px;
+}
+
+.discord-banner-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-white);
+  margin-bottom: 10px;
+  line-height: 1.25;
+}
+
+.discord-banner-desc {
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 680px;
+  margin-bottom: 22px;
+}
+
+.discord-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.btn-discord {
+  background: #5865F2;
+  color: #ffffff !important;
+  box-shadow: 0 4px 18px rgba(88, 101, 242, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-discord:hover {
+  background: #4752c4;
+  box-shadow: 0 6px 24px rgba(88, 101, 242, 0.6);
+  transform: translateY(-2px);
+}
+
+.discord-note-text {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+@media (max-width: 768px) {
+  .discord-community-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 32px 24px;
+    gap: 20px;
+  }
+  .discord-banner-actions {
+    justify-content: center;
+  }
+}
+
 
 

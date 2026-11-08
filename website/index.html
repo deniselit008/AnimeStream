@@ -194,8 +194,9 @@
           <li><a href="#instalacion" class="nav-link">Instalación</a></li>
           <li><a href="#faq" class="nav-link">FAQ</a></li>
           <li>
-            <a href="https://discord.gg/MR6E6YHe3z" target="_blank" rel="noopener noreferrer" class="nav-link" style="color:#8ea1e1; font-weight:600;" title="Únete a nuestro servidor de Discord">
-              Discord
+            <a href="https://discord.gg/MR6E6YHe3z" target="_blank" rel="noopener noreferrer" class="nav-link nav-link-discord" title="Únete a nuestro servidor de Discord">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.078.078 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+              <span>Discord</span>
             </a>
           </li>
           <li>
@@ -302,21 +303,29 @@
           </a>
         </div>
 
-        <!-- Opciones adicionales destacadas en Hero: Portable y Paquete Debian -->
-        <div style="display:flex; justify-content:center; gap:14px; flex-wrap:wrap; margin-top:14px; margin-bottom:12px;">
+        <!-- Opciones adicionales destacadas en Hero: Portable, Paquete Debian y Discord -->
+        <div class="hero-sub-downloads">
           <a href="https://github.com/deniselit008/AnimeStream/releases/latest" 
-             class="js-download-win-portable" 
+             class="hero-pill-link js-download-win-portable" 
              data-platform="windows-portable" 
-             style="font-size:0.88rem; color:var(--text-muted); text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:999px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); transition:all 0.2s;"
              title="Descargar versión portable de AnimeStream (.exe sin instalador)">
             <span>📦 Windows Portable <strong>(.exe)</strong> (<span class="js-file-size-win-portable">~111 MB</span>)</span>
           </a>
           <a href="https://github.com/deniselit008/AnimeStream/releases/download/1.2.0/animestream-node_1.2.0_amd64.deb" 
-             class="js-download-linux-deb" 
+             class="hero-pill-link js-download-linux-deb" 
              data-platform="linux-deb" 
-             style="font-size:0.88rem; color:var(--text-muted); text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:999px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); transition:all 0.2s;"
              title="Descargar paquete para Debian, Ubuntu y Linux Mint (.deb)">
             <span>🐧 Debian / Ubuntu <strong>(.deb)</strong> (<span class="js-file-size-linux-deb">~103 MB</span>)</span>
+          </a>
+          <a href="https://discord.gg/MR6E6YHe3z" 
+             target="_blank" 
+             rel="noopener noreferrer" 
+             class="hero-pill-link hero-pill-discord" 
+             title="Únete a nuestro servidor oficial de Discord">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+            </svg>
+            <span>💬 Servidor de Discord</span>
           </a>
         </div>
 
@@ -881,7 +890,7 @@
               <p>
                 Elige el formato adecuado según tu dispositivo: <strong>Windows (.exe)</strong>, <strong>Android (.apk)</strong> o <strong>Linux (.AppImage / .deb)</strong> directamente desde GitHub Releases.
               </p>
-              <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+              <div class="step-download-buttons">
                 <a href="#descargar" class="btn btn-primary btn-sm js-download-btn">Windows (.exe)</a>
                 <a href="#descargar" class="btn btn-secondary btn-sm js-download-android">Android (.apk)</a>
                 <a href="#descargar" class="btn btn-secondary btn-sm js-download-linux">Linux (.AppImage)</a>
@@ -897,12 +906,12 @@
               <h3>Ejecuta o instala según tu plataforma</h3>
               
               <!-- Windows SmartScreen -->
-              <div style="margin-bottom:20px;">
-                <h4 style="color:var(--text-white); font-size:1.05rem; margin-bottom:6px;">🪟 En Windows (Aviso de SmartScreen):</h4>
-                <p style="font-size:0.92rem; color:var(--text-muted); margin-bottom:8px;">
+              <div class="step-platform-block">
+                <h4 style="color:var(--text-white); font-size:1.05rem; margin-bottom:8px;">🪟 En Windows (Aviso de SmartScreen):</h4>
+                <p style="font-size:0.92rem; color:var(--text-muted); margin-bottom:10px;">
                   Haz doble clic sobre <code>AnimeStream.exe</code>. Al ser código abierto comunitario sin certificado corporativo de pago, Windows SmartScreen puede mostrar una pantalla azul informativa.
                 </p>
-                <div class="smartscreen-tip-box" style="margin-bottom:14px;">
+                <div class="smartscreen-tip-box" style="margin-bottom:16px;">
                   <strong>Cómo omitir la advertencia de SmartScreen:</strong>
                   <ol style="margin-top:6px; padding-left:20px; line-height:1.5;">
                     <li>Haz clic en <strong>"Más información"</strong> en la ventana azul.</li>
@@ -911,28 +920,28 @@
                 </div>
                 <div class="smartscreen-diagram-row">
                   <div>
-                    <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;"><strong>Paso A:</strong> Clic en "Más información"</p>
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;"><strong>Paso A:</strong> Clic en "Más información"</p>
                     <img src="./assets/smartscreen-step1.svg" alt="Paso 1 Más Información SmartScreen" class="smartscreen-diagram-img" width="500" height="260" loading="lazy">
                   </div>
                   <div>
-                    <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;"><strong>Paso B:</strong> Clic en "Ejecutar de todas formas"</p>
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;"><strong>Paso B:</strong> Clic en "Ejecutar de todas formas"</p>
                     <img src="./assets/smartscreen-step2.svg" alt="Paso 2 Ejecutar SmartScreen" class="smartscreen-diagram-img" width="500" height="260" loading="lazy">
                   </div>
                 </div>
               </div>
 
               <!-- Android -->
-              <div style="margin-bottom:20px; padding-top:16px; border-top:1px solid var(--border-subtle);">
-                <h4 style="color:var(--text-white); font-size:1.05rem; margin-bottom:6px;">🤖 En Android (.apk):</h4>
+              <div class="step-platform-block with-divider">
+                <h4 style="color:var(--text-white); font-size:1.05rem; margin-bottom:8px;">🤖 En Android (.apk):</h4>
                 <p style="font-size:0.92rem; color:var(--text-muted);">
                   Abre el archivo descargado <code>AnimeStream.apk</code> desde las notificaciones o tu administrador de archivos. Si el sistema te lo solicita, autoriza <em>"Instalar aplicaciones de fuentes desconocidas"</em> para tu navegador o gestor de archivos. ¡La app es 100% autónoma y no requiere PC!
                 </p>
               </div>
 
               <!-- Linux -->
-              <div style="padding-top:16px; border-top:1px solid var(--border-subtle);">
-                <h4 style="color:var(--text-white); font-size:1.05rem; margin-bottom:6px;">🐧 En Linux (.AppImage / .deb):</h4>
-                <p style="font-size:0.92rem; color:var(--text-muted); margin-bottom:6px;">
+              <div class="step-platform-block with-divider">
+                <h4 style="color:var(--text-white); font-size:1.05rem; margin-bottom:8px;">🐧 En Linux (.AppImage / .deb):</h4>
+                <p style="font-size:0.92rem; color:var(--text-muted); margin-bottom:8px;">
                   <strong>Opción AppImage:</strong> Abre una terminal en la carpeta donde descargaste el archivo, concede permisos de ejecución con <code>chmod +x AnimeStream-1.2.0.AppImage</code> y ejecuta <code>./AnimeStream-1.2.0.AppImage</code>.
                 </p>
                 <p style="font-size:0.92rem; color:var(--text-muted);">
@@ -1010,15 +1019,12 @@
                    title="Descargar Instalador de AnimeStream para Windows (.exe)">
                   <span>Descargar Instalador (.exe)</span>
                 </a>
-                <div style="margin-top:10px; text-align:center;">
-                  <a href="https://github.com/deniselit008/AnimeStream/releases/latest" 
-                     class="js-download-win-portable" 
-                     data-platform="windows-portable"
-                     style="font-size:0.84rem; color:var(--text-muted); text-decoration:underline; display:inline-block; padding:4px 0;" 
-                     title="Descargar versión portable autónoma (.exe sin instalador)">
-                    📦 O descargar Versión Portable (<span class="js-file-size-win-portable">~111 MB</span>)
-                  </a>
-                </div>
+                <a href="https://github.com/deniselit008/AnimeStream/releases/latest" 
+                   class="platform-secondary-link js-download-win-portable" 
+                   data-platform="windows-portable" 
+                   title="Descargar versión portable autónoma (.exe sin instalador)">
+                  <span>📦 Versión Portable (<strong class="js-file-size-win-portable">~111 MB</strong>)</span>
+                </a>
               </div>
             </div>
 
@@ -1044,6 +1050,9 @@
                    title="Descargar AnimeStream para Android (.apk)">
                   <span>Descargar .apk</span>
                 </a>
+                <span class="platform-secondary-note">
+                  <span>⚡ Sin PC • 100% Autónomo en Móvil y TV</span>
+                </span>
               </div>
             </div>
 
@@ -1069,15 +1078,12 @@
                    title="Descargar AnimeStream para Linux (Binario ELF AppImage)">
                   <span>Descargar .AppImage</span>
                 </a>
-                <div style="margin-top:10px; text-align:center;">
-                  <a href="https://github.com/deniselit008/AnimeStream/releases/download/1.2.0/animestream-node_1.2.0_amd64.deb" 
-                     class="js-download-linux-deb" 
-                     data-platform="linux-deb"
-                     style="font-size:0.84rem; color:var(--text-muted); text-decoration:underline; display:inline-block; padding:4px 0;" 
-                     title="Descargar paquete para Debian, Ubuntu y Linux Mint (.deb)">
-                    📦 O descargar paquete Debian / Ubuntu (<span class="js-file-size-linux-deb">~103 MB</span>) .deb
-                  </a>
-                </div>
+                <a href="https://github.com/deniselit008/AnimeStream/releases/download/1.2.0/animestream-node_1.2.0_amd64.deb" 
+                   class="platform-secondary-link js-download-linux-deb" 
+                   data-platform="linux-deb" 
+                   title="Descargar paquete para Debian, Ubuntu y Linux Mint (.deb)">
+                  <span>🐧 Paquete Debian / Ubuntu (<strong class="js-file-size-linux-deb">~103 MB</strong>) .deb</span>
+                </a>
               </div>
             </div>
 
@@ -1293,6 +1299,39 @@
     </section>
 
     <!-- =======================================================================
+         COMUNIDAD OFICIAL EN DISCORD
+         ======================================================================= -->
+    <section class="section" id="comunidad" aria-labelledby="comunidad-h2">
+      <div class="container">
+        
+        <div class="discord-community-banner">
+          <div class="discord-banner-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+            </svg>
+          </div>
+          <div class="discord-banner-content">
+            <span class="section-tag" style="color:#8ea1e1;">Comunidad Oficial</span>
+            <h2 id="comunidad-h2" class="discord-banner-title">Únete a Nuestro Servidor de Discord</h2>
+            <p class="discord-banner-desc">
+              Pide animes, recibe soporte directo para configurar Smart TV o móviles, comparte sugerencias y habla con otros miembros de la comunidad en tiempo real.
+            </p>
+            <div class="discord-banner-actions">
+              <a href="https://discord.gg/MR6E6YHe3z" target="_blank" rel="noopener noreferrer" class="btn btn-discord btn-lg" title="Unirse al Discord Oficial de AnimeStream">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                </svg>
+                <span>Unirse al Servidor de Discord</span>
+              </a>
+              <span class="discord-note-text">Acceso 100% libre • Comunidad oficial en español</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =======================================================================
          SEGURIDAD Y CÓDIGO ABIERTO
          ======================================================================= -->
     <section class="section" id="seguridad" aria-labelledby="seguridad-h2">
@@ -1352,6 +1391,7 @@
             <li><a href="#comparativa" class="footer-link">Comparativa</a></li>
             <li><a href="#requisitos" class="footer-link">Requisitos</a></li>
             <li><a href="#instalacion" class="footer-link">Instalación</a></li>
+            <li><a href="#comunidad" class="footer-link">Comunidad Discord</a></li>
           </ul>
         </div>
 
