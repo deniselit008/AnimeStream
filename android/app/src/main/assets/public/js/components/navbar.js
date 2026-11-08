@@ -64,6 +64,19 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
                 <span class="network-radar-icon">📡</span>
                 <span class="nav-network-label">Dispositivos</span>
               </button>
+
+              <!-- Official Discord Server Link -->
+              <a 
+                href="https://discord.gg/MR6E6YHe3z" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="nav-discord-btn" 
+                id="nav-btn-discord" 
+                title="Servidor oficial de Discord: Únete a la comunidad"
+              >
+                <span class="discord-icon-svg">${Icons.discord}</span>
+                <span class="nav-discord-label">Discord</span>
+              </a>
             </div>
           </div>
 

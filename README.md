@@ -214,3 +214,11 @@ AnimeStream/
 | `GET` | `/api/cache/stats` | Estadísticas de aciertos y memoria caché. |
 | `POST`| `/api/cache/clear` | Vaciado manual de la memoria caché. |
 | `GET` | `/api/health` | Estado del servidor y tiempo de actividad. |
+
+---
+
+## 💬 Comunidad y Soporte
+
+¿Tienes dudas, sugerencias o quieres compartir con otros usuarios y desarrolladores de AnimeStream?
+- **Servidor Oficial de Discord**: [https://discord.gg/MR6E6YHe3z](https://discord.gg/MR6E6YHe3z)
+- **Reporte de Errores**: Abre un [Issue en GitHub](https://github.com/deniselit008/AnimeStream/issues)

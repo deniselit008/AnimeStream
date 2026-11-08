@@ -297,6 +297,15 @@ public class MainActivity extends Activity {
                         return false;
                     }
 
+                    // If external community link (Discord, GitHub), open outside in Android browser / native app
+                    if (host != null && (host.contains("discord.gg") || host.contains("discord.com") || host.contains("github.com"))) {
+                        try {
+                            android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, uri);
+                            startActivity(intent);
+                        } catch (Exception ignored) {}
+                        return true;
+                    }
+
                     // NEVER allow third-party player iframes or ad clicks to replace our main app window!
                     return true;
                 }

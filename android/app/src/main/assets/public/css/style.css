@@ -2374,6 +2374,90 @@ body {
   font-size: 1rem;
 }
 
+/* ==========================================================================
+   Discord Community Nav Button & Badges
+   ========================================================================== */
+.nav-discord-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(88, 101, 242, 0.15);
+  border: 1px solid rgba(88, 101, 242, 0.4);
+  color: #8ea1e1;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.nav-discord-btn:hover {
+  background: rgba(88, 101, 242, 0.28);
+  border-color: #5865F2;
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(88, 101, 242, 0.35);
+  transform: translateY(-1px);
+}
+
+.discord-icon-svg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.discord-icon-svg svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+}
+
+.discord-footer-link {
+  color: #8ea1e1;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.discord-footer-link:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+/* Discord Banner in Network Modal */
+.network-discord-banner {
+  margin: 14px 0 6px 0;
+  background: rgba(88, 101, 242, 0.12);
+  border: 1px solid rgba(88, 101, 242, 0.3);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.btn-discord-mini {
+  background: #5865F2;
+  color: #ffffff !important;
+  text-decoration: none;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.btn-discord-mini:hover {
+  background: #4752c4;
+  transform: translateY(-1px);
+}
+
 .network-pulse-dot {
   width: 7px;
   height: 7px;
@@ -2754,7 +2838,8 @@ body {
   .desktop-nav-links,
   .nav-links,
   #nav-btn-tv-mode,
-  .nav-network-label {
+  .nav-network-label,
+  .nav-discord-label {
     display: none !important;
   }
 
@@ -2771,7 +2856,8 @@ body {
     font-size: 0.7rem !important;
   }
 
-  .nav-network-btn {
+  .nav-network-btn,
+  .nav-discord-btn {
     padding: 4px 8px !important;
     font-size: 0.74rem !important;
     height: 30px !important;

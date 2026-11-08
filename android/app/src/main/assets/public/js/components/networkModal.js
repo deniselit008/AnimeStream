@@ -196,6 +196,11 @@ function renderNetworkModalContent(modal, data) {
         </div>
       </div>
 
+      <div class="network-discord-banner">
+        <span>💬 ¿Dudas, sugerencias o reporte de errores?</span>
+        <a href="https://discord.gg/MR6E6YHe3z" target="_blank" rel="noopener noreferrer" class="btn-discord-mini">Únete a nuestro Discord</a>
+      </div>
+
       <div class="network-modal-footer">
         <div class="modal-footer-status">
           <span>🟢 Servidor activo en puerto <strong>${data.port || 3000}</strong></span>
