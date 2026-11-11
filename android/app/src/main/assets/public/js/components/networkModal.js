@@ -2,7 +2,8 @@
  * Network & Devices Modal Component
  * Displays local network IPs, Smart TV connection guides, and QR code inside the app.
  */
-import { escapeHtml } from '../utils.js?v=4.0';
+import { escapeHtml } from '../utils.js?v=5.0';
+import { isStandaloneMode } from '../api.js?v=5.0';
 
 let deferredInstallPrompt = null;
 let escHandler = null;
@@ -13,6 +14,15 @@ if (typeof window !== 'undefined') {
     e.preventDefault();
     deferredInstallPrompt = e;
   });
+}
+
+function isAndroidLocalEnv() {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.location.protocol === 'file:' ||
+    window.location.host.includes('appassets.androidplatform.net') ||
+    (window.AndroidBridge && isStandaloneMode())
+  );
 }
 
 export function openNetworkModal() {
@@ -41,6 +51,12 @@ export function openNetworkModal() {
   };
   document.addEventListener('keydown', escHandler);
 
+  // On Android standalone mode / local APK without PC server connected, show manual PC connection UI directly!
+  if (isAndroidLocalEnv() || isStandaloneMode()) {
+    renderAndroidManualConnectModal(modal);
+    return;
+  }
+
   // Show loading state
   modal.innerHTML = `
     <div class="network-modal-card">
@@ -58,37 +74,159 @@ export function openNetworkModal() {
     </div>
   `;
 
-  // Fetch from server
+  // Fetch from local PC server
   fetch('/api/network-info')
     .then(r => r.json())
     .then(data => {
-      // Check if modal is still in DOM (user might have closed it while fetching)
       if (document.getElementById('network-modal')) {
         renderNetworkModalContent(modal, data);
       }
     })
-    .catch(err => {
-      const card = modal.querySelector('.network-modal-card');
-      if (card) {
-        card.innerHTML = `
-          <button class="modal-close-btn" aria-label="Cerrar ventana" title="Cerrar">✕</button>
-          <div class="modal-header-row">
-            <div class="modal-icon-badge" style="background:rgba(239,68,68,0.2); color:#ef4444;">⚠️</div>
-            <div>
-              <h2 class="modal-title">Error al consultar red local</h2>
-              <p class="modal-subtitle">${escapeHtml(err.message)}</p>
-            </div>
-          </div>
-          <p style="margin-top:16px; color:var(--text-muted); font-size:0.9rem;">
-            Asegúrate de que el servidor local de AnimeStream esté activo. Puedes acceder directamente en: 
-            <code>http://localhost:3000</code>
-          </p>
-          <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
-            <button class="btn btn-secondary btn-close-modal-action" style="padding: 8px 24px; cursor: pointer;">Cerrar</button>
-          </div>
-        `;
+    .catch(() => {
+      if (document.getElementById('network-modal')) {
+        renderAndroidManualConnectModal(modal);
       }
     });
+}
+
+function renderAndroidManualConnectModal(modal) {
+  const savedServer = localStorage.getItem('animestream_server_url') ||
+    (window.AndroidBridge && typeof window.AndroidBridge.getServerUrl === 'function' ? window.AndroidBridge.getServerUrl() : '') || '';
+  const deviceIp = (window.AndroidBridge && typeof window.AndroidBridge.getDeviceWifiIp === 'function')
+    ? window.AndroidBridge.getDeviceWifiIp()
+    : '';
+  const isConnectedToPc = !!savedServer;
+
+  modal.innerHTML = `
+    <div class="network-modal-card">
+      <button class="modal-close-btn" aria-label="Cerrar ventana" title="Cerrar">✕</button>
+
+      <div class="modal-header-row">
+        <div class="modal-icon-badge">📡</div>
+        <div>
+          <h2 class="modal-title">Conexión Manual con PC / Red Local</h2>
+          <p class="modal-subtitle">Vincula esta app móvil con tu ordenador o úsala de forma autónoma sin PC</p>
+        </div>
+      </div>
+
+      ${deviceIp && deviceIp !== '0.0.0.0' ? `
+        <div style="margin: 12px 0; padding: 10px 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.28); border-radius: 10px; font-size: 0.85rem; color: #a7f3d0;">
+          📶 IP Wi-Fi actual de este dispositivo: <strong>${escapeHtml(deviceIp)}</strong>
+        </div>
+      ` : ''}
+
+      <div style="margin-top: 14px; padding: 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px;">
+        <label for="manual-pc-ip-input" style="display: block; font-size: 0.86rem; font-weight: 600; color: #fff; margin-bottom: 8px;">
+          🖥️ Dirección IP o URL de AnimeStream en tu PC:
+        </label>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <input
+            type="text"
+            id="manual-pc-ip-input"
+            value="${escapeHtml(savedServer)}"
+            placeholder="Ej: 192.168.1.50:3000"
+            style="flex: 1; min-width: 180px; background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 0.92rem; outline: none;"
+            autocomplete="off"
+          />
+          <button class="btn btn-primary btn-sm" id="btn-manual-connect-pc" style="padding: 10px 18px; font-weight: 600;">
+            🔗 Conectar
+          </button>
+        </div>
+        <p id="manual-connect-status" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 8px; line-height: 1.45;">
+          En tu ordenador abre AnimeStream → pulsa <strong>Dispositivos 📡</strong> → copia la IP local (ej. <code>192.168.1.50:3000</code>) y conéctate estando en el mismo Wi-Fi.
+        </p>
+      </div>
+
+      ${isConnectedToPc ? `
+        <div style="margin-top: 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; background: rgba(244, 117, 33, 0.1); border: 1px solid rgba(244, 117, 33, 0.3); border-radius: 10px;">
+          <span style="font-size: 0.84rem; color: #fed7aa;">Conectado actualmente a: <strong>${escapeHtml(savedServer)}</strong></span>
+          <button class="btn btn-secondary btn-sm" id="btn-switch-standalone" style="padding: 6px 12px; font-size: 0.8rem;">
+            📱 Volver a Modo Autónomo
+          </button>
+        </div>
+      ` : `
+        <div style="margin-top: 14px; padding: 12px 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 10px; font-size: 0.84rem; color: var(--text-muted);">
+          ✅ Actualmente estás usando el <strong>Modo Autónomo 100% Independiente</strong> (no necesitas tener un PC encendido).
+        </div>
+      `}
+
+      <div class="network-x-banner" style="margin-top: 16px;">
+        <span>💬 ¿Dudas, sugerencias o novedades? Síguenos en X</span>
+        <a href="https://x.com/animestreaem7f" target="_blank" rel="noopener noreferrer" class="btn-x-mini">@animestreaem7f</a>
+      </div>
+
+      <div style="margin-top: 18px; display: flex; justify-content: flex-end;">
+        <button class="btn btn-secondary btn-close-modal-action" style="padding: 8px 24px; cursor: pointer;">Cerrar</button>
+      </div>
+    </div>
+  `;
+
+  const connectBtn = modal.querySelector('#btn-manual-connect-pc');
+  const ipInput = modal.querySelector('#manual-pc-ip-input');
+  const statusEl = modal.querySelector('#manual-connect-status');
+
+  if (connectBtn && ipInput) {
+    connectBtn.addEventListener('click', async () => {
+      let raw = ipInput.value.trim();
+      if (!raw) {
+        if (statusEl) {
+          statusEl.style.color = '#f87171';
+          statusEl.textContent = '⚠️ Introduce la IP o URL de tu ordenador (ejemplo: 192.168.1.50:3000)';
+        }
+        return;
+      }
+
+      if (!raw.startsWith('http://') && !raw.startsWith('https://')) {
+        raw = `http://${raw}`;
+      }
+      if (!raw.includes(':', 7)) {
+        raw = `${raw.replace(/\/+$/, '')}:3000`;
+      }
+      raw = raw.replace(/\/+$/, '');
+
+      connectBtn.disabled = true;
+      connectBtn.textContent = 'Conectando...';
+      if (statusEl) {
+        statusEl.style.color = '#94a3b8';
+        statusEl.textContent = `Verificando conexión con ${raw}...`;
+      }
+
+      try {
+        const controller = new AbortController();
+        const tid = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch(`${raw}/api/health`, { signal: controller.signal });
+        clearTimeout(tid);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        localStorage.setItem('animestream_server_url', raw);
+        if (window.AndroidBridge && typeof window.AndroidBridge.connectToServer === 'function') {
+          window.AndroidBridge.connectToServer(raw);
+        } else {
+          window.location.reload();
+        }
+      } catch (err) {
+        connectBtn.disabled = false;
+        connectBtn.textContent = '🔗 Conectar';
+        if (statusEl) {
+          statusEl.style.color = '#f87171';
+          statusEl.textContent = `❌ No se pudo conectar con ${raw}. Verifica que AnimeStream esté abierto en tu PC y que ambos estén en la misma red Wi-Fi.`;
+        }
+      }
+    });
+  }
+
+  const standaloneBtn = modal.querySelector('#btn-switch-standalone');
+  if (standaloneBtn) {
+    standaloneBtn.addEventListener('click', () => {
+      localStorage.removeItem('animestream_server_url');
+      if (window.AndroidBridge && typeof window.AndroidBridge.resetServer === 'function') {
+        window.AndroidBridge.resetServer();
+      } else {
+        window.location.reload();
+      }
+      closeNetworkModal();
+    });
+  }
 }
 
 export function closeNetworkModal() {

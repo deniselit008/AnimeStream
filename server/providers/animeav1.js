@@ -80,6 +80,7 @@ class AnimeAV1Provider {
     const seen = new Set();
 
     $('a').each((_, el) => {
+      if ($(el).closest('header, nav, footer, aside').length) return;
       const href = $(el).attr('href') || '';
       const m = href.match(/^\/media\/([^/]+)$/);
       if (!m) return;
@@ -321,14 +322,6 @@ class AnimeAV1Provider {
                     audio: variant
                   });
                 }
-                if (!seenEmbeds.has(`${sUrl}_${variant}`)) {
-                  seenEmbeds.add(`${sUrl}_${variant}`);
-                  servers.push({
-                    name: `${labelPrefix}HLS (Zilla Mirror)`,
-                    embed: sUrl,
-                    audio: variant
-                  });
-                }
                 continue;
               }
             }
@@ -359,26 +352,28 @@ class AnimeAV1Provider {
           const mHash = sUrl.match(/([a-fA-F0-9]{32})/);
           if (mHash) {
             servers.unshift({ name: '[SUB] HLS (Reproductor HD)', embed: `/api/hls/player/${mHash[1]}`, audio: 'SUB' });
-            servers.push({ name: '[SUB] HLS (Zilla Mirror)', embed: sUrl, audio: 'SUB' });
             continue;
           }
         }
         servers.push({ name: `[SUB] ${sName}`, embed: sUrl, audio: 'SUB' });
       }
-      audios.push('SUB');
+      if (servers.length > 0) audios.push('SUB');
     }
 
-    // Fallback DOM iframes
-    $('iframe').each((_, el) => {
-      const src = $(el).attr('src');
-      if (src && src.startsWith('http') && !seenEmbeds.has(src)) {
-        if (!['google', 'analytics', 'turnstile', 'recaptcha', 'discord'].some(b => src.includes(b))) {
-          seenEmbeds.add(src);
-          servers.unshift({ name: '[SUB] Principal', embed: src, audio: 'SUB' });
-          if (!audios.includes('SUB')) audios.unshift('SUB');
+    // Fallback DOM iframes ONLY when zero servers were extracted from structured payloads
+    if (servers.length === 0) {
+      $('iframe').each((_, el) => {
+        const src = $(el).attr('src');
+        if (src && src.startsWith('http') && !seenEmbeds.has(src)) {
+          const lower = src.toLowerCase();
+          if (!['google', 'analytics', 'turnstile', 'recaptcha', 'discord', 'cloudflare', 'challenges', 'disqus', 'facebook', 'twitter', 'zilla-networks'].some(b => lower.includes(b))) {
+            seenEmbeds.add(src);
+            servers.push({ name: '[SUB] Reproductor', embed: src, audio: 'SUB' });
+            if (!audios.includes('SUB')) audios.unshift('SUB');
+          }
         }
-      }
-    });
+      });
+    }
 
     if (audios.length === 0) audios.push('SUB');
 

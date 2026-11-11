@@ -3,7 +3,7 @@
  * Protects against popups, popunders, clickjacking overlays, deceptive redirects,
  * and intrusive ad scripts in embedded third-party video players and web pages.
  */
-import { Icons, escapeHtml, showToast } from './utils.js';
+import { Icons, escapeHtml, showToast } from './utils.js?v=5.0';
 
 const STORAGE_KEYS = {
   ENABLED: 'animestream_adblock_enabled',
@@ -57,6 +57,26 @@ class AdBlockEngine {
     // 3. Monitor DOM mutations for rogue ad overlays and deceptive banners
     this.initDomProtection();
 
+    // 4. Listen for native Electron WebRequest/Popup blocks & sanitized iframe blocks
+    if (typeof window !== 'undefined') {
+      if (window.electronAPI && typeof window.electronAPI.onAdblockHit === 'function') {
+        window.electronAPI.onAdblockHit((reason) => {
+          this.recordBlock(reason || 'Anuncio de red bloqueado (Electron)');
+        });
+      }
+      if (window.electronAPI && typeof window.electronAPI.setAdblockEnabled === 'function') {
+        window.electronAPI.setAdblockEnabled(this.enabled);
+      }
+      window.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'ANIMESTREAM_ADBLOCK_HIT') {
+          this.recordBlock(e.data.reason || 'Anuncio bloqueado en reproductor');
+        }
+      });
+      window.addEventListener('animestream-android-adblock-hit', (e) => {
+        this.recordBlock(`Bloqueado (Android): ${e.detail || 'Tracker publicitario'}`);
+      });
+    }
+
     console.log(`[AnimeStream] AdBlocker Engine iniciado. Estado: ${this.enabled ? 'ACTIVO' : 'PAUSADO'} (Total bloqueados: ${this.blockedCount})`);
   }
 
@@ -68,6 +88,9 @@ class AdBlockEngine {
     this.enabled = !this.enabled;
     this.saveState();
     this.updateCosmeticStyles();
+    if (typeof window !== 'undefined' && window.electronAPI && typeof window.electronAPI.setAdblockEnabled === 'function') {
+      window.electronAPI.setAdblockEnabled(this.enabled);
+    }
     this.dispatchUpdate();
     showToast(
       this.enabled ? '🛡️ Escudo AdBlock activado' : '⚠️ Escudo AdBlock pausado',
@@ -92,6 +115,12 @@ class AdBlockEngine {
   }
 
   dispatchUpdate() {
+    // Also update live DOM badges immediately in case modal or navbar listeners haven't refreshed
+    const navCountEl = document.getElementById('nav-adblock-count');
+    if (navCountEl) navCountEl.textContent = String(this.blockedCount);
+    const modalCountEl = document.getElementById('adblock-modal-count');
+    if (modalCountEl) modalCountEl.textContent = String(this.blockedCount);
+
     window.dispatchEvent(new CustomEvent('animestream-adblock-change', {
       detail: { enabled: this.enabled, count: this.blockedCount }
     }));

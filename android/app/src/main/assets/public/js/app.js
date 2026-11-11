@@ -1,18 +1,18 @@
 /**
  * Main Application Coordinator & Hash Router
  */
-import { renderNavbar } from './components/navbar.js?v=3.0';
-import { renderHome } from './components/homeView.js?v=3.0';
-import { renderSearch } from './components/searchView.js?v=3.0';
-import { renderAnime } from './components/animeView.js?v=3.1';
-import { renderWatch, cleanupWatchView } from './components/watchView.js?v=3.0';
-import { renderFavorites } from './components/favoritesView.js?v=3.0';
-import { renderHistory } from './components/historyView.js?v=3.0';
-import { renderDirectory } from './components/directoryView.js?v=3.0';
-import { renderLibrary } from './components/libraryView.js?v=3.0';
-import { renderMobileConnect } from './components/mobileConnectView.js?v=4.0';
-import { AdBlock } from './adblock.js?v=3.0';
-import { TVNavigation } from './tvNavigation.js?v=3.2';
+import { renderNavbar } from './components/navbar.js?v=5.0';
+import { renderHome } from './components/homeView.js?v=5.0';
+import { renderSearch } from './components/searchView.js?v=5.0';
+import { renderAnime } from './components/animeView.js?v=5.0';
+import { renderWatch, cleanupWatchView } from './components/watchView.js?v=5.0';
+import { renderFavorites } from './components/favoritesView.js?v=5.0';
+import { renderHistory } from './components/historyView.js?v=5.0';
+import { renderDirectory } from './components/directoryView.js?v=5.0';
+import { renderLibrary } from './components/libraryView.js?v=5.0';
+import { renderMobileConnect } from './components/mobileConnectView.js?v=5.0';
+import { AdBlock } from './adblock.js?v=5.0';
+import { TVNavigation } from './tvNavigation.js?v=5.0';
 
 // Initialize AdBlock & Smart TV Navigation engines
 AdBlock.init();

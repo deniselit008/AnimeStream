@@ -114,15 +114,24 @@ jobs:
             curl -Lo gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradle/wrapper/gradle-wrapper.jar
           fi
 
-      - name: Compilar APK con Gradle
+      - name: Preparar firma permanente del APK (para actualizaciones sin conflicto)
+        run: |
+          openssl pkcs12 -export \
+            -in android/signing/animestream-cert.pem \
+            -inkey android/signing/animestream-key.pem \
+            -out android/app/animestream.p12 \
+            -name animestream \
+            -passout pass:animestream_release_key
+
+      - name: Compilar APK Release con Gradle
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Renombrar y preparar APK
         run: |
           mkdir -p dist-apk
-          cp android/app/build/outputs/apk/debug/*.apk dist-apk/AnimeStream.apk
+          cp android/app/build/outputs/apk/release/*.apk dist-apk/AnimeStream.apk
 
       - name: Subir paquete .apk de Android
         uses: actions/upload-artifact@v6

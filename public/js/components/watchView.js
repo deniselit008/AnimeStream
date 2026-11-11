@@ -2,10 +2,10 @@
  * Video Player View Component (Sala de Reproducción)
  * 16:9 adaptable player, multiple server switcher, next/prev controls, and fallbacks.
  */
-import { Api, getApiBase, isStandaloneMode } from '../api.js?v=4.2';
-import { Storage } from '../storage.js?v=3.0';
-import { Icons, escapeHtml, showToast, getSourceBadgeClass, fixEncoding } from '../utils.js?v=3.0';
-import { AdBlock } from '../adblock.js?v=3.0';
+import { Api, getApiBase, isStandaloneMode } from '../api.js?v=5.0';
+import { Storage } from '../storage.js?v=5.0';
+import { Icons, escapeHtml, showToast, getSourceBadgeClass, fixEncoding } from '../utils.js?v=5.0';
+import { AdBlock } from '../adblock.js?v=5.0';
 
 let currentWatchKeyDownHandler = null;
 let currentIdleCursorTimer = null;
@@ -163,7 +163,7 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
               webkitallowfullscreen="true" 
               mozallowfullscreen="true" 
               allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-              referrerpolicy="no-referrer"
+              ${(!embedSrc.startsWith('http://localhost') && !embedSrc.includes('appassets.androidplatform.net') && !embedSrc.startsWith('/')) ? 'referrerpolicy="no-referrer"' : ''}
               ${shouldApplySandbox(currentServer?.embed, currentServer?.name) ? 'sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-downloads allow-fullscreen"' : ''}
             ></iframe>
           ` : `
@@ -222,7 +222,7 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
           </div>
 
           ${currentServer ? `
-            <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+            <div class="watch-toolbar-actions" style="margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
               <!-- Cinema Mode Toggle -->
               <button 
                 id="btn-toggle-cinema" 

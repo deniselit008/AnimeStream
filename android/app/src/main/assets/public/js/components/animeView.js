@@ -2,9 +2,9 @@
  * Anime Detail View Component
  * Technical sheet, synopsis, genres, add to favorites, franchise relations (MAL), and searchable/invertible episode list.
  */
-import { Api } from '../api.js?v=3.0';
-import { Storage } from '../storage.js?v=3.0';
-import { Icons, escapeHtml, showToast, getSourceBadgeClass, getRelationBadgeClass, fixEncoding, slugifyGenre } from '../utils.js?v=3.0';
+import { Api } from '../api.js?v=5.0';
+import { Storage } from '../storage.js?v=5.0';
+import { Icons, escapeHtml, showToast, getSourceBadgeClass, getRelationBadgeClass, fixEncoding, slugifyGenre, getDefaultPoster } from '../utils.js?v=5.0';
 
 export async function renderAnime(container, animeUrl) {
   container.innerHTML = `
@@ -203,7 +203,7 @@ export async function renderAnime(container, animeUrl) {
     }
 
     function buildHtml() {
-      const fallbackPoster = 'https://via.placeholder.com/300x420/161f30/94a3b8?text=Poster';
+      const fallbackPoster = getDefaultPoster(anime.title, anime.source);
       return `
         <!-- Detail Hero Header -->
         <div class="detail-hero">

@@ -110,6 +110,7 @@ export const ClientAnimeAV1 = {
 
     const links = doc.querySelectorAll('a');
     links.forEach(a => {
+      if (a.closest('header, nav, footer, aside')) return;
       const href = a.getAttribute('href') || '';
       const m = href.match(/^\/media\/([^/]+)$/);
       if (!m) return;
@@ -282,6 +283,26 @@ export const ClientAnimeAV1 = {
             const sUrl = s[2];
             const labelPrefix = `[${variant}] `;
 
+            if (sUrl.includes('zilla-networks.com') || sName.toUpperCase() === 'HLS') {
+              const mHash = sUrl.match(/([a-fA-F0-9]{32})/);
+              if (mHash) {
+                const hlsHash = mHash[1];
+                // Native Android WebView HLS local proxy endpoint (handled seamlessly in MainActivity.java)
+                const hlsEmbed = (typeof window !== 'undefined' && window.AndroidBridge)
+                  ? `https://appassets.androidplatform.net/android-hls/player/${hlsHash}`
+                  : `/api/hls/player/${hlsHash}`;
+                if (!seenEmbeds.has(`${hlsEmbed}_${variant}`)) {
+                  seenEmbeds.add(`${hlsEmbed}_${variant}`);
+                  servers.push({
+                    name: `${labelPrefix}HLS (Reproductor HD)`,
+                    embed: hlsEmbed,
+                    audio: variant
+                  });
+                }
+                continue;
+              }
+            }
+
             if (!seenEmbeds.has(`${sUrl}_${variant}`)) {
               seenEmbeds.add(`${sUrl}_${variant}`);
               servers.push({
@@ -448,6 +469,7 @@ export const ClientTioAnime = {
     const seen = new Set();
 
     doc.querySelectorAll('a[href^="/anime/"]').forEach(a => {
+      if (a.closest('header, nav, footer, aside')) return;
       const href = a.getAttribute('href') || '';
       const slug = href.replace(/\/+$/, '').split('/').pop();
       if (!slug || seen.has(slug) || ['directorio', 'programacion'].includes(slug)) return;
@@ -721,30 +743,47 @@ export const ClientJKAnime = {
     const results = [];
     const seen = new Set();
 
+    const EXCLUDED_SLUGS = new Set([
+      'buscar', 'directorio', 'horario', 'top', 'editar-perfil', 'jkanime.net',
+      'guardados', 'favoritos', 'historial', 'login', 'registro', 'recuperar',
+      'privacidad', 'terminos', 'dmca', 'contacto', 'noticias', 'blog',
+      'calendario', 'aleatorio', 'buscados', 'buscados-recientemente',
+      'emision', 'finalizados', 'estrenos', 'peliculas', 'ovas', 'especiales'
+    ]);
+
     doc.querySelectorAll('.anime__item').forEach(item => {
+      if (item.closest('.anime__sidebar, .product__sidebar, .sidebar, aside, header, nav, footer')) return;
+      const sectionHeading = item.closest('section, div[class*="col"]')?.querySelector('h4, h5, .section-title')?.textContent?.toLowerCase() || '';
+      if (sectionHeading.includes('buscado') || sectionHeading.includes('top ') || sectionHeading.includes('popular')) return;
+
       const a = item.querySelector('a[href*="jkanime.net/"], a[href^="/"]');
       if (!a) return;
       const href = a.getAttribute('href') || '';
-      const m = href.match(/(?:https:\/\/jkanime\.net)?\/([^/]+)\/?$/);
+      if (href.startsWith('http') && !href.includes('jkanime.net')) return;
+
+      const m = href.match(/(?:https:\/\/jkanime\.net)?\/([^/?#]+)\/?$/);
       if (!m) return;
 
-      const slug = m[1];
-      if (seen.has(slug) || ['buscar', 'directorio', 'horario', 'top'].includes(slug)) return;
+      const slug = m[1].toLowerCase();
+      if (seen.has(slug) || EXCLUDED_SLUGS.has(slug) || slug.includes('hentai') || slug.includes('.php') || slug.includes('.html')) return;
       seen.add(slug);
 
-      const titleEl = item.querySelector('h5, h6, h4, .title');
+      const titleEl = item.querySelector('.anime__item__text h5 a, h5 a, h5, h6, h4, .title');
       let title = titleEl ? titleEl.textContent.trim() : slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+      const typeText = item.querySelector('.anime__item__text ul li.anime, ul li')?.textContent?.trim() || 'Anime';
+      if (/\b(noticia|blog|articulo|manga|novela)\b/i.test(typeText)) return;
 
       const img = item.querySelector('.set-bg, img');
       let image = img ? (img.getAttribute('data-setbg') || img.getAttribute('src')) : null;
-      if (!image) image = `https://cdn.jkdesa.com/assets/images/animes/image/${slug}.jpg`;
+      if (!image) image = `https://cdn.jkdesa.com/assets/images/animes/image/${m[1]}.jpg`;
 
       results.push({
         title: fixText(title),
-        url: `https://jkanime.net/${slug}/`,
+        url: `https://jkanime.net/${m[1]}/`,
         image,
         source: this.name,
-        type: 'Anime'
+        type: typeText
       });
     });
 

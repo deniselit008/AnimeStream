@@ -13,5 +13,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openExternal: (url) => ipcRenderer.send('open-external', url),
   onMaximizeChange: (callback) => {
     ipcRenderer.on('maximize-change', (_, isMax) => callback(isMax));
-  }
+  },
+  onAdblockHit: (callback) => {
+    ipcRenderer.on('adblock-hit', (_, reason) => callback(reason));
+  },
+  setAdblockEnabled: (enabled) => ipcRenderer.send('adblock-toggle', !!enabled)
 });

@@ -3,9 +3,9 @@
  * Manages anime watchlist: Viendo, Visto, Pendiente, Pausado, Abandonado.
  * Supports native XML/XML.GZ MyAnimeList import, JSON backup export, and one-click streaming search.
  */
-import { Storage } from '../storage.js?v=3.0';
-import { Api } from '../api.js?v=3.0';
-import { Icons, escapeHtml, showToast, getDefaultPoster, resolveAnimeCover } from '../utils.js?v=3.0';
+import { Storage } from '../storage.js?v=5.0';
+import { Api } from '../api.js?v=5.0';
+import { Icons, escapeHtml, showToast, getDefaultPoster, resolveAnimeCover } from '../utils.js?v=5.0';
 
 const STATUS_LABELS = {
   all: 'Todos',

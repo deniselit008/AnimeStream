@@ -3,7 +3,7 @@
  * Seamlessly switches between Node.js backend endpoints (PC/Web/TV) and
  * the native autonomous client scraper on Android mobile (100% standalone without PC).
  */
-import { ClientScraper, fetchHtml } from './clientScraper.js?v=4.0';
+import { ClientScraper, fetchHtml } from './clientScraper.js?v=5.0';
 
 const RELATION_MAP = {
   'sequel': 'Secuela',
@@ -118,9 +118,13 @@ export const Api = {
       const jikanUrl = `https://api.jikan.moe/v4/${endpoint}`;
       // Direct browser fetch first (Jikan supports public CORS)
       try {
+        const controller = new AbortController();
+        const tid = setTimeout(() => controller.abort(), 7000);
         const res = await fetch(jikanUrl, {
-          headers: { 'Accept': 'application/json' }
+          headers: { 'Accept': 'application/json' },
+          signal: controller.signal
         });
+        clearTimeout(tid);
         if (res.ok) {
           return await res.json();
         }
@@ -129,16 +133,38 @@ export const Api = {
       // Fallback via fetchHtml / AndroidBridge
       try {
         const raw = await fetchHtml(jikanUrl, { 'Accept': 'application/json' });
-        return typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (raw && typeof raw === 'string' && raw.trim().startsWith('{')) {
+          return JSON.parse(raw);
+        }
+        return typeof raw === 'object' ? raw : null;
       } catch (_) {}
 
       return null;
     }
 
+    // Generate clean title variants if full title misses Jikan match
+    const titleVariants = [cleanTitle];
+    const baseTitle = cleanTitle
+      .replace(/:\s*[^:]+$/, '')
+      .replace(/\b(2nd|3rd|4th|final|next)\s+season\b/gi, '')
+      .replace(/\b(temporada|parte|part|season)\s*\d+\b/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (baseTitle && baseTitle.length >= 3 && baseTitle.toLowerCase() !== cleanTitle.toLowerCase()) {
+      titleVariants.push(baseTitle);
+    }
+
     // 2. Query Jikan API
     try {
-      const searchData = await queryJikanApi(`anime?q=${encodeURIComponent(cleanTitle)}&limit=1`);
-      const malId = searchData?.data?.[0]?.mal_id;
+      let malId = null;
+      for (const variant of titleVariants) {
+        const searchData = await queryJikanApi(`anime?q=${encodeURIComponent(variant)}&limit=1`);
+        if (searchData?.data?.[0]?.mal_id) {
+          malId = searchData.data[0].mal_id;
+          break;
+        }
+      }
+
       if (malId) {
         const relData = await queryJikanApi(`anime/${malId}/relations`);
         const rels = [];
@@ -173,7 +199,63 @@ export const Api = {
         }
       }
     } catch (e) {
-      console.debug('[Api.getRelations] Fallback relations error:', e.message || e);
+      console.debug('[Api.getRelations] Jikan relations error:', e.message || e);
+    }
+
+    // 3. Fallback: Direct MyAnimeList HTML scraping via AndroidBridge (if Jikan was rate-limited/429)
+    try {
+      const malSearchHtml = await fetchHtml(`https://myanimelist.net/anime.php?q=${encodeURIComponent(cleanTitle)}&cat=anime`);
+      if (malSearchHtml && typeof malSearchHtml === 'string') {
+        const doc = new DOMParser().parseFromString(malSearchHtml, 'text/html');
+        const firstLink = doc.querySelector('a[href*="/anime/"]');
+        const href = firstLink?.getAttribute('href') || '';
+        const mId = href.match(/myanimelist\.net\/anime\/(\d+)/);
+        if (mId) {
+          const pageHtml = await fetchHtml(`https://myanimelist.net/anime/${mId[1]}`);
+          const pageDoc = new DOMParser().parseFromString(pageHtml, 'text/html');
+          const rels = [];
+          const seen = new Set();
+
+          // Tile layout (.related-entries .entry)
+          pageDoc.querySelectorAll('.related-entries .entry, table.anime_detail_related_anime tr').forEach(row => {
+            let rawRel = '';
+            const relEl = row.querySelector('.relation, td:first-child');
+            if (relEl) rawRel = relEl.textContent.replace(/:/g, '').trim();
+            const normRel = rawRel.toLowerCase();
+            if (!rawRel) return;
+            const relLabel = RELATION_MAP[normRel] || rawRel;
+
+            row.querySelectorAll('a[href*="/anime/"]').forEach(a => {
+              const aHref = a.getAttribute('href') || '';
+              const titleText = a.textContent.trim();
+              if (!titleText || !aHref.includes('/anime/')) return;
+              const lowerName = titleText.toLowerCase();
+              if (seen.has(lowerName)) return;
+              seen.add(lowerName);
+
+              const imgEl = row.querySelector('img');
+              const imgSrc = imgEl ? (imgEl.getAttribute('data-src') || imgEl.getAttribute('src')) : null;
+              const fullMalUrl = aHref.startsWith('http') ? aHref : `https://myanimelist.net${aHref}`;
+              const cleanTerm = titleText.replace(/\s*\(TV\)|\s*\(Movie\)|\s*\(OVA\)/gi, '').trim();
+
+              rels.push({
+                title: titleText,
+                relation: relLabel,
+                raw_relation: rawRel,
+                type: 'Anime',
+                mal_id: null,
+                mal_url: fullMalUrl,
+                image: imgSrc || null,
+                url: `#/search?q=${encodeURIComponent(cleanTerm)}`
+              });
+            });
+          });
+
+          if (rels.length > 0) return rels;
+        }
+      }
+    } catch (e) {
+      console.debug('[Api.getRelations] Direct MAL HTML fallback error:', e.message || e);
     }
 
     return [];

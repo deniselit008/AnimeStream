@@ -27,13 +27,18 @@ import android.widget.FrameLayout;
 import androidx.webkit.WebViewAssetLoader;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.InflaterInputStream;
 
 import org.json.JSONObject;
 
@@ -164,6 +169,8 @@ public class MainActivity extends Activity {
                 String encoding = conn.getHeaderField("Content-Encoding");
                 if (encoding != null && encoding.equalsIgnoreCase("gzip")) {
                     is = new GZIPInputStream(is);
+                } else if (encoding != null && encoding.equalsIgnoreCase("deflate")) {
+                    is = new InflaterInputStream(is);
                 }
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
@@ -249,6 +256,14 @@ public class MainActivity extends Activity {
                 if (request != null && request.getUrl() != null) {
                     Uri reqUri = request.getUrl();
                     String host = reqUri.getHost();
+                    // 1. Native Android HLS Player & Proxy Interceptor for AnimeAV1 (zilla-networks)
+                    if ("appassets.androidplatform.net".equalsIgnoreCase(host)) {
+                        String path = reqUri.getPath();
+                        if (path != null && path.startsWith("/android-hls/")) {
+                            return handleAndroidHlsProxy(path);
+                        }
+                    }
+
                     if (host != null) {
                         String lowerHost = host.toLowerCase();
                         // Block intrusive ad networks, clickjackers, and popunders that hijack video players
@@ -261,7 +276,13 @@ public class MainActivity extends Activity {
                             lowerHost.contains("adnxs") || lowerHost.contains("criteo") ||
                             lowerHost.contains("bidgear") || lowerHost.contains("yllix") ||
                             lowerHost.contains("adsterra") || lowerHost.contains("monetag")) {
-                            return new WebResourceResponse("text/plain", "UTF-8", new java.io.ByteArrayInputStream(new byte[0]));
+                            if (webView != null) {
+                                webView.post(() -> webView.evaluateJavascript(
+                                    "window.dispatchEvent(new CustomEvent('animestream-android-adblock-hit', {detail:'" + lowerHost.replace("'", "") + "'}))",
+                                    null
+                                ));
+                            }
+                            return new WebResourceResponse("text/plain", "UTF-8", new ByteArrayInputStream(new byte[0]));
                         }
                     }
                 }
@@ -297,8 +318,8 @@ public class MainActivity extends Activity {
                         return false;
                     }
 
-                    // If external community link (X/Twitter, GitHub), open outside in Android browser / native app
-                    if (host != null && (host.contains("x.com") || host.contains("twitter.com") || host.contains("github.com"))) {
+                    // If external community or reference link (X/Twitter, GitHub, MyAnimeList), open outside in Android browser / native app
+                    if (host != null && (host.contains("x.com") || host.contains("twitter.com") || host.contains("github.com") || host.contains("myanimelist.net"))) {
                         try {
                             android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, uri);
                             startActivity(intent);
@@ -408,6 +429,131 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         if (webView != null) webView.onResume();
+    }
+
+    private static final String ANDROID_UA = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36";
+    private final Map<String, String> hlsCookieCache = new HashMap<>();
+
+    private WebResourceResponse handleAndroidHlsProxy(String path) {
+        Map<String, String> corsHeaders = new HashMap<>();
+        corsHeaders.put("Access-Control-Allow-Origin", "*");
+        corsHeaders.put("Access-Control-Allow-Methods", "GET, OPTIONS");
+
+        try {
+            if (path.startsWith("/android-hls/player/")) {
+                String hash = path.replace("/android-hls/player/", "").replaceAll("[^a-fA-F0-9]", "");
+                String html = "<!DOCTYPE html><html lang=\"es\"><head><meta charset=\"UTF-8\">" +
+                    "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\">" +
+                    "<script src=\"https://appassets.androidplatform.net/assets/public/js/vendor/hls.min.js\"></script>" +
+                    "<style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}" +
+                    "video{width:100%;height:100%;object-fit:contain;outline:none}" +
+                    "#err{display:none;position:absolute;inset:0;color:#ef4444;background:#090d16;align-items:center;justify-content:center;text-align:center;padding:20px;font-family:sans-serif;font-weight:600}</style>" +
+                    "</head><body><video id=\"v\" controls playsinline autoplay></video>" +
+                    "<div id=\"err\">⚠️ No se pudo reproducir este vídeo HLS. Prueba con otro servidor.</div>" +
+                    "<script>(function(){var v=document.getElementById('v'),src='https://appassets.androidplatform.net/android-hls/m3u8/" + hash + "';" +
+                    "if(window.Hls&&Hls.isSupported()){var h=new Hls({maxBufferLength:30,enableWorker:true});h.loadSource(src);h.attachMedia(v);" +
+                    "h.on(Hls.Events.MANIFEST_PARSED,function(){v.play().catch(function(){});});" +
+                    "h.on(Hls.Events.ERROR,function(e,d){if(d.fatal){if(d.type===Hls.ErrorTypes.NETWORK_ERROR)h.startLoad();" +
+                    "else if(d.type===Hls.ErrorTypes.MEDIA_ERROR)h.recoverMediaError();" +
+                    "else{document.getElementById('err').style.display='flex';h.destroy();}}});}" +
+                    "else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=src;v.play().catch(function(){});}})();</script></body></html>";
+                corsHeaders.put("Cache-Control", "no-store");
+                return new WebResourceResponse("text/html", "UTF-8", 200, "OK", corsHeaders, new ByteArrayInputStream(html.getBytes(StandardCharsets.UTF_8)));
+            }
+
+            if (path.startsWith("/android-hls/m3u8/")) {
+                String hash = path.replace("/android-hls/m3u8/", "").replaceAll("[^a-fA-F0-9]", "");
+                if (hash.isEmpty()) return null;
+
+                // 1. Pre-warm /play/<hash> to collect session cookies
+                String cookieHeader = hlsCookieCache.get(hash);
+                try {
+                    URL playUrl = new URL("https://player.zilla-networks.com/play/" + hash);
+                    HttpURLConnection playConn = (HttpURLConnection) playUrl.openConnection();
+                    playConn.setConnectTimeout(7000);
+                    playConn.setReadTimeout(7000);
+                    playConn.setRequestProperty("User-Agent", ANDROID_UA);
+                    playConn.setRequestProperty("Referer", "https://animeav1.com/");
+                    playConn.getResponseCode();
+                    List<String> setCookies = playConn.getHeaderFields().get("Set-Cookie");
+                    if (setCookies != null && !setCookies.isEmpty()) {
+                        StringBuilder ck = new StringBuilder();
+                        for (String sc : setCookies) {
+                            String pair = sc.split(";", 2)[0];
+                            if (ck.length() > 0) ck.append("; ");
+                            ck.append(pair);
+                        }
+                        cookieHeader = ck.toString();
+                        hlsCookieCache.put(hash, cookieHeader);
+                    }
+                    playConn.disconnect();
+                } catch (Exception ignored) {}
+
+                // 2. Fetch .m3u8 manifest
+                URL m3u8Url = new URL("https://player.zilla-networks.com/m3u8/" + hash);
+                HttpURLConnection mConn = (HttpURLConnection) m3u8Url.openConnection();
+                mConn.setConnectTimeout(12000);
+                mConn.setReadTimeout(12000);
+                mConn.setRequestProperty("User-Agent", ANDROID_UA);
+                mConn.setRequestProperty("Referer", "https://player.zilla-networks.com/play/" + hash);
+                mConn.setRequestProperty("Origin", "https://player.zilla-networks.com");
+                if (cookieHeader != null && !cookieHeader.isEmpty()) {
+                    mConn.setRequestProperty("Cookie", cookieHeader);
+                }
+
+                InputStream is = mConn.getInputStream();
+                String enc = mConn.getHeaderField("Content-Encoding");
+                if ("gzip".equalsIgnoreCase(enc)) is = new GZIPInputStream(is);
+                else if ("deflate".equalsIgnoreCase(enc)) is = new InflaterInputStream(is);
+
+                BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) {
+                    if (line.contains("https://player.zilla-networks.com/segs/" + hash + "/")) {
+                        line = line.replace("https://player.zilla-networks.com/segs/" + hash + "/",
+                            "https://appassets.androidplatform.net/android-hls/seg/" + hash + "/");
+                    } else if (line.startsWith("/segs/" + hash + "/")) {
+                        line = "https://appassets.androidplatform.net/android-hls/seg/" + hash + "/" + line.substring(("/segs/" + hash + "/").length());
+                    } else if (!line.isEmpty() && !line.startsWith("#") && !line.startsWith("http")) {
+                        line = "https://appassets.androidplatform.net/android-hls/seg/" + hash + "/" + line;
+                    }
+                    sb.append(line).append("\n");
+                }
+                br.close();
+                mConn.disconnect();
+
+                corsHeaders.put("Cache-Control", "public, max-age=300");
+                return new WebResourceResponse("application/vnd.apple.mpegurl", "UTF-8", 200, "OK", corsHeaders,
+                    new ByteArrayInputStream(sb.toString().getBytes(StandardCharsets.UTF_8)));
+            }
+
+            if (path.startsWith("/android-hls/seg/")) {
+                String rest = path.replace("/android-hls/seg/", "");
+                int slash = rest.indexOf('/');
+                if (slash <= 0) return null;
+                String hash = rest.substring(0, slash).replaceAll("[^a-fA-F0-9]", "");
+                String file = rest.substring(slash + 1).replaceAll("[^a-zA-Z0-9_\\-\\.]", "");
+                if (hash.isEmpty() || file.isEmpty()) return null;
+
+                URL segUrl = new URL("https://player.zilla-networks.com/segs/" + hash + "/" + file);
+                HttpURLConnection sConn = (HttpURLConnection) segUrl.openConnection();
+                sConn.setConnectTimeout(12000);
+                sConn.setReadTimeout(20000);
+                sConn.setRequestProperty("User-Agent", ANDROID_UA);
+                sConn.setRequestProperty("Referer", "https://player.zilla-networks.com/play/" + hash);
+                sConn.setRequestProperty("Origin", "https://player.zilla-networks.com");
+                String cookieHeader = hlsCookieCache.get(hash);
+                if (cookieHeader != null && !cookieHeader.isEmpty()) {
+                    sConn.setRequestProperty("Cookie", cookieHeader);
+                }
+
+                String mime = file.endsWith(".ts") ? "video/mp2t" : (file.endsWith(".m3u8") ? "application/vnd.apple.mpegurl" : "application/octet-stream");
+                corsHeaders.put("Cache-Control", "public, max-age=86400");
+                return new WebResourceResponse(mime, null, sConn.getResponseCode(), "OK", corsHeaders, sConn.getInputStream());
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 
     @Override

@@ -3,7 +3,7 @@
  * Mobile Connection Setup View Component
  * Provides seamless pairing between the Android Mobile App and the local AnimeStream server.
  */
-import { escapeHtml, showToast, Icons } from '../utils.js?v=4.0';
+import { escapeHtml, showToast, Icons } from '../utils.js?v=5.0';
 
 export function renderMobileConnect(container, options = {}) {
   const isError = options.error === 'unreachable';

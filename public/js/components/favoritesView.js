@@ -1,8 +1,8 @@
 /**
  * Favorites View Component
  */
-import { Storage } from '../storage.js?v=3.0';
-import { Icons, escapeHtml, showToast, getSourceBadgeClass } from '../utils.js?v=3.0';
+import { Storage } from '../storage.js?v=5.0';
+import { Icons, escapeHtml, showToast, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster } from '../utils.js?v=5.0';
 
 export function renderFavorites(container) {
   const favorites = Storage.getFavorites();
@@ -26,14 +26,19 @@ export function renderFavorites(container) {
         </div>
       ` : `
         <div class="anime-grid">
-          ${favorites.map(item => `
+          ${favorites.map(item => {
+            const coverUrl = resolveAnimeCover(item);
+            const fallbackSvg = getDefaultPoster(item.title, item.source);
+            return `
             <div class="anime-card">
               <a href="#/anime?url=${encodeURIComponent(item.url)}" class="anime-card-media poster">
                 <img 
-                  src="${escapeHtml(item.image || 'https://via.placeholder.com/240x340/161f30/94a3b8?text=Poster')}" 
+                  src="${escapeHtml(coverUrl)}" 
                   alt="${escapeHtml(item.title)}" 
                   class="anime-card-img" 
                   loading="lazy"
+                  referrerpolicy="no-referrer"
+                  onerror="this.onerror=null; this.src='${escapeHtml(fallbackSvg)}';"
                 />
                 <div class="play-overlay">
                   <div class="play-btn-circle">${Icons.play}</div>
@@ -63,7 +68,7 @@ export function renderFavorites(container) {
                 </div>
               </div>
             </div>
-          `).join('')}
+          `; }).join('')}
         </div>
       `}
     </div>

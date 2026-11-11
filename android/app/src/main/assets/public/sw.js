@@ -1,7 +1,7 @@
 /**
  * AnimeStream - Service Worker for PWA & Offline Shell Caching
  */
-const CACHE_NAME = 'animestream-v4.0.0';
+const CACHE_NAME = 'animestream-v5.0.0';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -52,6 +52,11 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
+  // Never intercept cross-origin requests (external images, Jikan API, video embeds)
+  if (url.origin !== self.location.origin) {
+    return;
+  }
 
   // Never cache API calls, streams, or media proxy calls
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/watch')) {

@@ -2,9 +2,9 @@
  * Home View Component
  * Featured hero banner, Continue Watching carousel/grid, and Latest Episodes grid.
  */
-import { Api } from '../api.js?v=3.0';
-import { Storage } from '../storage.js?v=3.0';
-import { Icons, escapeHtml, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster } from '../utils.js?v=3.0';
+import { Api } from '../api.js?v=5.0';
+import { Storage } from '../storage.js?v=5.0';
+import { Icons, escapeHtml, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster } from '../utils.js?v=5.0';
 
 export async function renderHome(container) {
   container.innerHTML = `

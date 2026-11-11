@@ -2,8 +2,8 @@
  * Search View Component
  * Multi-source real-time search with error shielding and source tabs.
  */
-import { Api } from '../api.js?v=4.0';
-import { Icons, escapeHtml, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster } from '../utils.js?v=4.1';
+import { Api } from '../api.js?v=5.0';
+import { Icons, escapeHtml, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster } from '../utils.js?v=5.0';
 
 export async function renderSearch(container, query, source = 'all') {
   container.innerHTML = `
@@ -118,8 +118,45 @@ export async function renderSearch(container, query, source = 'all') {
 
   try {
     const data = await Api.search(query, source);
-    const results = Array.isArray(data) ? data : (data?.results || []);
+    let results = Array.isArray(data) ? data : (data?.results || []);
     const errors = Array.isArray(data?.errors) ? data.errors : [];
+
+    // Filter out non-anime / navigation noise and rank by relevance to search query
+    const normalizeStr = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    const normQuery = normalizeStr(query);
+    const queryWords = normQuery.split(' ').filter(w => w.length >= 2);
+    const STOP_WORDS = new Set(['buscar', 'directorio', 'horario', 'top', 'terminos', 'privacidad', 'contacto', 'dmca', 'login', 'registro', 'noticias', 'blog']);
+
+    results = results.filter(item => {
+      if (!item || !item.title || !item.url) return false;
+      const lowerTitle = normalizeStr(item.title);
+      if (!lowerTitle || STOP_WORDS.has(lowerTitle)) return false;
+      return true;
+    }).map(item => {
+      const nt = normalizeStr(item.title);
+      let score = 0;
+      if (nt === normQuery) score += 100;
+      else if (nt.startsWith(normQuery)) score += 60;
+      else if (nt.includes(normQuery)) score += 45;
+
+      if (queryWords.length > 0) {
+        let matchedWords = 0;
+        for (const w of queryWords) {
+          if (nt.includes(w)) matchedWords++;
+        }
+        score += (matchedWords / queryWords.length) * 35;
+      }
+      return { item, score };
+    });
+
+    // If we have genuinely relevant matches (score > 10), filter out 0-match irrelevant noise (e.g. random sidebar/recent items)
+    const hasRelevantMatches = results.some(r => r.score >= 12);
+    if (hasRelevantMatches) {
+      results = results.filter(r => r.score >= 10);
+    }
+
+    results.sort((a, b) => b.score - a.score);
+    results = results.map(r => r.item);
 
     // Show warnings if one provider had issues
     if (errors.length > 0) {

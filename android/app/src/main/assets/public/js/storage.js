@@ -2,7 +2,7 @@
  * LocalStorage Persistence Manager
  * Manages watch history, favorites, seen episode markers, and resume points.
  */
-import { resolveAnimeCover } from './utils.js';
+import { resolveAnimeCover } from './utils.js?v=5.0';
 
 const KEYS = {
   HISTORY: 'animestream_history',

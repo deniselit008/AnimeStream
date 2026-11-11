@@ -16,10 +16,30 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        release {
+            if (file("animestream.p12").exists()) {
+                storeFile file("animestream.p12")
+                storeType "PKCS12"
+                storePassword "animestream_release_key"
+                keyAlias "animestream"
+                keyPassword "animestream_release_key"
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            if (file("animestream.p12").exists()) {
+                signingConfig signingConfigs.release
+            }
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (file("animestream.p12").exists()) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 

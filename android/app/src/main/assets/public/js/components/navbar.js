@@ -1,11 +1,11 @@
 /**
  * Modern Floating Navbar Component with Live Autocomplete Suggestions
  */
-import { Icons, escapeHtml, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster } from '../utils.js?v=4.1';
-import { AdBlock } from '../adblock.js?v=4.0';
-import { TVNavigation } from '../tvNavigation.js?v=4.0';
-import { Api } from '../api.js?v=4.0';
-import { openNetworkModal } from './networkModal.js?v=4.1';
+import { Icons, escapeHtml, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster } from '../utils.js?v=5.0';
+import { AdBlock } from '../adblock.js?v=5.0';
+import { TVNavigation } from '../tvNavigation.js?v=5.0';
+import { Api } from '../api.js?v=5.0';
+import { openNetworkModal } from './networkModal.js?v=5.0';
 
 let navbarInitialized = false;
 let autocompleteDebounceTimer = null;

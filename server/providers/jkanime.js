@@ -90,77 +90,62 @@ class JKAnimeProvider {
     const results = [];
     const seen = new Set();
 
-    const items = $('.anime__item');
-    if (items.length > 0) {
-      items.each((_, el) => {
-        const link = $(el).find('a[href*="jkanime.net/"], a[href^="/"]').first();
-        const href = link.attr('href') || '';
-        const m = href.match(/(?:https:\/\/jkanime\.net)?\/([^/]+)\/?$/);
-        if (!m) return;
+    const EXCLUDED_SLUGS = new Set([
+      'buscar', 'directorio', 'horario', 'top', 'editar-perfil', 'jkanime.net',
+      'guardados', 'favoritos', 'historial', 'login', 'registro', 'recuperar',
+      'privacidad', 'terminos', 'dmca', 'contacto', 'noticias', 'blog',
+      'calendario', 'aleatorio', 'buscados', 'buscados-recientemente',
+      'emision', 'finalizados', 'estrenos', 'peliculas', 'ovas', 'especiales'
+    ]);
 
-        const slug = m[1];
-        if (seen.has(slug) || ['buscar', 'directorio', 'horario', 'top', 'editar-perfil', 'jkanime.net'].includes(slug)) return;
-        seen.add(slug);
+    // Scope strictly to main search result items, excluding sidebars ("Buscado recientemente"), header, nav, and footer
+    const items = $('.anime__item').filter((_, el) => {
+      return !$(el).closest('.anime__sidebar, .product__sidebar, .sidebar, aside, header, nav, footer').length;
+    });
 
-        const titleEl = $(el).find('.anime__item__text h5 a, h5 a, h5').first();
-        let title = titleEl.text().trim() || slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        title = fixEncoding(title);
+    items.each((_, el) => {
+      // Also ignore container sections explicitly titled "Buscado recientemente" or "Top"
+      const sectionHeading = $(el).closest('section, div[class*="col"]').find('h4, h5, .section-title').first().text().toLowerCase();
+      if (sectionHeading.includes('buscado') || sectionHeading.includes('top ') || sectionHeading.includes('popular')) {
+        return;
+      }
 
-        const pic = $(el).find('.anime__item__pic, .set-bg, [data-setbg]').first();
-        let image = pic.attr('data-setbg') || pic.find('img').attr('src') || $(el).find('img').attr('src');
-        if (!image) {
-          image = `https://cdn.jkdesa.com/assets/images/animes/image/${slug}.jpg`;
-        }
+      const link = $(el).find('a[href*="jkanime.net/"], a[href^="/"]').first();
+      const href = link.attr('href') || '';
+      if (href.startsWith('http') && !href.includes('jkanime.net')) return;
 
-        const type = $(el).find('.anime__item__text ul li.anime, ul li').last().text().trim() || 'Anime';
-        const synopsis = fixEncoding($(el).find('p').text().trim() || null);
+      const m = href.match(/(?:https:\/\/jkanime\.net)?\/([^/?#]+)\/?$/);
+      if (!m) return;
 
-        results.push({
-          title,
-          url: `https://jkanime.net/${slug}/`,
-          image,
-          source: this.name,
-          synopsis: synopsis || null,
-          type
-        });
+      const slug = m[1].toLowerCase();
+      if (seen.has(slug) || EXCLUDED_SLUGS.has(slug) || slug.includes('hentai') || slug.includes('.php') || slug.includes('.html')) return;
+      seen.add(slug);
+
+      const titleEl = $(el).find('.anime__item__text h5 a, h5 a, h5').first();
+      let title = titleEl.text().trim() || slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      title = fixEncoding(title);
+
+      const pic = $(el).find('.anime__item__pic, .set-bg, [data-setbg]').first();
+      let image = pic.attr('data-setbg') || pic.find('img').attr('src') || $(el).find('img').attr('src');
+      if (!image) {
+        image = `https://cdn.jkdesa.com/assets/images/animes/image/${m[1]}.jpg`;
+      }
+
+      const typeText = $(el).find('.anime__item__text ul li.anime, .anime__item__text ul li, ul li').last().text().trim() || 'Anime';
+      // Filter out non-anime media entries (e.g. news/manga/articles)
+      if (/\b(noticia|blog|articulo|manga|novela)\b/i.test(typeText)) return;
+
+      const synopsis = fixEncoding($(el).find('p').text().trim() || null);
+
+      results.push({
+        title,
+        url: `https://jkanime.net/${m[1]}/`,
+        image,
+        source: this.name,
+        synopsis: synopsis || null,
+        type: typeText
       });
-    } else {
-      $('a').each((_, el) => {
-        const href = $(el).attr('href') || '';
-        const m = href.match(/(?:https:\/\/jkanime\.net)?\/([^/]+)\/?$/);
-        if (!m) return;
-
-        const slug = m[1];
-        if (seen.has(slug) || ['buscar', 'directorio', 'horario', 'top', 'editar-perfil', 'jkanime.net'].includes(slug)) return;
-        seen.add(slug);
-
-        const card = $(el).closest('.anime__item, .col, .item, .card');
-        const parent = card.length ? card : $(el).parent();
-        const titleEl = parent.find('h5, h6, h4, h3, .title').first();
-        let title = titleEl.text().trim();
-        if (!title) {
-          title = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        }
-        title = fixEncoding(title);
-
-        const imgEl = parent.find('.set-bg, img').first();
-        let image = imgEl.attr('data-setbg') || imgEl.attr('src');
-        if (!image) {
-          image = `https://cdn.jkdesa.com/assets/images/animes/image/${slug}.jpg`;
-        }
-
-        const synopsis = fixEncoding(parent.find('p').text().trim() || null);
-
-        results.push({
-          title,
-          url: `https://jkanime.net/${slug}/`,
-          image,
-          source: this.name,
-          synopsis: synopsis || null,
-          type: 'Anime'
-        });
-      });
-    }
+    });
 
     return results;
   }

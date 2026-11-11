@@ -1,8 +1,8 @@
 /**
  * Watch History View Component
  */
-import { Storage } from '../storage.js?v=3.0';
-import { Icons, escapeHtml, timeAgo, showToast, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster } from '../utils.js?v=3.0';
+import { Storage } from '../storage.js?v=5.0';
+import { Icons, escapeHtml, timeAgo, showToast, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster } from '../utils.js?v=5.0';
 
 export function renderHistory(container) {
   const history = Storage.getHistory();

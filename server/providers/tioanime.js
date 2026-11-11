@@ -75,6 +75,7 @@ class TioAnimeProvider {
     const seen = new Set();
 
     $('a[href^="/anime/"]').each((_, el) => {
+      if ($(el).closest('header, nav, footer, aside').length) return;
       const href = $(el).attr('href') || '';
       const slug = href.replace(/\/+$/, '').split('/').pop();
       if (!slug || seen.has(slug) || ['directorio', 'programacion'].includes(slug)) return;

@@ -27,6 +27,7 @@ if (process.platform === 'linux' && process.getuid && process.getuid() === 0) {
 
 let mainWindow = null;
 let serverInstance = null;
+let adblockActive = true;
 
 // Single instance lock
 const gotLock = app.requestSingleInstanceLock();
@@ -105,14 +106,16 @@ async function createWindow(serverUrl) {
 
   // CRITICAL: Register ready-to-show BEFORE loadURL so it doesn't miss the event!
   mainWindow.once('ready-to-show', () => {
-    logDebug('ready-to-show event fired! Calling mainWindow.show()');
+    logDebug('ready-to-show event fired! Maximizing and showing mainWindow');
+    mainWindow.maximize();
     mainWindow.show();
   });
 
-  // Fallback timer: Force window visibility if ready-to-show doesn't trigger within 1.5s
+  // Fallback timer: Force window visibility & maximized state if ready-to-show doesn't trigger within 1.5s
   setTimeout(() => {
     if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
-      logDebug('Fallback timer: mainWindow was not visible yet, forcing show()');
+      logDebug('Fallback timer: mainWindow was not visible yet, maximizing and forcing show()');
+      mainWindow.maximize();
       mainWindow.show();
     }
   }, 1500);
@@ -125,6 +128,9 @@ async function createWindow(serverUrl) {
       return { action: 'deny' };
     }
     logDebug(`[AdBlock Native] Bloqueado window.open emergente: ${url}`);
+    if (adblockActive && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('adblock-hit', `Popup bloqueado: ${url.slice(0, 60)}`);
+    }
     return { action: 'deny' };
   });
 
@@ -181,7 +187,13 @@ async function createWindow(serverUrl) {
 
   const ses = mainWindow.webContents.session;
   ses.webRequest.onBeforeRequest({ urls: adBlockPatterns }, (details, callback) => {
+    if (!adblockActive) {
+      return callback({ cancel: false });
+    }
     logDebug(`[AdBlock WebRequest] Cancelada petición publicitaria: ${details.url}`);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('adblock-hit', `Tracker/Anuncio bloqueado: ${details.url.slice(0, 60)}`);
+    }
     callback({ cancel: true });
   });
 
@@ -248,6 +260,11 @@ ipcMain.on('window-close', () => {
 
 ipcMain.handle('window-is-maximized', () => {
   return mainWindow ? mainWindow.isMaximized() : false;
+});
+
+ipcMain.on('adblock-toggle', (_, enabled) => {
+  adblockActive = !!enabled;
+  logDebug(`[AdBlock Native] Estado actualizado: ${adblockActive ? 'ACTIVO' : 'PAUSADO'}`);
 });
 
 ipcMain.on('open-external', (_, url) => {

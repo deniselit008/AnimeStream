@@ -2,8 +2,8 @@
  * Anime Directory View Component (Directorio de Anime)
  * Multi-faceted catalog filtering by Category/Genre, Type, Year, Status, and Source.
  */
-import { Api } from '../api.js?v=3.0';
-import { Icons, escapeHtml, getSourceBadgeClass, getDefaultPoster, fixEncoding, slugifyGenre } from '../utils.js?v=3.0';
+import { Api } from '../api.js?v=5.0';
+import { Icons, escapeHtml, getSourceBadgeClass, getDefaultPoster, fixEncoding, slugifyGenre } from '../utils.js?v=5.0';
 
 const GENRES = [
   { id: 'all', label: 'Todos los géneros' },

@@ -71,8 +71,17 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
         window.addEventListener('touchstart', resetC, { passive: true });
         resetC();
 
+        function notifyAdBlocked(reason) {
+          try {
+            if (window.top && window.top !== window) {
+              window.top.postMessage({ type: 'ANIMESTREAM_ADBLOCK_HIT', reason: reason }, '*');
+            }
+          } catch (e) {}
+        }
+
         window.open = function(url) {
           console.warn('[AnimeStream AdBlock] Bloqueado popup publicitario:', url);
+          notifyAdBlocked('Popup bloqueado: ' + String(url || '').slice(0, 50));
           return {
             closed: true,
             focus: function() {},
@@ -80,7 +89,7 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
             location: { href: '' }
           };
         };
-        window.alert = function() {};
+        window.alert = function() { notifyAdBlocked('Alerta publicitaria bloqueada'); };
         window.confirm = function() { return false; };
         window.prompt = function() { return null; };
         window.onbeforeunload = null;
@@ -91,6 +100,7 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
             var overlays = document.querySelectorAll('#overlayads, .overlayads, [id*="overlayad"], [class*="overlayad"]');
             for (var o = 0; o < overlays.length; o++) {
               overlays[o].remove();
+              notifyAdBlocked('Overlay publicitario eliminado');
             }
 
             var traps = document.querySelectorAll('a[target="_blank"], a[href^="http"], div');
@@ -106,6 +116,7 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
                   var r = el.getBoundingClientRect();
                   if (r.width >= window.innerWidth * 0.7 && r.height >= window.innerHeight * 0.7) {
                     el.remove();
+                    notifyAdBlocked('Capa clickjacking invisible eliminada');
                   }
                 }
               }

@@ -4,7 +4,7 @@
  * Provides 2D D-Pad Spatial Navigation, Remote Back handling, Media Keys,
  * and high-visibility couch-friendly focus management.
  */
-import { showToast } from './utils.js?v=3.0';
+import { showToast } from './utils.js?v=5.0';
 
 const STORAGE_KEY = 'animestream_tv_mode';
 

@@ -202,39 +202,54 @@ async function handleHlsM3u8(hashId, req, res) {
   }
 
   const ua = getRandomUserAgent();
+  let cookieHeader = '';
 
   // Step 1: Pre-warm session cookie
   try {
-    await httpClient.get(`https://player.zilla-networks.com/play/${cleanHash}`, {
+    const playRes = await httpClient.get(`https://player.zilla-networks.com/play/${cleanHash}`, {
       headers: {
         'User-Agent': ua,
         'Referer': 'https://animeav1.com/'
       },
       timeout: 6000
     });
+    const setCookies = playRes.headers?.['set-cookie'];
+    if (Array.isArray(setCookies) && setCookies.length > 0) {
+      cookieHeader = setCookies.map(c => c.split(';')[0]).join('; ');
+    }
   } catch (_) {}
 
   // Step 2: Fetch .m3u8 playlist
   try {
+    const reqHeaders = {
+      'User-Agent': ua,
+      'Referer': `https://player.zilla-networks.com/play/${cleanHash}`,
+      'Origin': 'https://player.zilla-networks.com',
+      'Sec-Fetch-Dest': 'empty',
+      'Sec-Fetch-Mode': 'cors',
+      'Sec-Fetch-Site': 'same-origin'
+    };
+    if (cookieHeader) reqHeaders['Cookie'] = cookieHeader;
+
     const m3u8Res = await httpClient.get(`https://player.zilla-networks.com/m3u8/${cleanHash}`, {
-      headers: {
-        'User-Agent': ua,
-        'Referer': `https://player.zilla-networks.com/play/${cleanHash}`,
-        'Origin': 'https://player.zilla-networks.com',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-origin'
-      },
+      headers: reqHeaders,
       timeout: REQUEST_TIMEOUT_MS
     });
 
     const rawM3u8 = typeof m3u8Res.data === 'string' ? m3u8Res.data : JSON.stringify(m3u8Res.data);
 
-    // Rewrite absolute segment links to local proxy endpoints
-    const rewritten = rawM3u8.replace(
-      new RegExp(`https://player\\.zilla-networks\\.com/segs/${cleanHash}/([a-zA-Z0-9_\\-\\.]+)`, 'g'),
-      `/api/hls/seg/${cleanHash}/$1`
-    );
+    // Rewrite absolute and relative segment links to local proxy endpoints
+    const rewritten = rawM3u8
+      .replace(
+        new RegExp(`https://player\\.zilla-networks\\.com/segs/${cleanHash}/([a-zA-Z0-9_\\-\\.]+)`, 'g'),
+        `/api/hls/seg/${cleanHash}/$1`
+      )
+      .split(/\r?\n/)
+      .map(line => {
+        if (!line || line.startsWith('#') || line.startsWith('/') || line.startsWith('http')) return line;
+        return `/api/hls/seg/${cleanHash}/${line.trim()}`;
+      })
+      .join('\n');
 
     res.set({
       'Content-Type': 'application/vnd.apple.mpegurl',
