@@ -186,7 +186,7 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
 
         <!-- Audio Variants Bar (SUB vs DUB) -->
         ${availableAudios.length > 1 ? `
-          <div class="audio-tabs-bar" style="display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+          <div class="audio-tabs-bar" style="display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); flex-wrap: wrap;">
             <span style="font-size: 0.84rem; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
               🎧 Idioma / Audio:
             </span>

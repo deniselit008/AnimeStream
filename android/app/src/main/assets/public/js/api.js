@@ -170,7 +170,7 @@ export const Api = {
                 id
                 title { romaji english userPreferred }
                 type
-                coverImage { medium }
+                coverImage { extraLarge large medium }
                 siteUrl
               }
             }
@@ -220,7 +220,7 @@ export const Api = {
                   type: 'Anime',
                   mal_id: node.id,
                   mal_url: node.siteUrl || `https://anilist.co/anime/${node.id}`,
-                  image: node.coverImage?.medium || null,
+                  image: node.coverImage?.extraLarge || node.coverImage?.large || node.coverImage?.medium || null,
                   url: `#/search?q=${encodeURIComponent(cleanTerm)}`
                 });
               });
@@ -315,7 +315,10 @@ export const Api = {
               seen.add(lowerName);
 
               const imgEl = row.querySelector('img');
-              const imgSrc = imgEl ? (imgEl.getAttribute('data-src') || imgEl.getAttribute('src')) : null;
+              let imgSrc = imgEl ? (imgEl.getAttribute('data-src') || imgEl.getAttribute('src')) : null;
+              if (imgSrc) {
+                imgSrc = imgSrc.replace(/\/r\/\d+x\d+\//, '/').split('?')[0];
+              }
               const fullMalUrl = aHref.startsWith('http') ? aHref : `https://myanimelist.net${aHref}`;
               const cleanTerm = titleText.replace(/\s*\(TV\)|\s*\(Movie\)|\s*\(OVA\)/gi, '').trim();
 

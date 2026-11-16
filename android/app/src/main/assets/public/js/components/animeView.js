@@ -145,7 +145,7 @@ export async function renderAnime(container, animeUrl) {
                         class="relation-img" 
                         loading="lazy" 
                         referrerpolicy="no-referrer"
-                        onerror="if (!this.dataset.retried && this.src && !this.src.includes('/api/image-proxy')) { this.dataset.retried='1'; this.src='/api/image-proxy?url=' + encodeURIComponent('${escapeHtml(rel.image)}'); } else { this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='flex'; }"
+                        onerror="this.onerror=null; this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='flex';"
                       />
                       <div class="relation-fallback-cover" style="display: none;">
                         <span style="font-size: 1.8rem; margin-bottom: 4px;">🎬</span>

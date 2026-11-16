@@ -296,7 +296,7 @@ async function fetchAniListRelations(title) {
               id
               title { romaji english userPreferred }
               type
-              coverImage { medium large }
+              coverImage { extraLarge large medium }
               siteUrl
             }
           }
@@ -327,7 +327,7 @@ async function fetchAniListRelations(title) {
         relation: relLabel,
         raw_relation: rawRel,
         type: 'Anime',
-        image: node.coverImage?.large || node.coverImage?.medium || null,
+        image: node.coverImage?.extraLarge || node.coverImage?.large || node.coverImage?.medium || null,
         mal_id: node.id,
         mal_url: node.siteUrl || `https://anilist.co/anime/${node.id}`
       });

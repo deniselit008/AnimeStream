@@ -903,8 +903,8 @@ button {
 
 .relations-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
 }
 
 .relation-card {
@@ -3211,6 +3211,13 @@ body {
     padding: 8px 10px !important;
     gap: 8px !important;
     margin-bottom: 14px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .watch-controls-bar #btn-toggle-seen {
+    width: 100% !important;
+    justify-content: center !important;
   }
 
   .watch-nav-btns {
@@ -3339,6 +3346,128 @@ body {
     gap: 10px !important;
     font-size: 0.78rem !important;
   }
+  /* ------------------------------------------------------------------------
+     11. Franchise & Relations on Mobile
+     ------------------------------------------------------------------------ */
+  .relations-section {
+    margin: 14px 0 16px !important;
+    padding: 12px 10px !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  .relations-header {
+    margin-bottom: 10px !important;
+    gap: 8px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  .relations-title-group h2 {
+    font-size: 1.05rem !important;
+    gap: 6px !important;
+  }
+
+  .relations-title-group p {
+    font-size: 0.74rem !important;
+  }
+
+  .relations-filters {
+    width: 100% !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    padding-bottom: 4px !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  .relations-filters::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .relations-filters .btn-pill {
+    padding: 4px 10px !important;
+    font-size: 0.72rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .relations-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .relation-card {
+    border-radius: var(--radius-sm) !important;
+  }
+
+  .relation-media {
+    aspect-ratio: 2 / 3 !important;
+  }
+
+  .relation-badges-top {
+    top: 4px !important;
+    left: 4px !important;
+    right: 4px !important;
+    gap: 4px !important;
+  }
+
+  .relation-badges-top .badge {
+    font-size: 0.58rem !important;
+    padding: 1px 4px !important;
+  }
+
+  .relation-type-badge {
+    font-size: 0.55rem !important;
+    padding: 1px 3px !important;
+  }
+
+  .relation-fallback-cover {
+    padding: 8px !important;
+  }
+
+  .relation-fallback-cover span:first-child {
+    font-size: 1.3rem !important;
+  }
+
+  .relation-fallback-cover span:last-child {
+    font-size: 0.7rem !important;
+  }
+
+  .relation-body {
+    padding: 6px 8px !important;
+  }
+
+  .relation-card-name {
+    font-size: 0.75rem !important;
+    line-height: 1.25 !important;
+    margin-bottom: 4px !important;
+    -webkit-line-clamp: 2 !important;
+    max-height: 2.5em !important;
+  }
+
+  .relation-footer-actions {
+    padding-top: 4px !important;
+  }
+
+  .relation-stream-btn {
+    font-size: 0.66rem !important;
+    padding: 2px 5px !important;
+    gap: 3px !important;
+  }
+
+  .relation-stream-btn svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  .relation-mal-link {
+    font-size: 0.64rem !important;
+    padding: 1px 4px !important;
+  }
+
+  .relation-mal-link svg {
+    width: 10px !important;
+    height: 10px !important;
+  }
 }
 
 /* Mid-size Tablet Portrait (480px - 768px) Grid enhancement */
@@ -3346,6 +3475,11 @@ body {
   .anime-grid {
     grid-template-columns: repeat(3, 1fr) !important;
     gap: 12px !important;
+  }
+
+  .relations-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
   }
 }
 
