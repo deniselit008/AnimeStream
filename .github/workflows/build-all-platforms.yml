@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Nombre de la release en GitHub (ej. 1.2.3 o v1.2.3)'
+        description: 'Nombre de la release en GitHub (ej. 1.2.4 o v1.2.4)'
         required: false
-        default: '1.2.3'
+        default: '1.2.4'
   release:
     types: [published, created]
   push:
@@ -158,7 +158,7 @@ jobs:
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
             echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           else
-            echo "tag=1.2.3" >> $GITHUB_OUTPUT
+            echo "tag=1.2.4" >> $GITHUB_OUTPUT
           fi
 
       - name: Descargar artefactos de Windows

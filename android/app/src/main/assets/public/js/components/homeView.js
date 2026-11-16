@@ -6,7 +6,17 @@ import { Api } from '../api.js?v=5.0';
 import { Storage } from '../storage.js?v=5.0';
 import { Icons, escapeHtml, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster, showToast } from '../utils.js?v=5.0';
 
+let currentHeroInterval = null;
+
+export function cleanupHomeView() {
+  if (currentHeroInterval) {
+    clearInterval(currentHeroInterval);
+    currentHeroInterval = null;
+  }
+}
+
 export async function renderHome(container) {
+  cleanupHomeView();
   container.innerHTML = `
     <div class="home-container">
       <!-- Hero Banner Placeholder with Skeleton -->
@@ -147,6 +157,9 @@ async function loadLatestEpisodes(container, source = 'all') {
   try {
     const episodes = await Api.getLatest(source);
     if (!episodes || episodes.length === 0) {
+      if (heroMount && heroMount.querySelector('.hero-skeleton-placeholder')) {
+        heroMount.innerHTML = '';
+      }
       grid.innerHTML = `
         <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-dim);">
           No se pudieron cargar los últimos episodios. Por favor, intenta de nuevo o cambia de fuente.
@@ -156,8 +169,9 @@ async function loadLatestEpisodes(container, source = 'all') {
     }
 
     // Render Hero Carousel from featured items if on 'all'
-    if (source === 'all' && heroMount && !heroMount.querySelector('.hero-banner')) {
-      const featuredItems = episodes.filter(e => e.image && e.image.startsWith('http')).slice(0, 4);
+    const hasActiveHero = heroMount && heroMount.querySelector('.hero-banner:not(.hero-skeleton-placeholder)');
+    if (source === 'all' && heroMount && !hasActiveHero) {
+      const featuredItems = episodes.filter(e => e.image && (e.image.startsWith('http') || e.image.startsWith('/'))).slice(0, 4);
       if (featuredItems.length === 0 && episodes.length > 0) featuredItems.push(episodes[0]);
 
       if (featuredItems.length > 0) {
@@ -167,9 +181,10 @@ async function loadLatestEpisodes(container, source = 'all') {
           const featured = featuredItems[idx];
           if (!featured) return;
           const isFav = Storage.isFavorite(featured.animeUrl);
+          const coverUrl = resolveAnimeCover(featured);
           heroMount.innerHTML = `
             <div class="hero-banner">
-              <img src="${escapeHtml(featured.image)}" class="hero-backdrop" alt="${escapeHtml(featured.title)}" onerror="this.style.display='none'" />
+              <img src="${escapeHtml(coverUrl)}" class="hero-backdrop" alt="${escapeHtml(featured.title)}" onerror="this.style.display='none'" />
               <div class="hero-gradient"></div>
               <div class="hero-content">
                 <div class="hero-badges">
@@ -184,7 +199,7 @@ async function loadLatestEpisodes(container, source = 'all') {
                   Transmisión en alta definición sin interrupciones publicitarias de ${escapeHtml(featured.title)}. Disponible ahora en AnimeStream con múltiples servidores ultra rápidos.
                 </p>
                 <div class="hero-actions">
-                  <a href="#/watch?url=${encodeURIComponent(featured.url)}" class="btn btn-primary">
+                  <a href="#/watch?url=${encodeURIComponent(featured.url)}&image=${encodeURIComponent(featured.image || '')}&title=${encodeURIComponent(featured.title || '')}&animeUrl=${encodeURIComponent(featured.animeUrl || '')}" class="btn btn-primary">
                     ${Icons.play} Ver Episodio ${escapeHtml(String(featured.episode))}
                   </a>
                   <a href="#/anime?url=${encodeURIComponent(featured.animeUrl)}" class="btn btn-secondary">
@@ -198,7 +213,7 @@ async function loadLatestEpisodes(container, source = 'all') {
                 ${featuredItems.length > 1 ? `
                   <div class="hero-dots" style="display: flex; gap: 8px; margin-top: 18px;">
                     ${featuredItems.map((_, i) => `
-                      <button class="hero-dot ${i === idx ? 'active' : ''}" data-idx="${i}" style="width: ${i === idx ? '26px' : '9px'}; height: 9px; border-radius: 6px; background: ${i === idx ? 'var(--accent-primary)' : 'rgba(255,255,255,0.25)'}; border: none; cursor: pointer; transition: all 0.25s ease;"></button>
+                      <button class="hero-dot ${i === idx ? 'active' : ''}" data-idx="${i}" style="width: ${i === idx ? '26px' : '9px'}; height: 9px; border-radius: 6px; background: ${i === idx ? 'var(--accent-primary)' : 'rgba(255,255,255,0.25)'}; border: none; cursor: pointer; transition: all 0.25s ease;" title="Ver estreno ${i + 1}"></button>
                     `).join('')}
                   </div>
                 ` : ''}
@@ -240,21 +255,33 @@ async function loadLatestEpisodes(container, source = 'all') {
               const nextIdx = parseInt(d.dataset.idx, 10);
               currentHeroIdx = nextIdx;
               updateHero(nextIdx);
+              startHeroTimer();
             });
           });
         }
 
-        updateHero(0);
-
-        // Auto rotate hero every 8 seconds
-        if (featuredItems.length > 1) {
-          setInterval(() => {
-            if (document.querySelector('#hero-banner-mount .hero-banner')) {
-              currentHeroIdx = (currentHeroIdx + 1) % featuredItems.length;
-              updateHero(currentHeroIdx);
-            }
-          }, 8000);
+        function startHeroTimer() {
+          if (currentHeroInterval) {
+            clearInterval(currentHeroInterval);
+            currentHeroInterval = null;
+          }
+          if (featuredItems.length > 1) {
+            currentHeroInterval = setInterval(() => {
+              if (heroMount && heroMount.isConnected && heroMount.querySelector('.hero-banner:not(.hero-skeleton-placeholder)')) {
+                currentHeroIdx = (currentHeroIdx + 1) % featuredItems.length;
+                updateHero(currentHeroIdx);
+              } else {
+                clearInterval(currentHeroInterval);
+                currentHeroInterval = null;
+              }
+            }, 8000);
+          }
         }
+
+        updateHero(0);
+        startHeroTimer();
+      } else if (heroMount) {
+        heroMount.innerHTML = '';
       }
     }
 
@@ -310,6 +337,9 @@ async function loadLatestEpisodes(container, source = 'all') {
     }).join('');
 
   } catch (err) {
+    if (heroMount && heroMount.querySelector('.hero-skeleton-placeholder')) {
+      heroMount.innerHTML = '';
+    }
     grid.innerHTML = `
       <div class="alert-banner error" style="grid-column: 1/-1; padding: 20px; border-radius: var(--radius-md); text-align: center;">
         <div style="margin-bottom: 8px;">

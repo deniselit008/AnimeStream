@@ -685,7 +685,7 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
           ${Icons.alert} <strong>No se pudo cargar el episodio:</strong> ${escapeHtml(err.message)}
         </div>
         <div style="display: flex; gap: 10px;">
-          <a href="${escapeHtml(episodeUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+          <a href="${escapeHtml(episodeUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary external-link" data-external-url="${escapeHtml(episodeUrl)}">
             ${Icons.external} Ver en la web original
           </a>
           <button class="btn btn-primary" onclick="window.history.back()">Volver</button>

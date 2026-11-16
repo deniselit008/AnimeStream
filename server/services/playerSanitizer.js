@@ -10,7 +10,7 @@ const AD_DOMAINS = [
   'juicyads', 'hilltopads', 'ad-maven', 'ezmob', 'realsrv', 'zeroredirect',
   'deloton', 'deloplen', 'onclasrv', 'adsco', 'creativecdn', 'tsyndicate', 'adtrue', 'vidoomy',
   'cortahewt', 'dirdumaigre', 'sxlzbz', 'adkeeper', 'adrun', 'adserver', 'syndication',
-  'alwingulla', 'stape', 'streamwish', 'vidhide', 'propu.sh', 'notix', 'pushwhoosh'
+  'alwingulla', 'stape', 'propu.sh', 'notix', 'pushwhoosh'
 ];
 
 function sanitizePlayerHtml(html, baseHref = null, active = true) {

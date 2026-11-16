@@ -4,7 +4,7 @@
  */
 import { Api } from '../api.js?v=5.0';
 import { Storage } from '../storage.js?v=5.0';
-import { Icons, escapeHtml, showToast, getSourceBadgeClass, getRelationBadgeClass, fixEncoding, slugifyGenre, getDefaultPoster } from '../utils.js?v=5.0';
+import { Icons, escapeHtml, showToast, getSourceBadgeClass, getRelationBadgeClass, fixEncoding, slugifyGenre, getDefaultPoster, openExternalUrl } from '../utils.js?v=5.0';
 
 export async function renderAnime(container, animeUrl) {
   container.innerHTML = `
@@ -401,7 +401,7 @@ export async function renderAnime(container, animeUrl) {
           e.stopPropagation();
           const targetUrl = link.dataset.malHref;
           if (targetUrl) {
-            window.open(targetUrl, '_blank', 'noopener,noreferrer');
+            openExternalUrl(targetUrl);
           }
         });
       });

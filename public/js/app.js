@@ -2,7 +2,7 @@
  * Main Application Coordinator & Hash Router
  */
 import { renderNavbar } from './components/navbar.js?v=5.0';
-import { renderHome } from './components/homeView.js?v=5.0';
+import { renderHome, cleanupHomeView } from './components/homeView.js?v=5.0';
 import { renderSearch } from './components/searchView.js?v=5.0';
 import { renderAnime } from './components/animeView.js?v=5.0';
 import { renderWatch, cleanupWatchView } from './components/watchView.js?v=5.0';
@@ -46,9 +46,12 @@ async function handleRoute() {
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'instant' });
 
-    // Cleanup player listeners when leaving watch view
+    // Cleanup player and home carousel listeners when leaving their respective views
     if (path !== '/watch') {
       cleanupWatchView();
+    }
+    if (path !== '' && path !== '/') {
+      cleanupHomeView();
     }
 
     // Route Dispatcher

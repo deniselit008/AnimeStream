@@ -2,7 +2,9 @@ package com.animestream.app;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.Uri;
@@ -67,7 +69,7 @@ public class MainActivity extends Activity {
         "pushwhoosh", "evadav", "clickadilla", "rollerads", "tacdn", "fastclick",
         "bidvertiser", "trafficstars", "adxpansion", "revenuehits", "clouddelivery",
         "serving-sys", "rubiconproject", "openx.net", "pubmatic", "smartadserver",
-        "infolinks", "conversantmedia", "sovrn", "yieldmo", "streamwish", "vidhide"
+        "infolinks", "conversantmedia", "sovrn", "yieldmo"
     };
 
     private static boolean isAdHost(String host) {
@@ -439,13 +441,57 @@ public class MainActivity extends Activity {
             }
 
             @Override
-            public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
+            public boolean onJsAlert(WebView view, String url, String message, final JsResult result) {
+                if (url != null && (url.contains("appassets.androidplatform.net") || url.contains("localhost") || url.startsWith("file:"))) {
+                    new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("AnimeStream")
+                        .setMessage(message)
+                        .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                result.confirm();
+                            }
+                        })
+                        .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                            @Override
+                            public void onCancel(DialogInterface dialog) {
+                                result.cancel();
+                            }
+                        })
+                        .show();
+                    return true;
+                }
                 result.cancel();
                 return true;
             }
 
             @Override
-            public boolean onJsConfirm(WebView view, String url, String message, JsResult result) {
+            public boolean onJsConfirm(WebView view, String url, String message, final JsResult result) {
+                if (url != null && (url.contains("appassets.androidplatform.net") || url.contains("localhost") || url.startsWith("file:"))) {
+                    new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("AnimeStream")
+                        .setMessage(message)
+                        .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                result.confirm();
+                            }
+                        })
+                        .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                result.cancel();
+                            }
+                        })
+                        .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                            @Override
+                            public void onCancel(DialogInterface dialog) {
+                                result.cancel();
+                            }
+                        })
+                        .show();
+                    return true;
+                }
                 result.cancel();
                 return true;
             }

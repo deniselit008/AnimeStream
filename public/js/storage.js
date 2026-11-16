@@ -209,10 +209,10 @@ export const Storage = {
         favorites = favorites.filter(f => f.url !== anime.url);
       } else {
         favorites.unshift({
-          title: anime.title,
+          title: anime.title || 'Anime',
           url: anime.url,
-          image: anime.image,
-          source: anime.source,
+          image: resolveAnimeCover(anime),
+          source: anime.source || 'Anime',
           addedAt: Date.now()
         });
       }
