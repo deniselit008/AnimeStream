@@ -219,7 +219,7 @@ export async function renderAnime(container, animeUrl) {
                 src="${escapeHtml(anime.image || fallbackPoster)}" 
                 alt="${escapeHtml(anime.title)}" 
                 class="detail-poster" 
-                onerror="this.src='${fallbackPoster}'"
+                onerror="this.onerror=null; this.src='${fallbackPoster}';"
               />
             </div>
 

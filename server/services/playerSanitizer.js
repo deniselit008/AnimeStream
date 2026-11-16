@@ -10,7 +10,19 @@ const AD_DOMAINS = [
   'juicyads', 'hilltopads', 'ad-maven', 'ezmob', 'realsrv', 'zeroredirect',
   'deloton', 'deloplen', 'onclasrv', 'adsco', 'creativecdn', 'tsyndicate', 'adtrue', 'vidoomy',
   'cortahewt', 'dirdumaigre', 'sxlzbz', 'adkeeper', 'adrun', 'adserver', 'syndication',
-  'alwingulla', 'stape', 'propu.sh', 'notix', 'pushwhoosh'
+  'alwingulla', 'stape', 'propu.sh', 'notix', 'pushwhoosh',
+  'flawlessimmunizeguy', 'phruk.org', 'subgumgutwise', 'lumbarssweepup',
+  'greentrafsa', 'advtpe', 'shottervills', 'greatdexchange', 'mdstats',
+  'pixibay', 'mc.yandex', 'yandex.ru', 'stats.jkdesa', 'filters-save',
+  'xads.js', 'ev-static', 'highcpmgate', 'coinhive', 'crypto-loot',
+  'chaturbate', 'bongacams', 'stripchat', 'livejasmin', 'faphouse',
+  'spankbang', 'eporner', 'pornhub', 'xvideos', 'hentaijk',
+  'adultfriendfinder', 'crakrevenue', 'clickdealer', 'ero-advertising',
+  'plugrush', 'adcolony', 'applovin', 'ironSource', 'springserve',
+  'spotxchange', 'connatix', 'scorecardresearch', 'quantserve',
+  'clarity.ms', 'adblade', 'adform', 'casalemedia', 'indexexchange',
+  'gumgum', 'kargo', 'sharethrough', 'triplelift', 'nativeads',
+  'revcontent', 'zemanta', 'adnow', 'content.ad'
 ];
 
 function sanitizePlayerHtml(html, baseHref = null, active = true) {
@@ -48,8 +60,10 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
     // 4. Inject non-destructive protective shield, cosmetic suppression styles and cursor auto-hide
     const shieldScript = `<style>
       #overlayads, .overlayads, [id*="overlayad"], [class*="overlayad"],
+      #confirm_modal, #modal-back, .play-overlay,
       .ad-banner, .advertisement, [id*="popunder"], [class*="popunder"],
-      div[style*="z-index: 2147483647"], div[style*="z-index: 9999999"] {
+      div[style*="z-index: 2147483647"], div[style*="z-index: 9999999"],
+      a[target="_blank"][style*="position: absolute"], a[target="_blank"][style*="position: fixed"] {
         display: none !important;
         visibility: hidden !important;
         pointer-events: none !important;
@@ -115,12 +129,20 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
         window.alert = function() { notifyAdBlocked('Alerta publicitaria bloqueada'); };
         window.confirm = function() { return false; };
         window.prompt = function() { return null; };
+        window.modal_confirm = function() {};
         window.onbeforeunload = null;
 
         function purgeClickjacking() {
           try {
-            // Remove explicit overlay ad containers (like Mp4Upload #overlayads)
-            var overlays = document.querySelectorAll('#overlayads, .overlayads, [id*="overlayad"], [class*="overlayad"]');
+            // Remove explicit overlay ad containers, fake modals, and click traps
+            var overlays = document.querySelectorAll(
+              '#overlayads, .overlayads, [id*="overlayad"], [class*="overlayad"], ' +
+              '#confirm_modal, #modal-back, .play-overlay, ' +
+              'div[class*="modal-backdrop"], .ad-banner, .advertisement, ' +
+              '[id*="popunder"], [class*="popunder"], ' +
+              'div[style*="z-index: 2147483647"], div[style*="z-index: 9999999"], ' +
+              'a[target="_blank"][style*="position: absolute"], a[target="_blank"][style*="position: fixed"]'
+            );
             for (var o = 0; o < overlays.length; o++) {
               overlays[o].remove();
               notifyAdBlocked('Overlay publicitario eliminado');

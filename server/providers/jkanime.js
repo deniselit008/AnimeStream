@@ -334,7 +334,8 @@ class JKAnimeProvider {
     const serverNames = $('.bg-servers a').map((_, el) => $(el).text().trim()).get();
 
     videoEmbeds.forEach((embedUrl, idx) => {
-      const sName = serverNames[idx] || `Servidor ${idx + 1}`;
+      const rawName = serverNames[idx] || `Servidor ${idx + 1}`;
+      const sName = rawName.replace(/\s*\((?:mirror|Mirror)\)\s*/gi, '').trim();
       servers.push({
         name: `${audioPrefix}${sName}`,
         embed: embedUrl,
@@ -354,6 +355,14 @@ class JKAnimeProvider {
             try {
               const decoded = Buffer.from(s.remote, 'base64').toString('utf-8').trim();
               if (decoded.startsWith('http')) {
+                // Ignore download-only hosts like Mediafire that cannot be embedded in video player
+                if (cleanName.toLowerCase().includes('mediafire') || decoded.includes('mediafire.com')) {
+                  continue;
+                }
+                // Ignore incomplete or empty embed URLs (e.g. vidhidevip.com/embed/ with no id)
+                if (decoded.endsWith('/embed/') || decoded.endsWith('/embed')) {
+                  continue;
+                }
                 servers.push({
                   name: `${audioPrefix}${cleanName}`,
                   embed: decoded,

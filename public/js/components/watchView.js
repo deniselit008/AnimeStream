@@ -10,8 +10,18 @@ import { AdBlock } from '../adblock.js?v=5.0';
 let currentWatchKeyDownHandler = null;
 let currentIdleCursorTimer = null;
 let currentCursorListeners = null;
+let currentCleanPlayerInterval = null;
+let currentAdblockChangeListener = null;
 
 export function cleanupWatchView() {
+  if (currentCleanPlayerInterval) {
+    clearInterval(currentCleanPlayerInterval);
+    currentCleanPlayerInterval = null;
+  }
+  if (currentAdblockChangeListener) {
+    window.removeEventListener('animestream-adblock-change', currentAdblockChangeListener);
+    currentAdblockChangeListener = null;
+  }
   try {
     const iframe = document.getElementById('main-player-iframe');
     if (iframe) {
@@ -256,7 +266,8 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
                 href="${escapeHtml(currentServer.embed)}" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                class="btn btn-outline" 
+                class="btn btn-outline external-link" 
+                data-external-url="${escapeHtml(currentServer.embed)}"
                 style="padding: 4px 10px; font-size: 0.8rem;" 
                 title="Abrir este reproductor en pestaña externa"
               >
@@ -360,7 +371,10 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
               btn.classList.add('active');
               
               const newTabLink = container.querySelector('#link-open-new-tab');
-              if (newTabLink) newTabLink.href = vServers[idx].embed;
+              if (newTabLink) {
+                newTabLink.href = vServers[idx].embed;
+                newTabLink.setAttribute('data-external-url', vServers[idx].embed);
+              }
 
               showToast(`Cambiado a servidor: ${vServers[idx].name}`, 'info');
             }
@@ -409,7 +423,10 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
         });
 
         // Keep player button reactive to AdBlock toggles
-        window.addEventListener('animestream-adblock-change', (e) => {
+        if (currentAdblockChangeListener) {
+          window.removeEventListener('animestream-adblock-change', currentAdblockChangeListener);
+        }
+        currentAdblockChangeListener = (e) => {
           const btn = container.querySelector('#btn-player-adblock');
           if (btn && e.detail) {
             const isAct = e.detail.enabled;
@@ -430,7 +447,8 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
               }
             }
           }
-        });
+        };
+        window.addEventListener('animestream-adblock-change', currentAdblockChangeListener);
       }
 
       // Cinema Mode toggle
@@ -461,7 +479,7 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
         });
       }
 
-      // Sync player volume & clean ads when iframe loads
+      // Sync player volume & clean ads when iframe loads + periodic sweep
       const iframe = container.querySelector('#main-player-iframe');
       if (iframe) {
         iframe.addEventListener('load', () => {
@@ -476,6 +494,12 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
             }
           } catch (e) {}
         });
+
+        // Periodic sweep for delayed rogue clickjacking traps and popunder triggers
+        if (currentCleanPlayerInterval) clearInterval(currentCleanPlayerInterval);
+        currentCleanPlayerInterval = setInterval(() => {
+          AdBlock.cleanThirdPartyPlayer(iframe);
+        }, 1200);
       }
 
       // Seen button

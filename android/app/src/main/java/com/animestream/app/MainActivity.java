@@ -69,7 +69,16 @@ public class MainActivity extends Activity {
         "pushwhoosh", "evadav", "clickadilla", "rollerads", "tacdn", "fastclick",
         "bidvertiser", "trafficstars", "adxpansion", "revenuehits", "clouddelivery",
         "serving-sys", "rubiconproject", "openx.net", "pubmatic", "smartadserver",
-        "infolinks", "conversantmedia", "sovrn", "yieldmo"
+        "infolinks", "conversantmedia", "sovrn", "yieldmo",
+        "flawlessimmunizeguy", "phruk", "subgumgutwise", "lumbarssweepup", "greentrafsa",
+        "advtpe", "shottervills", "greatdexchange", "mdstats", "pixibay", "mc.yandex",
+        "yandex.ru", "stats.jkdesa", "hentaijk", "highcpmgate", "coinhive", "crypto-loot",
+        "chaturbate", "bongacams", "stripchat", "livejasmin", "faphouse", "spankbang",
+        "eporner", "pornhub", "xvideos", "adultfriendfinder", "crakrevenue", "clickdealer",
+        "ero-advertising", "plugrush", "adcolony", "applovin", "ironSource", "springserve",
+        "spotxchange", "connatix", "scorecardresearch", "quantserve", "clarity.ms",
+        "adblade", "adform", "casalemedia", "indexexchange", "gumgum", "kargo",
+        "sharethrough", "triplelift", "nativeads", "revcontent", "zemanta", "adnow", "content.ad"
     };
 
     private static boolean isAdHost(String host) {
@@ -79,6 +88,21 @@ public class MainActivity extends Activity {
             if (lower.contains(ad)) return true;
         }
         return false;
+    }
+
+    private static boolean isAdUrl(Uri uri) {
+        if (uri == null) return false;
+        String host = uri.getHost();
+        if (host != null && isAdHost(host)) return true;
+        String full = uri.toString().toLowerCase();
+        return full.contains("/ad?type=") ||
+               full.contains("/ads?") ||
+               full.contains("/xads.js") ||
+               full.contains("ev-static.js") ||
+               full.contains("filters-save.js") ||
+               full.contains("/popunder") ||
+               full.contains("script.manual.js") ||
+               full.contains("prebid.min.js");
     }
 
     public class AndroidBridge {
@@ -304,7 +328,7 @@ public class MainActivity extends Activity {
         settings.setSupportZoom(false);
         settings.setBuiltInZoomControls(false);
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
-        settings.setSupportMultipleWindows(false);
+        settings.setSupportMultipleWindows(true);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
@@ -327,10 +351,10 @@ public class MainActivity extends Activity {
                         }
                     }
 
-                    if (host != null && isAdHost(host)) {
+                    if (isAdUrl(reqUri)) {
                         if (webView != null) {
                             webView.post(() -> webView.evaluateJavascript(
-                                "window.dispatchEvent(new CustomEvent('animestream-android-adblock-hit', {detail:'" + host.toLowerCase().replace("'", "") + "'}))",
+                                "window.dispatchEvent(new CustomEvent('animestream-android-adblock-hit', {detail:'" + (host != null ? host.toLowerCase().replace("'", "") : "anuncio") + "'}))",
                                 null
                             ));
                         }
@@ -350,32 +374,23 @@ public class MainActivity extends Activity {
                 String scheme = uri.getScheme();
                 String host = uri.getHost();
 
-                // Block intent:, market:, and non-web scheme redirects from crashing or taking over
+                // 1. Block intent:, market:, and non-web scheme redirects from crashing or taking over
                 if (scheme != null && !scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https")) {
                     return true;
                 }
 
-                // If external community, reference or anime source link, open outside in Android browser / native app
-                if (host != null) {
-                    String lower = host.toLowerCase();
-                    if (lower.contains("x.com") || lower.contains("twitter.com") || lower.contains("github.com") ||
-                        lower.contains("myanimelist.net") || lower.contains("anilist.co") ||
-                        lower.contains("animeav1.com") || lower.contains("jkanime.net") || lower.contains("tioanime.com")) {
-                        try {
-                            android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, uri);
-                            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-                            startActivity(intent);
-                        } catch (Exception ignored) {}
-                        return true;
+                // 2. Block any frame navigation to known ad hosts or ad URLs
+                if (isAdUrl(uri)) {
+                    if (webView != null) {
+                        webView.post(() -> webView.evaluateJavascript(
+                            "window.dispatchEvent(new CustomEvent('animestream-android-adblock-hit', {detail:'Redirección publicitaria bloqueada'}))",
+                            null
+                        ));
                     }
-                }
-
-                // Block any frame navigation to known ad hosts
-                if (isAdHost(host)) {
                     return true;
                 }
 
-                // If request is for the main frame (top-level app window):
+                // 3. Main Frame (top-level app window) navigations:
                 if (request.isForMainFrame()) {
                     // Allow our local appassets domain
                     if (host != null && host.equals("appassets.androidplatform.net")) {
@@ -389,11 +404,26 @@ public class MainActivity extends Activity {
                         return false;
                     }
 
+                    // If external community, reference or anime source link clicked from main window, open in external Android browser
+                    if (host != null) {
+                        String lower = host.toLowerCase();
+                        if (lower.contains("x.com") || lower.contains("twitter.com") || lower.contains("github.com") ||
+                            lower.contains("myanimelist.net") || lower.contains("anilist.co") ||
+                            lower.contains("animeav1.com") || lower.contains("jkanime.net") || lower.contains("tioanime.com")) {
+                            try {
+                                android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, uri);
+                                intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(intent);
+                            } catch (Exception ignored) {}
+                            return true;
+                        }
+                    }
+
                     // NEVER allow third-party player iframes or ad clicks to replace our main app window!
                     return true;
                 }
 
-                // Subframes (video players): allow them to load their video player embeds
+                // 4. Subframes (video players): allow genuine video players to render inside their iframe without triggering external app intents
                 return false;
             }
 
@@ -436,7 +466,13 @@ public class MainActivity extends Activity {
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, android.os.Message resultMsg) {
-                // Block all popup windows from video player iframes so they never hijack the app
+                // Strictly block all popup windows and popunders from third-party players
+                if (webView != null) {
+                    webView.post(() -> webView.evaluateJavascript(
+                        "window.dispatchEvent(new CustomEvent('animestream-android-adblock-hit', {detail:'Ventana emergente bloqueada'}))",
+                        null
+                    ));
+                }
                 return false;
             }
 

@@ -182,6 +182,9 @@ class AdBlockEngine {
     styleEl.textContent = `
       /* AnimeStream AdBlock Cosmetic Filtering */
       #overlayads, .overlayads, [id*="overlayad"], [class*="overlayad"],
+      #confirm_modal, #modal-back,
+      div[class*="modal-backdrop"]:not(#adblock-modal-overlay),
+      a[target="_blank"][style*="position: absolute"], a[target="_blank"][style*="position: fixed"],
       [id*="ad-"], [class*="ad-"]:not(.anime-card):not(.active),
       [id*="ads-"], [class*="ads-"],
       [id*="banner-ad"], [class*="banner-ad"],
@@ -380,11 +383,47 @@ class AdBlockEngine {
     try {
       const doc = iframe.contentDocument || iframe.contentWindow?.document;
       if (doc) {
-        const ads = doc.querySelectorAll('.ad-banner, .advertisement, [id*="ad_"], [class*="popunder"], [id*="popunder"]');
+        // 1. Inject cosmetic suppression CSS if not already present
+        if (!doc.getElementById('animestream-shield-style')) {
+          const st = doc.createElement('style');
+          st.id = 'animestream-shield-style';
+          st.textContent = `
+            #overlayads, .overlayads, [id*="overlayad"], [class*="overlayad"],
+            #confirm_modal, #modal-back, .play-overlay,
+            .ad-banner, .advertisement, [id*="popunder"], [class*="popunder"],
+            div[style*="z-index: 2147483647"], div[style*="z-index: 9999999"],
+            a[target="_blank"][style*="position: absolute"], a[target="_blank"][style*="position: fixed"] {
+              display: none !important;
+              visibility: hidden !important;
+              pointer-events: none !important;
+              width: 0 !important;
+              height: 0 !important;
+            }
+          `;
+          (doc.head || doc.body || doc.documentElement).appendChild(st);
+        }
+
+        // 2. Remove rogue ad elements, fake modals and clickjacking overlays
+        const ads = doc.querySelectorAll(
+          '#overlayads, .overlayads, [id*="overlayad"], [class*="overlayad"], ' +
+          '#confirm_modal, #modal-back, .play-overlay, ' +
+          '.ad-banner, .advertisement, [id*="ad_"], [class*="popunder"], [id*="popunder"], ' +
+          'div[style*="z-index: 2147483647"], div[style*="z-index: 9999999"], ' +
+          'a[target="_blank"][style*="position: absolute"], a[target="_blank"][style*="position: fixed"]'
+        );
         ads.forEach(ad => {
           ad.remove();
           this.recordBlock('Elemento publicitario dentro del reproductor eliminado');
         });
+
+        // 3. Neutralize window.open and window.modal_confirm inside iframe
+        try {
+          const win = iframe.contentWindow;
+          if (win) {
+            win.open = () => null;
+            win.modal_confirm = () => {};
+          }
+        } catch (_) {}
       }
     } catch (e) {
       // Cross-origin SOP prevents touching iframes from outside origin - expected and safe

@@ -2,7 +2,7 @@
  * Search View Component
  * Multi-source real-time search with error shielding and source tabs.
  */
-import { Api } from '../api.js?v=5.0';
+import { Api, getApiBase, isStandaloneMode } from '../api.js?v=5.0';
 import { Icons, escapeHtml, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster } from '../utils.js?v=5.0';
 
 export async function renderSearch(container, query, source = 'all') {
@@ -185,9 +185,13 @@ export async function renderSearch(container, query, source = 'all') {
       return;
     }
 
+    const isStandalone = isStandaloneMode();
+    const apiBase = getApiBase();
+
     grid.innerHTML = results.map(item => {
       const coverUrl = resolveAnimeCover(item);
       const fallbackSvg = getDefaultPoster(item.title, item.source);
+      const retryProxyUrl = (!isStandalone && item.image) ? `${apiBase}/image-proxy?url=${encodeURIComponent(item.image)}` : fallbackSvg;
       return `
         <div class="anime-card">
           <a href="#/anime?url=${encodeURIComponent(item.url)}" class="anime-card-media poster" title="${escapeHtml(item.title)}">
@@ -197,7 +201,7 @@ export async function renderSearch(container, query, source = 'all') {
               class="anime-card-img" 
               loading="lazy"
               referrerpolicy="no-referrer"
-              onerror="if (!this.dataset.retried && this.src && !this.src.includes('/api/image-proxy') && '${escapeHtml(item.image || '')}') { this.dataset.retried='1'; this.src='/api/image-proxy?url=' + encodeURIComponent('${escapeHtml(item.image || '')}'); } else { this.onerror=null; this.src='${escapeHtml(fallbackSvg)}'; }"
+              onerror="if (!this.dataset.retried && this.src && '${escapeHtml(retryProxyUrl)}' !== '${escapeHtml(fallbackSvg)}') { this.dataset.retried='1'; this.src='${escapeHtml(retryProxyUrl)}'; } else { this.onerror=null; this.src='${escapeHtml(fallbackSvg)}'; }"
             />
             <div class="play-overlay">
               <div class="play-btn-circle">${Icons.play}</div>

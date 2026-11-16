@@ -127,18 +127,22 @@ async function createWindow(serverUrl) {
 
   function isAllowedExternalUrl(targetUrl) {
     if (!targetUrl || typeof targetUrl !== 'string') return false;
+    const lower = targetUrl.toLowerCase();
+    // Strictly block player subpaths, adult redirects, and ad hops even if on allowed domain
+    if (lower.includes('/jkplayer/') || lower.includes('hentai') || lower.includes('/ajax/') || lower.includes('affiliate') || lower.includes('ads')) {
+      return false;
+    }
     try {
       const parsed = new URL(targetUrl);
       const host = parsed.hostname.toLowerCase();
       return ALLOWED_EXTERNAL_DOMAINS.some(d => host === d || host.endsWith('.' + d));
     } catch (_) {
-      const lower = targetUrl.toLowerCase();
       return ALLOWED_EXTERNAL_DOMAINS.some(d => lower.includes(d));
     }
   }
 
-  // 🛡️ NATIVE POPUP BLOCKER: Strictly deny any popup window from embedded video players (VOE, Mp4Upload, etc.)
-  // Never allow third-party ad networks to launch external browser tabs in Edge/Chrome, but allow legitimate community and anime source links to open in system browser.
+  // 🛡️ NATIVE POPUP BLOCKER: Strictly deny popup windows from embedded video players (VOE, Mp4Upload, Streamtape, Mixdrop, etc.)
+  // Never allow third-party ad networks to launch external browser tabs in Edge/Chrome.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (isAllowedExternalUrl(url)) {
       shell.openExternal(url);
@@ -198,17 +202,32 @@ async function createWindow(serverUrl) {
     '*://*/*outbrain*',
     '*://*/*taboola*',
     '*://*/*mgid.com/*',
-    '*://*/*yandex.ru/ads*',
-    '*://*.cortahewt.com/*',
-    '*://*.dirdumaigre.com/*',
-    '*://*.sxlzbz.com/*',
+    '*://*/*yandex.ru/*',
+    '*://*.mc.yandex.ru/*',
     '*://*/*cortahewt*',
     '*://*/*dirdumaigre*',
     '*://*/*sxlzbz*',
     '*://*/*adkeeper*',
     '*://*/*adrun*',
     '*://*/*adserver*',
-    '*://*/*syndication*'
+    '*://*/*syndication*',
+    '*://*/*flawlessimmunizeguy*',
+    '*://*/*phruk.org/*',
+    '*://*/*subgumgutwise*',
+    '*://*/*lumbarssweepup*',
+    '*://*/*greentrafsa*',
+    '*://*/*advtpe*',
+    '*://*/*shottervills*',
+    '*://*/*greatdexchange*',
+    '*://*/*mdstats.info/*',
+    '*://*/*pixibay.cc/*',
+    '*://*/*stats.jkdesa.com/*',
+    '*://*/*filters-save.js*',
+    '*://*/*xads.js*',
+    '*://*/*/ad?type=*',
+    '*://*/*ev-static.js*',
+    '*://*/*hentaijk*',
+    '*://*/*highcpmgate*'
   ];
 
   const ses = mainWindow.webContents.session;
@@ -223,13 +242,15 @@ async function createWindow(serverUrl) {
     callback({ cancel: true });
   });
 
-  // Eliminate overlay clickjacking traps (e.g. Mp4Upload #overlayads) in all frames
+  // Eliminate overlay clickjacking traps (e.g. Mp4Upload #overlayads, JKanime #confirm_modal) in all frames
   mainWindow.webContents.on('did-frame-finish-load', async () => {
     try {
       await mainWindow.webContents.insertCSS(`
         #overlayads, .overlayads, [id*="overlayad"], [class*="overlayad"],
+        #confirm_modal, #modal-back,
         .ad-banner, .advertisement, [id*="popunder"], [class*="popunder"],
-        div[style*="z-index: 2147483647"], div[style*="z-index: 9999999"] {
+        div[style*="z-index: 2147483647"], div[style*="z-index: 9999999"],
+        a[target="_blank"][style*="position: absolute"], a[target="_blank"][style*="position: fixed"] {
           display: none !important;
           visibility: hidden !important;
           pointer-events: none !important;
