@@ -333,9 +333,24 @@ class JKAnimeProvider {
     const videoEmbeds = [...txt.matchAll(/video\[\d+\]\s*=\s*['"]<iframe[^>]+src=['"]([^'"]+)['"]/g)].map(m => m[1]);
     const serverNames = $('.bg-servers a').map((_, el) => $(el).text().trim()).get();
 
+    // Hosts / players explicitly hidden due to aggressive ads and non-blockable redirections
+    const isHiddenServer = (name, url) => {
+      const target = `${name || ''} ${url || ''}`.toLowerCase();
+      return target.includes('mixdrop') ||
+             target.includes('mp4upload') ||
+             target.includes('streamtape') ||
+             target.includes('doodstream') ||
+             target.includes('dood') ||
+             target.includes('dsvplay') ||
+             target.includes('mdbekjwqa');
+    };
+
     videoEmbeds.forEach((embedUrl, idx) => {
       const rawName = serverNames[idx] || `Servidor ${idx + 1}`;
       const sName = rawName.replace(/\s*\((?:mirror|Mirror)\)\s*/gi, '').trim();
+      if (isHiddenServer(sName, embedUrl)) {
+        return;
+      }
       servers.push({
         name: `${audioPrefix}${sName}`,
         embed: embedUrl,
@@ -361,6 +376,10 @@ class JKAnimeProvider {
                 }
                 // Ignore incomplete or empty embed URLs (e.g. vidhidevip.com/embed/ with no id)
                 if (decoded.endsWith('/embed/') || decoded.endsWith('/embed')) {
+                  continue;
+                }
+                // Ignore user-hidden aggressive ad hosts (Mixdrop, Mp4upload, Streamtape, Doodstream)
+                if (isHiddenServer(cleanName, decoded)) {
                   continue;
                 }
                 servers.push({

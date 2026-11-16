@@ -200,6 +200,17 @@ class TioAnimeProvider {
 
     // Servers from script: var videos = [["Mega","https:\/\/...",0,0], ...]
     const servers = [];
+    const isHiddenServer = (name, url) => {
+      const target = `${name || ''} ${url || ''}`.toLowerCase();
+      return target.includes('mixdrop') ||
+             target.includes('mp4upload') ||
+             target.includes('streamtape') ||
+             target.includes('doodstream') ||
+             target.includes('dood') ||
+             target.includes('dsvplay') ||
+             target.includes('mdbekjwqa');
+    };
+
     const mVid = txt.match(/var videos = (\[.*?\]);/);
     if (mVid) {
       try {
@@ -207,6 +218,9 @@ class TioAnimeProvider {
         for (const v of vidData) {
           const sName = v[0];
           const sUrl = v[1];
+          if (isHiddenServer(sName, sUrl)) {
+            continue;
+          }
           servers.push({
             name: `${audioPrefix}${sName}`,
             embed: sUrl,

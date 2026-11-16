@@ -293,6 +293,17 @@ class AnimeAV1Provider {
     const seenEmbeds = new Set();
     const audios = [];
 
+    const isHiddenServer = (name, url) => {
+      const target = `${name || ''} ${url || ''}`.toLowerCase();
+      return target.includes('mixdrop') ||
+             target.includes('mp4upload') ||
+             target.includes('streamtape') ||
+             target.includes('doodstream') ||
+             target.includes('dood') ||
+             target.includes('dsvplay') ||
+             target.includes('mdbekjwqa');
+    };
+
     // 1. Structured embeds: { SUB: [...], DUB: [...] }
     const mEmbeds = txt.match(/embeds:\{(.*?)\},\s*(?:downloads|subtitles|mirrors):/s);
     if (mEmbeds) {
@@ -308,6 +319,10 @@ class AnimeAV1Provider {
             const sName = s[1].trim();
             const sUrl = s[2];
             const labelPrefix = `[${variant}] `;
+
+            if (isHiddenServer(sName, sUrl)) {
+              continue;
+            }
 
             if (sUrl.includes('zilla-networks.com') || sName.toUpperCase() === 'HLS') {
               const mHash = sUrl.match(/([a-fA-F0-9]{32})/);
@@ -345,6 +360,7 @@ class AnimeAV1Provider {
       for (const ms of mServers) {
         const sName = ms[1].trim();
         const sUrl = ms[2];
+        if (isHiddenServer(sName, sUrl)) continue;
         if (seenEmbeds.has(sUrl)) continue;
         seenEmbeds.add(sUrl);
 

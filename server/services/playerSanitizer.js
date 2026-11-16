@@ -13,7 +13,7 @@ const AD_DOMAINS = [
   'alwingulla', 'stape', 'propu.sh', 'notix', 'pushwhoosh',
   'flawlessimmunizeguy', 'phruk.org', 'subgumgutwise', 'lumbarssweepup',
   'greentrafsa', 'advtpe', 'shottervills', 'greatdexchange', 'mdstats',
-  'pixibay', 'mc.yandex', 'yandex.ru', 'stats.jkdesa', 'filters-save',
+  'pixibay', 'mc.yandex', 'yandex.ru',
   'xads.js', 'ev-static', 'highcpmgate', 'coinhive', 'crypto-loot',
   'chaturbate', 'bongacams', 'stripchat', 'livejasmin', 'faphouse',
   'spankbang', 'eporner', 'pornhub', 'xvideos', 'hentaijk',
@@ -129,7 +129,11 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
         window.alert = function() { notifyAdBlocked('Alerta publicitaria bloqueada'); };
         window.confirm = function() { return false; };
         window.prompt = function() { return null; };
-        window.modal_confirm = function() {};
+        window.modal_confirm = function(titulo, msj, callback, callback_cancel) {
+          if (typeof callback === 'function') {
+            try { callback(); } catch (_) {}
+          }
+        };
         window.onbeforeunload = null;
 
         function purgeClickjacking() {

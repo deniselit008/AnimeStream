@@ -421,7 +421,11 @@ class AdBlockEngine {
           const win = iframe.contentWindow;
           if (win) {
             win.open = () => null;
-            win.modal_confirm = () => {};
+            win.modal_confirm = (titulo, msj, callback, callback_cancel) => {
+              if (typeof callback === 'function') {
+                try { callback(); } catch (_) {}
+              }
+            };
           }
         } catch (_) {}
       }

@@ -221,8 +221,6 @@ async function createWindow(serverUrl) {
     '*://*/*greatdexchange*',
     '*://*/*mdstats.info/*',
     '*://*/*pixibay.cc/*',
-    '*://*/*stats.jkdesa.com/*',
-    '*://*/*filters-save.js*',
     '*://*/*xads.js*',
     '*://*/*/ad?type=*',
     '*://*/*ev-static.js*',

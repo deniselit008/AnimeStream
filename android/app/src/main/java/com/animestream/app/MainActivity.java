@@ -72,7 +72,7 @@ public class MainActivity extends Activity {
         "infolinks", "conversantmedia", "sovrn", "yieldmo",
         "flawlessimmunizeguy", "phruk", "subgumgutwise", "lumbarssweepup", "greentrafsa",
         "advtpe", "shottervills", "greatdexchange", "mdstats", "pixibay", "mc.yandex",
-        "yandex.ru", "stats.jkdesa", "hentaijk", "highcpmgate", "coinhive", "crypto-loot",
+        "yandex.ru", "hentaijk", "highcpmgate", "coinhive", "crypto-loot",
         "chaturbate", "bongacams", "stripchat", "livejasmin", "faphouse", "spankbang",
         "eporner", "pornhub", "xvideos", "adultfriendfinder", "crakrevenue", "clickdealer",
         "ero-advertising", "plugrush", "adcolony", "applovin", "ironSource", "springserve",
@@ -99,9 +99,7 @@ public class MainActivity extends Activity {
                full.contains("/ads?") ||
                full.contains("/xads.js") ||
                full.contains("ev-static.js") ||
-               full.contains("filters-save.js") ||
                full.contains("/popunder") ||
-               full.contains("script.manual.js") ||
                full.contains("prebid.min.js");
     }
 
