@@ -342,19 +342,20 @@ class JKAnimeProvider {
       });
     });
 
-    // Remote mirrors from JSON
+    // Remote servers from JSON
     const mRemote = txt.match(/var servers\s*=\s*(\[.*?\]);/);
     if (mRemote) {
       try {
         const remoteData = JSON.parse(mRemote[1]);
         for (const s of remoteData) {
-          const name = s.server || 'Descarga';
+          const rawName = s.server || 'Descarga';
+          const cleanName = rawName.replace(/\s*\((?:mirror|Mirror)\)\s*/gi, '').trim();
           if (s.remote) {
             try {
               const decoded = Buffer.from(s.remote, 'base64').toString('utf-8').trim();
               if (decoded.startsWith('http')) {
                 servers.push({
-                  name: `${audioPrefix}${name} (Mirror)`,
+                  name: `${audioPrefix}${cleanName}`,
                   embed: decoded,
                   audio: audioType
                 });

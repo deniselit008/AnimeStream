@@ -166,6 +166,40 @@ export const Storage = {
     return list.some(item => item.url === animeUrl);
   },
 
+  addFavorite(anime) {
+    try {
+      if (!anime || !anime.url) return false;
+      let favorites = this.getFavorites();
+      if (!favorites.some(f => f.url === anime.url)) {
+        favorites.unshift({
+          title: anime.title || 'Anime',
+          url: anime.url,
+          image: resolveAnimeCover(anime),
+          source: anime.source || 'Anime',
+          addedAt: Date.now()
+        });
+        localStorage.setItem(KEYS.FAVORITES, JSON.stringify(favorites));
+      }
+      return true;
+    } catch (e) {
+      console.error('Storage addFavorite error:', e);
+      return false;
+    }
+  },
+
+  removeFavorite(url) {
+    try {
+      if (!url) return false;
+      let favorites = this.getFavorites();
+      favorites = favorites.filter(f => f.url !== url);
+      localStorage.setItem(KEYS.FAVORITES, JSON.stringify(favorites));
+      return true;
+    } catch (e) {
+      console.error('Storage removeFavorite error:', e);
+      return false;
+    }
+  },
+
   toggleFavorite(anime) {
     try {
       let favorites = this.getFavorites();

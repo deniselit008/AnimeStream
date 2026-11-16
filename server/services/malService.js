@@ -261,10 +261,79 @@ async function fetchMalRelations(title) {
       return pA - pB;
     });
 
-    cache.set(cacheKey, relations, 24 * 60 * 60 * 1000);
-    return relations;
+    if (relations.length > 0) {
+      cache.set(cacheKey, relations, 24 * 60 * 60 * 1000);
+      return relations;
+    }
+
+    // Fallback: Query AniList if MAL relations were empty
+    const aniRels = await fetchAniListRelations(cleanTitle);
+    if (aniRels.length > 0) {
+      cache.set(cacheKey, aniRels, 24 * 60 * 60 * 1000);
+      return aniRels;
+    }
+
+    cache.set(cacheKey, [], 60 * 60 * 1000);
+    return [];
   } catch (err) {
     console.error('Error fetching MAL relations:', err.message);
+    const aniFallback = await fetchAniListRelations(cleanTitle);
+    if (aniFallback.length > 0) return aniFallback;
+    return [];
+  }
+}
+
+async function fetchAniListRelations(title) {
+  try {
+    const aniQuery = `query ($search: String) {
+      Media(search: $search, type: ANIME) {
+        id
+        title { romaji english userPreferred }
+        relations {
+          edges {
+            relationType
+            node {
+              id
+              title { romaji english userPreferred }
+              type
+              coverImage { medium large }
+              siteUrl
+            }
+          }
+        }
+      }
+    }`;
+    const res = await httpClient.post('https://graphql.anilist.co', {
+      query: aniQuery,
+      variables: { search: title }
+    }, {
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      timeout: 5000
+    });
+    const edges = res.data?.data?.Media?.relations?.edges || [];
+    const rels = [];
+    const seen = new Set();
+    for (const edge of edges) {
+      const node = edge.node;
+      if (!node || node.type !== 'ANIME') continue;
+      const t = node.title?.romaji || node.title?.english || node.title?.userPreferred;
+      if (!t || seen.has(t.toLowerCase())) continue;
+      seen.add(t.toLowerCase());
+      const rawRel = edge.relationType || 'OTHER';
+      const normRel = rawRel.toLowerCase().replace(/_/g, ' ');
+      const relLabel = RELATION_MAP[normRel] || rawRel;
+      rels.push({
+        title: t,
+        relation: relLabel,
+        raw_relation: rawRel,
+        type: 'Anime',
+        image: node.coverImage?.large || node.coverImage?.medium || null,
+        mal_id: node.id,
+        mal_url: node.siteUrl || `https://anilist.co/anime/${node.id}`
+      });
+    }
+    return rels;
+  } catch (_) {
     return [];
   }
 }

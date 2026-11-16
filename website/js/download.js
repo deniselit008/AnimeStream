@@ -16,36 +16,36 @@
   const GITHUB_CONFIG = {
     owner: 'deniselit008',
     repo: 'AnimeStream',
-    fallbackVersion: '1.2.2',
-    storageKey: 'animestream_release_cache_v8',
+    fallbackVersion: '1.2.3',
+    storageKey: 'animestream_release_cache_v9',
     fallbackReleaseUrl: 'https://github.com/deniselit008/AnimeStream/releases/latest',
     fallbackZipUrl: 'https://github.com/deniselit008/AnimeStream/archive/refs/heads/main.zip',
     platforms: {
       windows: {
         ext: '.exe',
-        defaultName: 'AnimeStream.Setup.1.2.2.exe',
+        defaultName: 'AnimeStream.Setup.1.2.3.exe',
         fallbackSize: '123 MB',
-        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.2.2/AnimeStream.Setup.1.2.2.exe',
-        portableName: 'AnimeStream.1.2.2.exe',
+        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.2.3/AnimeStream.Setup.1.2.3.exe',
+        portableName: 'AnimeStream.1.2.3.exe',
         portableSize: '111 MB',
-        portableUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.2.2/AnimeStream.1.2.2.exe',
+        portableUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.2.3/AnimeStream.1.2.3.exe',
         systemLabel: 'Windows 10 / 11 (64-bit)'
       },
       android: {
         ext: '.apk',
         defaultName: 'AnimeStream.apk',
         fallbackSize: '6.1 MB',
-        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.2.2/AnimeStream.apk',
+        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.2.3/AnimeStream.apk',
         systemLabel: 'Android 7.0+ (Móvil, Tablet & TV)'
       },
       linux: {
         ext: '.AppImage',
-        defaultName: 'AnimeStream-1.2.2.AppImage',
+        defaultName: 'AnimeStream-1.2.3.AppImage',
         fallbackSize: '129 MB',
-        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.2.2/AnimeStream-1.2.2.AppImage',
-        debName: 'animestream-node_1.2.2_amd64.deb',
+        fallbackUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.2.3/AnimeStream-1.2.3.AppImage',
+        debName: 'animestream-node_1.2.3_amd64.deb',
         debSize: '103 MB',
-        debUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.2.2/animestream-node_1.2.2_amd64.deb',
+        debUrl: 'https://github.com/deniselit008/AnimeStream/releases/download/1.2.3/animestream-node_1.2.3_amd64.deb',
         systemLabel: 'Linux x64 (Binario ELF AppImage & paquete .deb)'
       }
     }
@@ -387,7 +387,7 @@
         }
       } else if (platform === 'linux-deb') {
         if (titleEl) titleEl.textContent = '¡Descargando paquete Debian / Ubuntu (.deb)!';
-        const debName = releaseCache ? releaseCache.linux.debName : 'animestream-node_1.2.2_amd64.deb';
+        const debName = releaseCache ? releaseCache.linux.debName : 'animestream-node_1.2.3_amd64.deb';
         if (descEl) descEl.innerHTML = `Tu descarga de <strong>${debName}</strong> (${tag}) ha comenzado.`;
         if (tipEl) {
           tipEl.innerHTML = `
@@ -425,7 +425,7 @@
       } else if (platform === 'windows-portable') {
         // Windows Portable
         if (titleEl) titleEl.textContent = '¡Descargando AnimeStream Portable!';
-        const pName = releaseCache ? releaseCache.windows.portableName : 'AnimeStream.1.2.2.exe';
+        const pName = releaseCache ? releaseCache.windows.portableName : 'AnimeStream.1.2.3.exe';
         if (descEl) descEl.innerHTML = `Tu descarga de la versión portable <strong>${pName}</strong> (${tag}) ha comenzado.`;
         if (tipEl) {
           tipEl.innerHTML = `
@@ -442,7 +442,7 @@
       } else {
         // Windows Installer
         if (titleEl) titleEl.textContent = '¡Descargando el Instalador de Windows!';
-        const iName = releaseCache ? releaseCache.windows.name : 'AnimeStream.Setup.1.2.2.exe';
+        const iName = releaseCache ? releaseCache.windows.name : 'AnimeStream.Setup.1.2.3.exe';
         if (descEl) descEl.innerHTML = `Tu descarga del instalador oficial <strong>${iName}</strong> (${tag}) ha comenzado.`;
         if (tipEl) {
           tipEl.innerHTML = `

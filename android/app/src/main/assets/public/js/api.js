@@ -13,11 +13,14 @@ const RELATION_MAP = {
   'spin off': 'Spin-off',
   'alternative setting': 'Ambientación alternativa',
   'alternative version': 'Versión alternativa',
+  'alternative': 'Versión alternativa',
   'summary': 'Resumen / Película',
   'parent story': 'Historia principal',
+  'parent': 'Historia principal',
   'full story': 'Historia completa',
   'character': 'Especial de personaje',
-  'other': 'Especial / Otro'
+  'other': 'Especial / Otro',
+  'adaptation': 'Adaptación original'
 };
 
 export function isStandaloneMode() {
@@ -154,7 +157,85 @@ export const Api = {
       titleVariants.push(baseTitle);
     }
 
-    // 2. Query Jikan API
+    // 2. Query AniList GraphQL (Fast, public CORS, 100% reliable on Android & PC)
+    try {
+      const aniQuery = `query ($search: String) {
+        Media(search: $search, type: ANIME) {
+          id
+          title { romaji english userPreferred }
+          relations {
+            edges {
+              relationType
+              node {
+                id
+                title { romaji english userPreferred }
+                type
+                coverImage { medium }
+                siteUrl
+              }
+            }
+          }
+        }
+      }`;
+
+      for (const variant of titleVariants) {
+        try {
+          const controller = new AbortController();
+          const tid = setTimeout(() => controller.abort(), 6000);
+          const aniRes = await fetch('https://graphql.anilist.co', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({ query: aniQuery, variables: { search: variant } }),
+            signal: controller.signal
+          });
+          clearTimeout(tid);
+
+          if (aniRes.ok) {
+            const aniData = await aniRes.json();
+            const edges = aniData?.data?.Media?.relations?.edges || [];
+            if (edges.length > 0) {
+              const rels = [];
+              const seen = new Set();
+              edges.forEach(edge => {
+                const node = edge.node;
+                if (!node || node.type !== 'ANIME') return;
+                const rTitle = node.title?.romaji || node.title?.english || node.title?.userPreferred;
+                if (!rTitle) return;
+                const lower = rTitle.toLowerCase();
+                if (seen.has(lower)) return;
+                seen.add(lower);
+
+                const rawRel = edge.relationType || 'OTHER';
+                const normRel = rawRel.toLowerCase().replace(/_/g, ' ');
+                const relLabel = RELATION_MAP[normRel] || rawRel;
+                const cleanTerm = rTitle.replace(/\s*\(TV\)|\s*\(Movie\)|\s*\(OVA\)/gi, '').trim();
+
+                rels.push({
+                  title: rTitle,
+                  relation: relLabel,
+                  raw_relation: rawRel,
+                  type: 'Anime',
+                  mal_id: node.id,
+                  mal_url: node.siteUrl || `https://anilist.co/anime/${node.id}`,
+                  image: node.coverImage?.medium || null,
+                  url: `#/search?q=${encodeURIComponent(cleanTerm)}`
+                });
+              });
+              if (rels.length > 0) {
+                return rels;
+              }
+            }
+          }
+        } catch (_) {}
+      }
+    } catch (e) {
+      console.debug('[Api.getRelations] AniList error:', e);
+    }
+
+    // 3. Query Jikan API (Fallback)
     try {
       let malId = null;
       for (const variant of titleVariants) {

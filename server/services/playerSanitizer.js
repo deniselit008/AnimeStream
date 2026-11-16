@@ -8,8 +8,9 @@ const AD_DOMAINS = [
   'monetag', 'clickadu', 'histats', 'doubleclick', 'googlesyndication',
   'bet365', '1xbet', 'mgid', 'onclickperformance', 'trafficfactory',
   'juicyads', 'hilltopads', 'ad-maven', 'ezmob', 'realsrv', 'zeroredirect',
-  'deloton', 'adsco', 'creativecdn', 'tsyndicate', 'adtrue', 'vidoomy',
-  'cortahewt', 'dirdumaigre', 'sxlzbz', 'adkeeper', 'adrun', 'adserver', 'syndication'
+  'deloton', 'deloplen', 'onclasrv', 'adsco', 'creativecdn', 'tsyndicate', 'adtrue', 'vidoomy',
+  'cortahewt', 'dirdumaigre', 'sxlzbz', 'adkeeper', 'adrun', 'adserver', 'syndication',
+  'alwingulla', 'stape', 'streamwish', 'vidhide', 'propu.sh', 'notix', 'pushwhoosh'
 ];
 
 function sanitizePlayerHtml(html, baseHref = null, active = true) {
@@ -20,7 +21,11 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
   // 1. Strip CSP and X-Frame-Options meta tags so player scripts can load
   cleaned = cleaned.replace(/<meta[^>]*http-equiv=['"](?:content-security-policy|x-frame-options)['"][^>]*>/gi, '');
 
-  // 2. Inject <base href="..."> for relative resources
+  // 2. Neutralize framebusting scripts targeting top or parent window navigation
+  cleaned = cleaned.replace(/(?:window\.)?top\.location/g, 'window.location');
+  cleaned = cleaned.replace(/(?:window\.)?parent\.location/g, 'window.location');
+
+  // 3. Inject <base href="..."> for relative resources
   if (baseHref) {
     cleaned = cleaned.replace(/<base[^>]*>/gi, '');
     const baseTag = `<base href="${baseHref}">`;
@@ -58,6 +63,24 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
     <script>
     (function() {
       try {
+        // 🛡️ ANTI-FRAMEBUSTER SHIELD: Strictly prevent proxied players from hijacking window.top or parent
+        try {
+          Object.defineProperty(window, 'top', {
+            get: function() { return window; },
+            set: function() {},
+            configurable: false
+          });
+          Object.defineProperty(window, 'parent', {
+            get: function() { return window; },
+            set: function() {},
+            configurable: false
+          });
+          Object.defineProperty(window, 'frameElement', {
+            get: function() { return null; },
+            configurable: false
+          });
+        } catch (_) {}
+
         var idleT = null;
         function resetC() {
           document.body.classList.remove('hide-cursor');

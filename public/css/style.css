@@ -2794,7 +2794,7 @@ body {
 
   /* Main content spacing for mobile bottom bar */
   .main-content {
-    padding: 10px 10px 85px !important;
+    padding: 4px 10px 80px !important;
     width: 100%;
     max-width: 100vw;
     box-sizing: border-box;
@@ -3009,27 +3009,25 @@ body {
      3. Hero Featured Banner on Mobile
      ------------------------------------------------------------------------ */
   .hero-banner {
-    min-height: 210px !important;
-    margin-bottom: 18px !important;
+    min-height: 150px !important;
+    margin-bottom: 12px !important;
     border-radius: var(--radius-md) !important;
+    align-items: center !important;
   }
 
   .hero-content {
-    padding: 14px 12px !important;
+    padding: 12px 10px !important;
     max-width: 100% !important;
   }
 
   .hero-title {
-    font-size: 1.25rem !important;
-    margin-bottom: 6px !important;
+    font-size: 1.15rem !important;
+    margin-bottom: 4px !important;
     line-height: 1.2 !important;
   }
 
   .hero-synopsis {
-    font-size: 0.78rem !important;
-    line-height: 1.4 !important;
-    margin-bottom: 10px !important;
-    -webkit-line-clamp: 2 !important;
+    display: none !important;
   }
 
   .hero-badges {
@@ -3045,6 +3043,22 @@ body {
   .hero-actions {
     gap: 6px !important;
     flex-wrap: wrap !important;
+  }
+
+  .section {
+    margin-bottom: 20px !important;
+  }
+
+  .section-header {
+    margin-bottom: 12px !important;
+  }
+
+  .directory-view {
+    gap: 12px !important;
+  }
+
+  .directory-header {
+    margin-bottom: 6px !important;
   }
 
   .hero-actions .btn {
@@ -3339,7 +3353,7 @@ body {
    MOBILE LANDSCAPE & MEDIUM VIEWPORT OVERFLOW PROTECTION (<= 1120px)
    Fixes search bar overflowing off-screen when smartphone rotates to landscape
    ========================================================================== */
-@media (max-width: 1120px) {
+@media (min-width: 769px) and (max-width: 1120px) {
   .navbar-container {
     flex-wrap: wrap !important;
     gap: 10px !important;
@@ -3465,7 +3479,7 @@ body {
   }
 
   .main-content {
-    padding: 10px 14px 66px !important;
+    padding: 4px 10px 66px !important;
   }
 
   .server-tabs-bar {

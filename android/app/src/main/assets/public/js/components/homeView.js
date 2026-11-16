@@ -4,13 +4,24 @@
  */
 import { Api } from '../api.js?v=5.0';
 import { Storage } from '../storage.js?v=5.0';
-import { Icons, escapeHtml, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster } from '../utils.js?v=5.0';
+import { Icons, escapeHtml, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster, showToast } from '../utils.js?v=5.0';
 
 export async function renderHome(container) {
   container.innerHTML = `
     <div class="home-container">
-      <!-- Hero Banner Placeholder -->
-      <div id="hero-banner-mount"></div>
+      <!-- Hero Banner Placeholder with Skeleton -->
+      <div id="hero-banner-mount">
+        <div class="hero-banner hero-skeleton-placeholder">
+          <div class="hero-content" style="width: 100%;">
+            <div style="width: 140px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.08); margin-bottom: 12px; animation: pulseOpacity 1.5s infinite;"></div>
+            <div style="width: 60%; height: 28px; border-radius: 6px; background: rgba(255,255,255,0.12); margin-bottom: 12px; animation: pulseOpacity 1.5s infinite;"></div>
+            <div style="display: flex; gap: 8px;">
+              <div style="width: 130px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.1); animation: pulseOpacity 1.5s infinite;"></div>
+              <div style="width: 110px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.06); animation: pulseOpacity 1.5s infinite;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Continue Watching Section -->
       <div id="continue-watching-mount"></div>
@@ -179,8 +190,9 @@ async function loadLatestEpisodes(container, source = 'all') {
                   <a href="#/anime?url=${encodeURIComponent(featured.animeUrl)}" class="btn btn-secondary">
                     Ficha Técnica
                   </a>
-                  <button id="hero-btn-favorite" class="btn btn-outline" style="border-radius: 8px;">
-                    ${Icons.heart} <span>${isFav ? 'En Favoritos' : 'Añadir a Favoritos'}</span>
+                  <button id="hero-btn-favorite" class="btn btn-outline ${isFav ? 'active' : ''}" style="border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                    <span id="hero-fav-icon">${isFav ? Icons.heartFilled : Icons.heart}</span>
+                    <span id="hero-fav-label">${isFav ? 'En Favoritos' : 'Añadir a Favoritos'}</span>
                   </button>
                 </div>
                 ${featuredItems.length > 1 ? `
@@ -198,9 +210,14 @@ async function loadLatestEpisodes(container, source = 'all') {
           const favBtn = heroMount.querySelector('#hero-btn-favorite');
           if (favBtn) {
             favBtn.addEventListener('click', () => {
+              const iconEl = favBtn.querySelector('#hero-fav-icon');
+              const labelEl = favBtn.querySelector('#hero-fav-label');
               if (Storage.isFavorite(featured.animeUrl)) {
                 Storage.removeFavorite(featured.animeUrl);
-                favBtn.innerHTML = `${Icons.heart} <span>Añadir a Favoritos</span>`;
+                favBtn.classList.remove('active');
+                if (iconEl) iconEl.innerHTML = Icons.heart;
+                if (labelEl) labelEl.textContent = 'Añadir a Favoritos';
+                showToast('Eliminado de tus favoritos', 'info');
               } else {
                 Storage.addFavorite({
                   title: featured.title,
@@ -208,7 +225,10 @@ async function loadLatestEpisodes(container, source = 'all') {
                   image: featured.image,
                   source: featured.source
                 });
-                favBtn.innerHTML = `${Icons.heart} <span>En Favoritos</span>`;
+                favBtn.classList.add('active');
+                if (iconEl) iconEl.innerHTML = Icons.heartFilled;
+                if (labelEl) labelEl.textContent = 'En Favoritos';
+                showToast('Añadido a tus favoritos', 'success');
               }
             });
           }

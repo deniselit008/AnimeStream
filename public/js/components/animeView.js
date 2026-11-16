@@ -301,7 +301,7 @@ export async function renderAnime(container, animeUrl) {
                 </div>
 
                 <!-- Original Source Link -->
-                <a href="${escapeHtml(anime.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" title="Ver en página oficial">
+                <a href="${escapeHtml(anime.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline external-link" data-external-url="${escapeHtml(anime.url)}" title="Ver en página oficial">
                   ${Icons.external} Abrir en ${escapeHtml(anime.source)}
                 </a>
               </div>

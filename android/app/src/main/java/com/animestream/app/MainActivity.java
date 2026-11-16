@@ -22,6 +22,11 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.JsResult;
+import android.webkit.JsPromptResult;
+import android.webkit.RenderProcessGoneDetail;
+import android.view.ViewGroup;
+import android.util.Log;
 import android.widget.FrameLayout;
 
 import androidx.webkit.WebViewAssetLoader;
@@ -50,11 +55,47 @@ public class MainActivity extends Activity {
     private View mCustomView;
     private WebViewAssetLoader assetLoader;
 
+    private static final String[] BLOCKED_AD_HOSTS = new String[]{
+        "popads", "popcash", "adcash", "clickadu", "exdynsrv", "syndication", "adrun",
+        "propeller", "bet365", "onclick", "trafficjunky", "adxprts", "doubleclick",
+        "adnxs", "criteo", "bidgear", "yllix", "adsterra", "monetag", "deloton",
+        "deloplen", "onclasrv", "tsyndicate", "adtrue", "vidoomy", "cortahewt",
+        "dirdumaigre", "sxlzbz", "adkeeper", "alwingulla", "creativecdn", "exoclick",
+        "juicyads", "hilltopads", "ad-maven", "ezmob", "realsrv", "zeroredirect",
+        "stape.fun", "stape.cloud", "histats", "1xbet", "mgid", "adsco.re",
+        "rtmark", "outbrain", "taboola", "adtarget", "propu.sh", "notix",
+        "pushwhoosh", "evadav", "clickadilla", "rollerads", "tacdn", "fastclick",
+        "bidvertiser", "trafficstars", "adxpansion", "revenuehits", "clouddelivery",
+        "serving-sys", "rubiconproject", "openx.net", "pubmatic", "smartadserver",
+        "infolinks", "conversantmedia", "sovrn", "yieldmo", "streamwish", "vidhide"
+    };
+
+    private static boolean isAdHost(String host) {
+        if (host == null || host.isEmpty()) return false;
+        String lower = host.toLowerCase();
+        for (String ad : BLOCKED_AD_HOSTS) {
+            if (lower.contains(ad)) return true;
+        }
+        return false;
+    }
+
     public class AndroidBridge {
         private Context mContext;
 
         AndroidBridge(Context c) {
             mContext = c;
+        }
+
+        @JavascriptInterface
+        public void openExternal(String url) {
+            if (url == null || url.trim().isEmpty()) return;
+            try {
+                android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(url.trim()));
+                intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                mContext.startActivity(intent);
+            } catch (Exception e) {
+                Log.e("AndroidBridge", "Error opening external URL: " + url, e);
+            }
         }
 
         @JavascriptInterface
@@ -219,13 +260,33 @@ public class MainActivity extends Activity {
 
         setContentView(R.layout.activity_main);
 
-        webView = findViewById(R.id.main_webview);
         customViewContainer = findViewById(R.id.custom_view_container);
 
         // Initialize WebViewAssetLoader to resolve local assets safely without CORS restrictions
         assetLoader = new WebViewAssetLoader.Builder()
                 .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
                 .build();
+
+        initWebView();
+    }
+
+    private void initWebView() {
+        if (webView == null) {
+            webView = findViewById(R.id.main_webview);
+            if (webView == null) {
+                webView = new WebView(this);
+                webView.setId(R.id.main_webview);
+                FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT
+                );
+                ViewGroup root = findViewById(android.R.id.content);
+                if (root instanceof ViewGroup) {
+                    ViewGroup fl = (ViewGroup) ((ViewGroup) root).getChildAt(0);
+                    if (fl != null) fl.addView(webView, 0, params);
+                }
+            }
+        }
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -264,26 +325,14 @@ public class MainActivity extends Activity {
                         }
                     }
 
-                    if (host != null) {
-                        String lowerHost = host.toLowerCase();
-                        // Block intrusive ad networks, clickjackers, and popunders that hijack video players
-                        if (lowerHost.contains("popads") || lowerHost.contains("adcash") ||
-                            lowerHost.contains("clickadu") || lowerHost.contains("exdynsrv") ||
-                            lowerHost.contains("syndication") || lowerHost.contains("adrun") ||
-                            lowerHost.contains("propeller") || lowerHost.contains("bet365") ||
-                            lowerHost.contains("onclick") || lowerHost.contains("trafficjunky") ||
-                            lowerHost.contains("adxprts") || lowerHost.contains("doubleclick") ||
-                            lowerHost.contains("adnxs") || lowerHost.contains("criteo") ||
-                            lowerHost.contains("bidgear") || lowerHost.contains("yllix") ||
-                            lowerHost.contains("adsterra") || lowerHost.contains("monetag")) {
-                            if (webView != null) {
-                                webView.post(() -> webView.evaluateJavascript(
-                                    "window.dispatchEvent(new CustomEvent('animestream-android-adblock-hit', {detail:'" + lowerHost.replace("'", "") + "'}))",
-                                    null
-                                ));
-                            }
-                            return new WebResourceResponse("text/plain", "UTF-8", new ByteArrayInputStream(new byte[0]));
+                    if (host != null && isAdHost(host)) {
+                        if (webView != null) {
+                            webView.post(() -> webView.evaluateJavascript(
+                                "window.dispatchEvent(new CustomEvent('animestream-android-adblock-hit', {detail:'" + host.toLowerCase().replace("'", "") + "'}))",
+                                null
+                            ));
                         }
+                        return new WebResourceResponse("text/plain", "UTF-8", new ByteArrayInputStream(new byte[0]));
                     }
                 }
                 if (assetLoader != null && request != null) {
@@ -304,6 +353,26 @@ public class MainActivity extends Activity {
                     return true;
                 }
 
+                // If external community, reference or anime source link, open outside in Android browser / native app
+                if (host != null) {
+                    String lower = host.toLowerCase();
+                    if (lower.contains("x.com") || lower.contains("twitter.com") || lower.contains("github.com") ||
+                        lower.contains("myanimelist.net") || lower.contains("anilist.co") ||
+                        lower.contains("animeav1.com") || lower.contains("jkanime.net") || lower.contains("tioanime.com")) {
+                        try {
+                            android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, uri);
+                            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(intent);
+                        } catch (Exception ignored) {}
+                        return true;
+                    }
+                }
+
+                // Block any frame navigation to known ad hosts
+                if (isAdHost(host)) {
+                    return true;
+                }
+
                 // If request is for the main frame (top-level app window):
                 if (request.isForMainFrame()) {
                     // Allow our local appassets domain
@@ -318,21 +387,27 @@ public class MainActivity extends Activity {
                         return false;
                     }
 
-                    // If external community or reference link (X/Twitter, GitHub, MyAnimeList), open outside in Android browser / native app
-                    if (host != null && (host.contains("x.com") || host.contains("twitter.com") || host.contains("github.com") || host.contains("myanimelist.net"))) {
-                        try {
-                            android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, uri);
-                            startActivity(intent);
-                        } catch (Exception ignored) {}
-                        return true;
-                    }
-
                     // NEVER allow third-party player iframes or ad clicks to replace our main app window!
                     return true;
                 }
 
                 // Subframes (video players): allow them to load their video player embeds
                 return false;
+            }
+
+            @Override
+            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                Log.e("MainActivity", "WebView render process gone: " + (detail != null && detail.didCrash() ? "crash" : "killed"));
+                if (webView != null) {
+                    ViewGroup parent = (ViewGroup) webView.getParent();
+                    if (parent != null) {
+                        parent.removeView(webView);
+                    }
+                    webView.destroy();
+                    webView = null;
+                }
+                initWebView();
+                return true;
             }
 
             @Override
@@ -361,6 +436,24 @@ public class MainActivity extends Activity {
             public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, android.os.Message resultMsg) {
                 // Block all popup windows from video player iframes so they never hijack the app
                 return false;
+            }
+
+            @Override
+            public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
+                result.cancel();
+                return true;
+            }
+
+            @Override
+            public boolean onJsConfirm(WebView view, String url, String message, JsResult result) {
+                result.cancel();
+                return true;
+            }
+
+            @Override
+            public boolean onJsPrompt(WebView view, String url, String message, String defaultValue, JsPromptResult result) {
+                result.cancel();
+                return true;
             }
             @Override
             public void onShowCustomView(View view, CustomViewCallback callback) {
@@ -429,6 +522,14 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         if (webView != null) webView.onResume();
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        if (webView != null && level >= TRIM_MEMORY_MODERATE) {
+            webView.clearCache(false);
+        }
     }
 
     private static final String ANDROID_UA = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36";

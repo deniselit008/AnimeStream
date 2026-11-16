@@ -12,6 +12,13 @@ let currentIdleCursorTimer = null;
 let currentCursorListeners = null;
 
 export function cleanupWatchView() {
+  try {
+    const iframe = document.getElementById('main-player-iframe');
+    if (iframe) {
+      iframe.src = 'about:blank';
+      iframe.remove();
+    }
+  } catch (_) {}
   if (currentWatchKeyDownHandler) {
     window.removeEventListener('keydown', currentWatchKeyDownHandler, true);
     currentWatchKeyDownHandler = null;
@@ -146,7 +153,7 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
               Ficha del Anime
             </a>
             <!-- Fallback button: Open original website -->
-            <a href="${escapeHtml(watchData.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="padding: 8px 14px; font-size: 0.88rem;" title="Abrir página original en caso de fallo">
+            <a href="${escapeHtml(watchData.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline external-link" data-external-url="${escapeHtml(watchData.url)}" style="padding: 8px 14px; font-size: 0.88rem;" title="Abrir página original en caso de fallo">
               ${Icons.external} Ver en ${escapeHtml(watchData.source)}
             </a>
           </div>
@@ -170,7 +177,7 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
             <div class="player-loading-spinner">
               ${Icons.alert}
               <p>No se encontraron servidores de vídeo para este episodio.</p>
-              <a href="${escapeHtml(watchData.url)}" target="_blank" class="btn btn-primary">
+              <a href="${escapeHtml(watchData.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary external-link" data-external-url="${escapeHtml(watchData.url)}">
                 Ver en la web oficial
               </a>
             </div>
@@ -207,7 +214,7 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
           <span class="server-tab-label">Servidores (${visibleServers.length}):</span>
           <div id="servers-buttons-container" style="display: flex; flex-wrap: wrap; gap: 8px;">
             ${visibleServers.map((server, idx) => {
-              const cleanName = server.name.replace(/^\[(SUB|DUB)\]\s*/i, '');
+              const cleanName = server.name.replace(/^\[(SUB|DUB)\]\s*/i, '').replace(/\s*\((?:mirror|Mirror)\)\s*/gi, '').trim();
               const audioBadge = server.audio ? `[${escapeHtml(server.audio)}] ` : '';
               return `
                 <button 
@@ -346,6 +353,7 @@ export async function renderWatch(container, episodeUrl, queryParams = null) {
             currentServerIndex = idx;
             const iframe = container.querySelector('#main-player-iframe');
             if (iframe) {
+              iframe.src = 'about:blank';
               updateIframeSandbox(iframe, vServers[idx].embed, vServers[idx].name);
               iframe.src = getEmbedUrl(vServers[idx].embed);
               serverBtns.forEach(b => b.classList.remove('active'));

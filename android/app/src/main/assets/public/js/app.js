@@ -13,6 +13,7 @@ import { renderLibrary } from './components/libraryView.js?v=5.0';
 import { renderMobileConnect } from './components/mobileConnectView.js?v=5.0';
 import { AdBlock } from './adblock.js?v=5.0';
 import { TVNavigation } from './tvNavigation.js?v=5.0';
+import { openExternalUrl } from './utils.js?v=5.0';
 
 // Initialize AdBlock & Smart TV Navigation engines
 AdBlock.init();
@@ -114,6 +115,21 @@ async function handleRoute() {
     `;
   }
 }
+
+// Intercept external link clicks to open in default browser on Electron & Android
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('a[target="_blank"], a.external-link, [data-external-url]');
+  if (link) {
+    const href = link.getAttribute('data-external-url') || link.getAttribute('href');
+    if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+      if ((window.electronAPI && typeof window.electronAPI.openExternal === 'function') ||
+          (window.AndroidBridge && typeof window.AndroidBridge.openExternal === 'function')) {
+        e.preventDefault();
+        openExternalUrl(href);
+      }
+    }
+  }
+});
 
 // Initialize Router safely on any document state
 window.addEventListener('hashchange', () => {

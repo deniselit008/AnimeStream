@@ -167,4 +167,21 @@ export function getRelationBadgeClass(rel) {
   return 'badge-relation-other';
 }
 
+export function openExternalUrl(url) {
+  if (!url || typeof url !== 'string') return;
+  const target = url.trim();
+  if (typeof window !== 'undefined') {
+    if (window.electronAPI && typeof window.electronAPI.openExternal === 'function') {
+      window.electronAPI.openExternal(target);
+      return;
+    }
+    if (window.AndroidBridge && typeof window.AndroidBridge.openExternal === 'function') {
+      window.AndroidBridge.openExternal(target);
+      return;
+    }
+    window.open(target, '_blank', 'noopener,noreferrer');
+  }
+}
+
+
 

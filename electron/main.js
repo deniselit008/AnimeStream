@@ -120,10 +120,27 @@ async function createWindow(serverUrl) {
     }
   }, 1500);
 
+  const ALLOWED_EXTERNAL_DOMAINS = [
+    'x.com', 'twitter.com', 'github.com', 'myanimelist.net',
+    'animeav1.com', 'jkanime.net', 'tioanime.com', 'anilist.co'
+  ];
+
+  function isAllowedExternalUrl(targetUrl) {
+    if (!targetUrl || typeof targetUrl !== 'string') return false;
+    try {
+      const parsed = new URL(targetUrl);
+      const host = parsed.hostname.toLowerCase();
+      return ALLOWED_EXTERNAL_DOMAINS.some(d => host === d || host.endsWith('.' + d));
+    } catch (_) {
+      const lower = targetUrl.toLowerCase();
+      return ALLOWED_EXTERNAL_DOMAINS.some(d => lower.includes(d));
+    }
+  }
+
   // 🛡️ NATIVE POPUP BLOCKER: Strictly deny any popup window from embedded video players (VOE, Mp4Upload, etc.)
-  // Never allow third-party ad networks to launch external browser tabs in Edge/Chrome, but allow legitimate community links (X/Twitter, GitHub) to open in system browser.
+  // Never allow third-party ad networks to launch external browser tabs in Edge/Chrome, but allow legitimate community and anime source links to open in system browser.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https://x.com/') || url.startsWith('https://twitter.com/') || url.startsWith('https://github.com/')) {
+    if (isAllowedExternalUrl(url)) {
       shell.openExternal(url);
       return { action: 'deny' };
     }
@@ -135,9 +152,18 @@ async function createWindow(serverUrl) {
   });
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (url.startsWith('https://x.com/') || url.startsWith('https://twitter.com/') || url.startsWith('https://github.com/')) {
+    // If URL is an allowed external service, open externally and prevent navigating main window
+    if (isAllowedExternalUrl(url)) {
       event.preventDefault();
       shell.openExternal(url);
+      return;
+    }
+
+    // Keep navigation strictly within local app root origin and prevent proxy-player from hijacking top window
+    const isLocalApp = url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:');
+    if (!isLocalApp || url.includes('/proxy-player')) {
+      event.preventDefault();
+      logDebug(`[AdBlock Native] Bloqueada navegación no autorizada de top window: ${url}`);
     }
   });
 

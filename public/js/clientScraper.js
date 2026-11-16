@@ -911,8 +911,10 @@ export const ClientJKAnime = {
             try {
               const decoded = atob(s.remote).trim();
               if (decoded.startsWith('http')) {
+                const rawName = s.server || 'Descarga';
+                const cleanName = rawName.replace(/\s*\((?:mirror|Mirror)\)\s*/gi, '').trim();
                 servers.push({
-                  name: `${audioPrefix}${s.server || 'Descarga'} (Mirror)`,
+                  name: `${audioPrefix}${cleanName}`,
                   embed: decoded,
                   audio: audioType
                 });
