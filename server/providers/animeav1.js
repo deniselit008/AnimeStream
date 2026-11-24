@@ -12,6 +12,9 @@ class AnimeAV1Provider {
 
   _formatUrl(pathOrUrl) {
     if (!pathOrUrl) return '';
+    if (pathOrUrl.startsWith('//')) {
+      return 'https:' + pathOrUrl;
+    }
     if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
       return pathOrUrl;
     }
@@ -41,7 +44,8 @@ class AnimeAV1Provider {
       seen.add(seenKey);
 
       // Card image search
-      const parent = $(el).closest('.item, .card, .group, .relative') || $(el).parent();
+      const cardEl = $(el).closest('.item, .card, .group, .relative');
+      const parent = cardEl.length ? cardEl : $(el);
       const imgEl = parent.find('img').first();
       let imgSrc = imgEl.attr('src') || imgEl.attr('data-src');
       if (imgSrc && !imgSrc.startsWith('http')) {
@@ -122,6 +126,7 @@ class AnimeAV1Provider {
 
   async getAnime(targetUrl) {
     const fullUrl = this._formatUrl(targetUrl);
+    const cleanSlug = fullUrl.split('?')[0].replace(/\/+$/, '').split('/').pop() || '';
     const headers = getHeaders(this.baseUrl);
     const res = await httpClient.get(fullUrl, { headers });
     const txt = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
@@ -132,7 +137,7 @@ class AnimeAV1Provider {
     let title = h1.text().trim();
     if (!title) {
       const mTitle = txt.match(/title:"([^"]+)"/);
-      title = mTitle ? mTitle[1] : fullUrl.split('/').pop().replace(/-/g, ' ');
+      title = mTitle ? mTitle[1] : cleanSlug.replace(/-/g, ' ');
     }
     title = fixEncoding(title);
 
@@ -153,8 +158,14 @@ class AnimeAV1Provider {
     synopsis = fixEncoding(synopsis);
 
     // 3. Poster & Backdrop
-    let image = $('img.aspect-poster, img[class*="aspect-poster"]').attr('src') || $('img').first().attr('src');
+    const mMediaIdPre = txt.match(/media:\{id:(\d+)/);
+    const midPre = mMediaIdPre ? mMediaIdPre[1] : '';
+    let image = $('img.aspect-poster, img[class*="aspect-poster"]').attr('src') ||
+                $('meta[property="og:image"]').attr('content');
     if (image && !image.startsWith('http')) image = this._formatUrl(image);
+    if ((!image || image.toLowerCase().includes('logo')) && midPre) {
+      image = `https://cdn.animeav1.com/thumbnails/${midPre}.jpg`;
+    }
 
     let backdrop = $('img.backdrop, img[class*="backdrop"]').attr('src');
     if (backdrop && !backdrop.startsWith('http')) backdrop = this._formatUrl(backdrop);
@@ -183,14 +194,13 @@ class AnimeAV1Provider {
     }
 
     // 6. Episodes List
-    const slug = fullUrl.split('/').pop();
+    const slug = cleanSlug;
     const episodes = [];
     const seenEps = new Set();
 
     // From script SvelteKit payload
     const mEps = [...txt.matchAll(/\{id:(\d+),number:(\d+)\}/g)];
-    const mMediaId = txt.match(/media:\{id:(\d+)/);
-    const mid = mMediaId ? mMediaId[1] : '';
+    const mid = midPre;
 
     if (mEps.length > 0) {
       for (const mep of mEps) {
@@ -208,8 +218,9 @@ class AnimeAV1Provider {
     }
 
     // Fallback to DOM episode links
-    if (episodes.length === 0) {
-      const epRegex = new RegExp(`^/media/${slug}/(\\d+)$`);
+    if (episodes.length === 0 && slug) {
+      const escapedSlug = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const epRegex = new RegExp(`^/media/${escapedSlug}/(\\d+)$`);
       $('a').each((_, el) => {
         const href = $(el).attr('href') || '';
         const m = href.match(epRegex);
@@ -305,16 +316,13 @@ class AnimeAV1Provider {
     };
 
     // 1. Structured embeds: { SUB: [...], DUB: [...] }
-    const mEmbeds = txt.match(/embeds:\{(.*?)\},\s*(?:downloads|subtitles|mirrors):/s);
+    const mEmbeds = txt.match(/embeds:\{(.*?)\}(?:,\s*(?:downloads|subtitles|mirrors|[a-zA-Z0-9_]+:)|\s*\})/s);
     if (mEmbeds) {
       const rawBlock = mEmbeds[1];
       for (const variant of ['SUB', 'DUB']) {
         const varMatch = rawBlock.match(new RegExp(`${variant}:\\[(.*?)\\]`, 's'));
         if (varMatch) {
           const sList = [...varMatch[1].matchAll(/\{server:"([^"]+)",url:"([^"]+)"\}/g)];
-          if (sList.length > 0 && !audios.includes(variant)) {
-            audios.push(variant);
-          }
           for (const s of sList) {
             const sName = s[1].trim();
             const sUrl = s[2];
@@ -331,6 +339,7 @@ class AnimeAV1Provider {
                 const hlsEmbed = `/api/hls/player/${hlsHash}`;
                 if (!seenEmbeds.has(`${hlsEmbed}_${variant}`)) {
                   seenEmbeds.add(`${hlsEmbed}_${variant}`);
+                  if (!audios.includes(variant)) audios.push(variant);
                   servers.push({
                     name: `${labelPrefix}HLS (Reproductor HD)`,
                     embed: hlsEmbed,
@@ -341,8 +350,26 @@ class AnimeAV1Provider {
               }
             }
 
+            if (!/^https?:\/\//i.test(sUrl) && !sUrl.startsWith('//')) {
+              continue;
+            }
+            if (sUrl.startsWith('//')) {
+              const normUrl = 'https:' + sUrl;
+              if (!seenEmbeds.has(`${normUrl}_${variant}`)) {
+                seenEmbeds.add(`${normUrl}_${variant}`);
+                if (!audios.includes(variant)) audios.push(variant);
+                servers.push({
+                  name: `${labelPrefix}${sName}`,
+                  embed: normUrl,
+                  audio: variant
+                });
+              }
+              continue;
+            }
+
             if (!seenEmbeds.has(`${sUrl}_${variant}`)) {
               seenEmbeds.add(`${sUrl}_${variant}`);
+              if (!audios.includes(variant)) audios.push(variant);
               servers.push({
                 name: `${labelPrefix}${sName}`,
                 embed: sUrl,

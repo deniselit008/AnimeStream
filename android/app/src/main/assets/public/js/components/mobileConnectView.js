@@ -1,5 +1,4 @@
 /**
-/**
  * Mobile Connection Setup View Component
  * Provides seamless pairing between the Android Mobile App and the local AnimeStream server.
  */
@@ -60,8 +59,8 @@ export function renderMobileConnect(container, options = {}) {
             <input 
               type="text" 
               id="server-url-input" 
-              placeholder="${defaultIp}XX:3000" 
-              value="${failingServer || defaultIp}" 
+              placeholder="${escapeHtml(defaultIp)}XX:3000" 
+              value="${escapeHtml(failingServer || defaultIp)}" 
               autocomplete="off" 
               autocapitalize="none"
               style="width: 100%; padding: 12px 14px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: #fff; font-family: monospace; font-size: 1rem; outline: none; transition: border-color 0.2s;"
@@ -77,6 +76,12 @@ export function renderMobileConnect(container, options = {}) {
           <button type="button" id="btn-auto-discover" class="btn btn-secondary" style="padding: 12px; font-size: 0.9rem; border-radius: var(--radius-md); justify-content: center; gap: 8px;">
             <span>🔍 Buscar Servidor en mi Wi-Fi</span>
           </button>
+
+          ${(typeof window !== 'undefined' && (window.AndroidBridge || window.location.host.includes('appassets.androidplatform.net'))) ? `
+            <button type="button" id="btn-use-standalone-mode" class="btn btn-outline" style="padding: 11px; font-size: 0.88rem; border-radius: var(--radius-md); justify-content: center; gap: 8px; border-color: rgba(16, 185, 129, 0.45); color: #34d399;">
+              <span>📱 Usar en Modo Autónomo (Sin PC)</span>
+            </button>
+          ` : ''}
         </form>
 
         <div style="margin-top: 24px; font-size: 0.78rem; color: var(--text-dim); line-height: 1.4;">
@@ -92,6 +97,19 @@ export function renderMobileConnect(container, options = {}) {
   const statusMsg = container.querySelector('#connect-status-message');
   const btnSubmit = container.querySelector('#btn-submit-connect');
   const btnDiscover = container.querySelector('#btn-auto-discover');
+  const btnStandalone = container.querySelector('#btn-use-standalone-mode');
+
+  if (btnStandalone) {
+    btnStandalone.addEventListener('click', () => {
+      localStorage.removeItem('animestream_server_url');
+      if (window.AndroidBridge && typeof window.AndroidBridge.resetServer === 'function') {
+        window.AndroidBridge.resetServer();
+      } else {
+        window.history.replaceState(null, '', window.location.pathname + '#/');
+        window.location.reload();
+      }
+    });
+  }
 
   function showStatus(text, type = 'info') {
     statusMsg.style.display = 'block';
@@ -120,11 +138,16 @@ export function renderMobileConnect(container, options = {}) {
     if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
       cleanUrl = 'http://' + cleanUrl;
     }
-    // Append default port :3000 if user only typed IP
-    if (!cleanUrl.match(/:\d+$/) && !cleanUrl.includes('://localhost') && !cleanUrl.includes('appassets')) {
-      cleanUrl = cleanUrl.replace(/\/+$/, '') + ':3000';
+    try {
+      const parsed = new URL(cleanUrl);
+      const rawHadPort = /:\d+$/.test(parsed.host);
+      if (!rawHadPort && parsed.protocol === 'http:' && parsed.hostname !== 'localhost' && !parsed.hostname.includes('appassets')) {
+        parsed.port = '3000';
+      }
+      cleanUrl = `${parsed.protocol}//${parsed.host}`;
+    } catch (_) {
+      cleanUrl = cleanUrl.replace(/\/+$/, '');
     }
-    cleanUrl = cleanUrl.replace(/\/+$/, '');
 
     btnSubmit.disabled = true;
     btnSubmit.innerHTML = `<span class="spinner" style="width:18px;height:18px;"></span> Probando conexión...`;
@@ -133,12 +156,15 @@ export function renderMobileConnect(container, options = {}) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 4000);
-
-      const resp = await fetch(`${cleanUrl}/api/network-info`, {
-        signal: controller.signal,
-        headers: { 'Accept': 'application/json' }
-      });
-      clearTimeout(timeoutId);
+      let resp;
+      try {
+        resp = await fetch(`${cleanUrl}/api/network-info`, {
+          signal: controller.signal,
+          headers: { 'Accept': 'application/json' }
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (resp.ok) {
         showStatus('¡Conexión establecida con éxito! Cargando catálogo...', 'success');
@@ -224,7 +250,7 @@ export function renderMobileConnect(container, options = {}) {
       if (validUrl) {
         found = true;
         input.value = validUrl;
-        showStatus(`¡Servidor AnimeStream encontrado en <strong>${validUrl}</strong>! Conectando...`, 'success');
+        showStatus(`¡Servidor AnimeStream encontrado en <strong>${escapeHtml(validUrl)}</strong>! Conectando...`, 'success');
         await testAndConnect(validUrl);
         break;
       }

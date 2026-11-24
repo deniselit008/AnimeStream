@@ -12,6 +12,9 @@ class TioAnimeProvider {
 
   _formatUrl(pathOrUrl) {
     if (!pathOrUrl) return '';
+    if (pathOrUrl.startsWith('//')) {
+      return 'https:' + pathOrUrl;
+    }
     if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
       return pathOrUrl;
     }
@@ -40,7 +43,8 @@ class TioAnimeProvider {
       if (seen.has(seenKey)) return;
       seen.add(seenKey);
 
-      const parent = $(el).closest('article, .col, .item, .episode, .card') || $(el);
+      const cardEl = $(el).closest('article, .col, .item, .episode, .card');
+      const parent = cardEl.length ? cardEl : $(el);
       const titleEl = parent.find('h3, h4, h5, span.title, .title').first();
       let rawTitle = titleEl.text().trim() || slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       let title = rawTitle.replace(new RegExp(`\\s+${epNum}$`), '').trim();
@@ -122,6 +126,7 @@ class TioAnimeProvider {
     const thumbEl = $('.thumb img').first();
     let image = thumbEl.attr('src');
     if (image && !image.startsWith('http')) image = this._formatUrl(image);
+    if (!image && slug) image = `https://tioanime.com/uploads/thumbs/${slug}.jpg`;
 
     // 3. Synopsis
     const sinopsisEl = $('p.sinopsis').first();
@@ -144,12 +149,18 @@ class TioAnimeProvider {
 
     // 6. Episodes from script: var episodes = [2, 1];
     const episodes = [];
+    const seenEps = new Set();
     const mEps = txt.match(/var episodes = (\[.*?\]);/);
     if (mEps) {
       try {
-        const epNums = JSON.parse(mEps[1]);
-        const sorted = [...epNums].sort((a, b) => a - b);
-        for (const num of sorted) {
+        const rawList = JSON.parse(mEps[1]);
+        const nums = rawList
+          .map(ep => parseInt(Array.isArray(ep) ? ep[0] : ep, 10))
+          .filter(n => !isNaN(n) && n > 0)
+          .sort((a, b) => a - b);
+        for (const num of nums) {
+          if (seenEps.has(num)) continue;
+          seenEps.add(num);
           episodes.push({
             number: num,
             title: `Episodio ${num}`,
@@ -190,8 +201,19 @@ class TioAnimeProvider {
     animeTitle = fixEncoding(animeTitle);
 
     // Prev / Next
-    const prevUrl = epNum > 1 ? this._formatUrl(`/ver/${slug}-${epNum - 1}`) : null;
-    const nextUrl = this._formatUrl(`/ver/${slug}-${epNum + 1}`);
+    let prevUrl = null;
+    const prevHref = $('.fa-arrow-left, [class*="arrow-left"]').closest('a').attr('href');
+    if (prevHref && prevHref !== '#' && prevHref.includes('/ver/')) {
+      prevUrl = this._formatUrl(prevHref);
+    } else if (epNum > 1) {
+      prevUrl = this._formatUrl(`/ver/${slug}-${epNum - 1}`);
+    }
+
+    let nextUrl = null;
+    const nextHref = $('.fa-arrow-right, [class*="arrow-right"]').closest('a').attr('href');
+    if (nextHref && nextHref !== '#' && nextHref.includes('/ver/')) {
+      nextUrl = this._formatUrl(nextHref);
+    }
 
     // Audio determination
     const isDub = ['latino', 'castellano', 'doblado', 'dub'].some(k => (slug + ' ' + animeTitle).toLowerCase().includes(k));
@@ -217,7 +239,11 @@ class TioAnimeProvider {
         const vidData = JSON.parse(mVid[1]);
         for (const v of vidData) {
           const sName = v[0];
-          const sUrl = v[1];
+          let sUrl = typeof v[1] === 'string' ? v[1].trim() : '';
+          if (sUrl.startsWith('//')) sUrl = 'https:' + sUrl;
+          if (!/^https?:\/\//i.test(sUrl)) {
+            continue;
+          }
           if (isHiddenServer(sName, sUrl)) {
             continue;
           }
@@ -230,11 +256,13 @@ class TioAnimeProvider {
       } catch (_) {}
     }
 
-    // Thumbnail fallback from anime page thumbnail if available
+    // Thumbnail fallback from canonical thumbs or meta tags (avoid picking up navbar logo)
     let image = null;
-    const thumbImg = $('img').first();
-    if (thumbImg.length > 0 && thumbImg.attr('src')) {
-      image = this._formatUrl(thumbImg.attr('src'));
+    const ogImg = $('meta[property="og:image"]').attr('content') || $('meta[name="twitter:image"]').attr('content');
+    if (ogImg && !ogImg.toLowerCase().includes('logo')) {
+      image = this._formatUrl(ogImg);
+    } else if (slug) {
+      image = `https://tioanime.com/uploads/thumbs/${slug}.jpg`;
     }
 
     return {

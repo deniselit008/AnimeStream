@@ -9,6 +9,11 @@ import { openNetworkModal } from './networkModal.js?v=5.0';
 
 let navbarInitialized = false;
 let autocompleteDebounceTimer = null;
+let autocompleteSeq = 0;
+let navDocClickListener = null;
+let navHashListener = null;
+let navTvChangeListener = null;
+let navAdblockChangeListener = null;
 
 export function renderNavbar(container, activeRoute = '', query = '', source = 'all', onRerun = null) {
   if (!container) return;
@@ -161,6 +166,11 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
     const suggestionsDropdown = container.querySelector('#nav-search-suggestions');
 
     function closeSuggestions() {
+      autocompleteSeq++;
+      if (autocompleteDebounceTimer) {
+        clearTimeout(autocompleteDebounceTimer);
+        autocompleteDebounceTimer = null;
+      }
       if (suggestionsDropdown) {
         suggestionsDropdown.classList.remove('open');
         suggestionsDropdown.innerHTML = '';
@@ -203,15 +213,20 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
     input.addEventListener('input', () => {
       const q = input.value.trim();
       if (autocompleteDebounceTimer) clearTimeout(autocompleteDebounceTimer);
+      const mySeq = ++autocompleteSeq;
 
       if (q.length < 2) {
-        closeSuggestions();
+        if (suggestionsDropdown) {
+          suggestionsDropdown.classList.remove('open');
+          suggestionsDropdown.innerHTML = '';
+        }
         return;
       }
 
       autocompleteDebounceTimer = setTimeout(async () => {
         try {
           const res = await Api.search(q, sourceSelect ? sourceSelect.value : 'all');
+          if (mySeq !== autocompleteSeq || input.value.trim().length < 2) return;
           const results = Array.isArray(res) ? res : (res?.results || []);
           if (results.length === 0) {
             suggestionsDropdown.innerHTML = `
@@ -235,7 +250,7 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
                     alt="${escapeHtml(item.title)}" 
                     loading="lazy" 
                     referrerpolicy="no-referrer"
-                    onerror="if (!this.dataset.retried && this.src && !this.src.includes('/api/image-proxy') && '${escapeHtml(item.image || '')}') { this.dataset.retried='1'; this.src='/api/image-proxy?url=' + encodeURIComponent('${escapeHtml(item.image || '')}'); } else { this.onerror=null; this.src='${escapeHtml(fallbackSvg)}'; }"
+                    onerror="this.onerror=null; this.src='${escapeHtml(fallbackSvg)}';"
                   />
                   <div class="suggestion-info">
                     <div class="suggestion-title">${escapeHtml(item.title)}</div>
@@ -271,15 +286,19 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
     });
 
     // Close suggestions when clicking outside, navigating or pressing Escape
-    document.addEventListener('click', (e) => {
+    if (navDocClickListener) document.removeEventListener('click', navDocClickListener);
+    navDocClickListener = (e) => {
       if (!form.contains(e.target) && !suggestionsDropdown.contains(e.target)) {
         closeSuggestions();
       }
-    });
+    };
+    document.addEventListener('click', navDocClickListener);
 
-    window.addEventListener('hashchange', () => {
+    if (navHashListener) window.removeEventListener('hashchange', navHashListener);
+    navHashListener = () => {
       closeSuggestions();
-    });
+    };
+    window.addEventListener('hashchange', navHashListener);
 
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
@@ -329,7 +348,8 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
       });
     }
 
-    window.addEventListener('animestream-tv-change', (e) => {
+    if (navTvChangeListener) window.removeEventListener('animestream-tv-change', navTvChangeListener);
+    navTvChangeListener = (e) => {
       const btn = container.querySelector('#nav-btn-tv-mode');
       if (btn && e.detail) {
         if (e.detail.enabled) {
@@ -340,9 +360,11 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
           btn.title = 'Modo Smart TV: Desactivado';
         }
       }
-    });
+    };
+    window.addEventListener('animestream-tv-change', navTvChangeListener);
 
-    window.addEventListener('animestream-adblock-change', (e) => {
+    if (navAdblockChangeListener) window.removeEventListener('animestream-adblock-change', navAdblockChangeListener);
+    navAdblockChangeListener = (e) => {
       const btn = container.querySelector('#nav-btn-adblock');
       const badge = container.querySelector('#nav-adblock-count');
       const icon = container.querySelector('#nav-adblock-icon');
@@ -361,7 +383,8 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
           if (label) label.textContent = 'AdBlock OFF';
         }
       }
-    });
+    };
+    window.addEventListener('animestream-adblock-change', navAdblockChangeListener);
   }
 
   // Update active navigation link (desktop & mobile bottom nav)
@@ -383,7 +406,11 @@ export function renderNavbar(container, activeRoute = '', query = '', source = '
       input.value = query;
     }
     if (sourceSelect && source) {
-      sourceSelect.value = source;
+      const s = String(source).toLowerCase().trim();
+      const norm = s === 'av1' ? 'animeav1' : (s === 'jk' ? 'jkanime' : (s === 'tio' ? 'tioanime' : s));
+      sourceSelect.value = ['all', 'animeav1', 'jkanime', 'tioanime'].includes(norm) ? norm : 'all';
     }
+  } else if (activeRoute !== '/search' && input && document.activeElement !== input) {
+    input.value = '';
   }
 }

@@ -4,6 +4,8 @@
  * Connects natively via AndroidBridge.fetchUrl to bypass browser CORS completely.
  */
 
+import { fixEncoding } from './utils.js?v=5.0';
+
 // Helper to execute native HTTP fetch via Android bridge or fallback
 export async function fetchHtml(url, headers = {}) {
   if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.fetchUrl === 'function') {
@@ -45,7 +47,7 @@ function parseDocument(html) {
 
 function fixText(str) {
   if (!str) return '';
-  return String(str).trim();
+  return fixEncoding(String(str)).trim();
 }
 
 // ==============================================================================
@@ -57,6 +59,7 @@ export const ClientAnimeAV1 = {
 
   formatUrl(pathOrUrl) {
     if (!pathOrUrl) return '';
+    if (pathOrUrl.startsWith('//')) return 'https:' + pathOrUrl;
     if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) return pathOrUrl;
     if (!pathOrUrl.startsWith('/')) pathOrUrl = '/' + pathOrUrl;
     return `${this.baseUrl}${pathOrUrl}`;
@@ -142,13 +145,14 @@ export const ClientAnimeAV1 = {
 
   async getAnime(targetUrl) {
     const fullUrl = this.formatUrl(targetUrl);
+    const cleanSlug = fullUrl.split('?')[0].replace(/\/+$/, '').split('/').pop() || '';
     const html = await fetchHtml(fullUrl);
     const doc = parseDocument(html);
 
     let title = doc.querySelector('h1')?.textContent.trim();
     if (!title) {
       const mTitle = html.match(/title:"([^"]+)"/);
-      title = mTitle ? mTitle[1] : fullUrl.split('/').pop().replace(/-/g, ' ');
+      title = mTitle ? mTitle[1] : cleanSlug.replace(/-/g, ' ');
     }
 
     let synopsis = '';
@@ -160,29 +164,41 @@ export const ClientAnimeAV1 = {
       synopsis = doc.querySelector('meta[property="og:description"]')?.getAttribute('content') || '';
     }
 
-    let image = doc.querySelector('img.aspect-poster, img[class*="aspect-poster"]')?.getAttribute('src') || doc.querySelector('img')?.getAttribute('src');
+    const mMediaIdPre = html.match(/media:\{id:(\d+)/);
+    const midPre = mMediaIdPre ? mMediaIdPre[1] : '';
+    let image = doc.querySelector('img.aspect-poster, img[class*="aspect-poster"]')?.getAttribute('src') ||
+                doc.querySelector('meta[property="og:image"]')?.getAttribute('content');
     if (image && !image.startsWith('http')) image = this.formatUrl(image);
+    if ((!image || image.toLowerCase().includes('logo')) && midPre) {
+      image = `https://cdn.animeav1.com/thumbnails/${midPre}.jpg`;
+    }
 
     let backdrop = doc.querySelector('img.backdrop, img[class*="backdrop"]')?.getAttribute('src');
     if (backdrop && !backdrop.startsWith('http')) backdrop = this.formatUrl(backdrop);
 
     const genres = [];
-    doc.querySelectorAll('a[href*="/catalogo?genre="]').forEach(a => {
-      const g = a.textContent.trim();
-      if (g && !genres.includes(g)) genres.push(g);
+    const mGenres = [...html.matchAll(/name:"([^"]+)",type:\d+,slug:"([^"]+)"/g)];
+    mGenres.forEach(mg => {
+      const cleanG = fixText(mg[1]);
+      if (cleanG && !genres.includes(cleanG)) genres.push(cleanG);
     });
+    if (genres.length === 0) {
+      doc.querySelectorAll('a[href*="/catalogo?genre="]').forEach(a => {
+        const g = fixText(a.textContent);
+        if (g && !genres.includes(g)) genres.push(g);
+      });
+    }
 
     let status = 'En emisión';
     const mStatus = html.match(/status:(\d+)/);
     if (mStatus && mStatus[1] === '1') status = 'Finalizado';
 
-    const slug = fullUrl.split('/').pop();
+    const slug = cleanSlug;
     const episodes = [];
     const seenEps = new Set();
 
     const mEps = [...html.matchAll(/\{id:(\d+),number:(\d+)\}/g)];
-    const mMediaId = html.match(/media:\{id:(\d+)/);
-    const mid = mMediaId ? mMediaId[1] : '';
+    const mid = midPre;
 
     if (mEps.length > 0) {
       mEps.forEach(mep => {
@@ -199,8 +215,9 @@ export const ClientAnimeAV1 = {
       });
     }
 
-    if (episodes.length === 0) {
-      const epRegex = new RegExp(`^/media/${slug}/(\\d+)$`);
+    if (episodes.length === 0 && slug) {
+      const escapedSlug = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const epRegex = new RegExp(`^/media/${escapedSlug}/(\\d+)$`);
       doc.querySelectorAll('a').forEach(a => {
         const href = a.getAttribute('href') || '';
         const m = href.match(epRegex);
@@ -269,19 +286,31 @@ export const ClientAnimeAV1 = {
     const seenEmbeds = new Set();
     const audios = [];
 
-    const mEmbeds = html.match(/embeds:\{(.*?)\},\s*(?:downloads|subtitles|mirrors):/s);
+    const isHiddenServer = (name, url) => {
+      const target = `${name || ''} ${url || ''}`.toLowerCase();
+      return target.includes('mixdrop') ||
+             target.includes('mp4upload') ||
+             target.includes('streamtape') ||
+             target.includes('doodstream') ||
+             target.includes('dood') ||
+             target.includes('dsvplay') ||
+             target.includes('mdbekjwqa');
+    };
+
+    const mEmbeds = html.match(/embeds:\{(.*?)\}(?:,\s*(?:downloads|subtitles|mirrors|[a-zA-Z0-9_]+:)|\s*\})/s);
     if (mEmbeds) {
       const rawBlock = mEmbeds[1];
       for (const variant of ['SUB', 'DUB']) {
         const varMatch = rawBlock.match(new RegExp(`${variant}:\\[(.*?)\\]`, 's'));
         if (varMatch) {
           const sList = [...varMatch[1].matchAll(/\{server:"([^"]+)",url:"([^"]+)"\}/g)];
-          if (sList.length > 0 && !audios.includes(variant)) audios.push(variant);
 
           for (const s of sList) {
             const sName = s[1].trim();
             const sUrl = s[2];
             const labelPrefix = `[${variant}] `;
+
+            if (isHiddenServer(sName, sUrl)) continue;
 
             if (sUrl.includes('zilla-networks.com') || sName.toUpperCase() === 'HLS') {
               const mHash = sUrl.match(/([a-fA-F0-9]{32})/);
@@ -293,6 +322,7 @@ export const ClientAnimeAV1 = {
                   : `/api/hls/player/${hlsHash}`;
                 if (!seenEmbeds.has(`${hlsEmbed}_${variant}`)) {
                   seenEmbeds.add(`${hlsEmbed}_${variant}`);
+                  if (!audios.includes(variant)) audios.push(variant);
                   servers.push({
                     name: `${labelPrefix}HLS (Reproductor HD)`,
                     embed: hlsEmbed,
@@ -303,11 +333,17 @@ export const ClientAnimeAV1 = {
               }
             }
 
-            if (!seenEmbeds.has(`${sUrl}_${variant}`)) {
-              seenEmbeds.add(`${sUrl}_${variant}`);
+            if (!/^https?:\/\//i.test(sUrl) && !sUrl.startsWith('//')) {
+              continue;
+            }
+            const cleanUrl = sUrl.startsWith('//') ? 'https:' + sUrl : sUrl;
+
+            if (!seenEmbeds.has(`${cleanUrl}_${variant}`)) {
+              seenEmbeds.add(`${cleanUrl}_${variant}`);
+              if (!audios.includes(variant)) audios.push(variant);
               servers.push({
                 name: `${labelPrefix}${sName}`,
-                embed: sUrl,
+                embed: cleanUrl,
                 audio: variant
               });
             }
@@ -417,6 +453,7 @@ export const ClientTioAnime = {
 
   formatUrl(pathOrUrl) {
     if (!pathOrUrl) return '';
+    if (pathOrUrl.startsWith('//')) return 'https:' + pathOrUrl;
     if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) return pathOrUrl;
     if (!pathOrUrl.startsWith('/')) pathOrUrl = '/' + pathOrUrl;
     return `${this.baseUrl}${pathOrUrl}`;
@@ -504,6 +541,7 @@ export const ClientTioAnime = {
     let title = doc.querySelector('h1.title')?.textContent.trim() || slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     let image = doc.querySelector('.thumb img')?.getAttribute('src');
     if (image && !image.startsWith('http')) image = this.formatUrl(image);
+    if (!image && slug) image = `https://tioanime.com/uploads/thumbs/${slug}.jpg`;
 
     let synopsis = doc.querySelector('.sinopsis')?.textContent.trim() || '';
 
@@ -518,23 +556,27 @@ export const ClientTioAnime = {
     if (statusBtn && statusBtn.textContent.includes('Finalizado')) status = 'Finalizado';
 
     const episodes = [];
+    const seenEps = new Set();
     const mEps = html.match(/var episodes = (\[.*?\]);/);
     if (mEps) {
       try {
         const epsData = JSON.parse(mEps[1]);
-        for (const ep of epsData) {
-          const epNum = Array.isArray(ep) ? ep[0] : ep;
+        const sortedNums = epsData
+          .map(ep => parseInt(Array.isArray(ep) ? ep[0] : ep, 10))
+          .filter(n => !isNaN(n) && n > 0)
+          .sort((a, b) => a - b);
+        for (const epNum of sortedNums) {
+          if (seenEps.has(epNum)) continue;
+          seenEps.add(epNum);
           episodes.push({
             number: epNum,
             title: `Episodio ${epNum}`,
             url: this.formatUrl(`/ver/${slug}-${epNum}`),
-            image: `https://tioanime.com/uploads/thumbs/${epNum}.jpg`
+            image: null
           });
         }
       } catch (_) {}
     }
-
-    episodes.sort((a, b) => a.number - b.number);
 
     return {
       title: fixText(title),
@@ -561,12 +603,36 @@ export const ClientTioAnime = {
 
     let animeTitle = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
-    const prevUrl = epNum > 1 ? this.formatUrl(`/ver/${slug}-${epNum - 1}`) : null;
-    const nextUrl = this.formatUrl(`/ver/${slug}-${epNum + 1}`);
+    let prevUrl = null;
+    const prevEl = doc.querySelector('.fa-arrow-left, [class*="arrow-left"]')?.closest('a');
+    const prevHref = prevEl?.getAttribute('href');
+    if (prevHref && prevHref !== '#' && prevHref.includes('/ver/')) {
+      prevUrl = this.formatUrl(prevHref);
+    } else if (epNum > 1) {
+      prevUrl = this.formatUrl(`/ver/${slug}-${epNum - 1}`);
+    }
+
+    let nextUrl = null;
+    const nextEl = doc.querySelector('.fa-arrow-right, [class*="arrow-right"]')?.closest('a');
+    const nextHref = nextEl?.getAttribute('href');
+    if (nextHref && nextHref !== '#' && nextHref.includes('/ver/')) {
+      nextUrl = this.formatUrl(nextHref);
+    }
 
     const isDub = ['latino', 'castellano', 'doblado', 'dub'].some(k => (slug + ' ' + animeTitle).toLowerCase().includes(k));
     const audioType = isDub ? 'DUB' : 'SUB';
     const audioPrefix = `[${audioType}] `;
+
+    const isHiddenServer = (name, url) => {
+      const target = `${name || ''} ${url || ''}`.toLowerCase();
+      return target.includes('mixdrop') ||
+             target.includes('mp4upload') ||
+             target.includes('streamtape') ||
+             target.includes('doodstream') ||
+             target.includes('dood') ||
+             target.includes('dsvplay') ||
+             target.includes('mdbekjwqa');
+    };
 
     const servers = [];
     const mVid = html.match(/var videos = (\[.*?\]);/);
@@ -574,17 +640,28 @@ export const ClientTioAnime = {
       try {
         const vidData = JSON.parse(mVid[1]);
         for (const v of vidData) {
+          const sName = v[0] || 'Servidor';
+          let sEmbed = typeof v[1] === 'string' ? v[1].trim() : '';
+          if (sEmbed.startsWith('//')) sEmbed = 'https:' + sEmbed;
+          if (!/^https?:\/\//i.test(sEmbed)) continue;
+          if (isHiddenServer(sName, sEmbed)) continue;
           servers.push({
-            name: `${audioPrefix}${v[0]}`,
-            embed: v[1],
+            name: `${audioPrefix}${sName}`,
+            embed: sEmbed,
             audio: audioType
           });
         }
       } catch (_) {}
     }
 
-    let image = doc.querySelector('img')?.getAttribute('src');
-    if (image && !image.startsWith('http')) image = this.formatUrl(image);
+    let image = null;
+    const ogImg = doc.querySelector('meta[property="og:image"]')?.getAttribute('content') ||
+                  doc.querySelector('meta[name="twitter:image"]')?.getAttribute('content');
+    if (ogImg && !ogImg.toLowerCase().includes('logo')) {
+      image = this.formatUrl(ogImg);
+    } else if (slug) {
+      image = `https://tioanime.com/uploads/thumbs/${slug}.jpg`;
+    }
 
     return {
       animeTitle: fixText(animeTitle),
@@ -651,6 +728,7 @@ export const ClientTioAnime = {
     const seen = new Set();
 
     doc.querySelectorAll('article.anime, .anime, a[href^="/anime/"]').forEach(el => {
+      if (el.closest('header, nav, footer, aside')) return;
       let a = el.tagName === 'A' ? el : el.querySelector('a');
       if (!a) return;
       const href = a.getAttribute('href') || '';
@@ -663,17 +741,22 @@ export const ClientTioAnime = {
 
       const img = el.querySelector('img');
       let imgSrc = img ? img.getAttribute('src') : null;
+      if (imgSrc && imgSrc.toLowerCase().includes('logo')) imgSrc = null;
       if (imgSrc && !imgSrc.startsWith('http')) imgSrc = this.formatUrl(imgSrc);
+      if (!imgSrc && slug) imgSrc = `https://tioanime.com/uploads/thumbs/${slug}.jpg`;
 
       const typeEl = el.querySelector('span.type, .badge');
-      const tipo = typeEl ? typeEl.textContent.trim() : 'Anime';
+      const tipo = typeEl ? typeEl.textContent.trim() : 'TV Anime';
+      const estadoNorm = (status && status.toLowerCase().includes('fin')) ? 'Finalizado' : 'En emisión';
 
       results.push({
         title: fixText(title),
         url: this.formatUrl(href),
         image: imgSrc || null,
         source: this.name,
-        type: tipo
+        type: fixText(tipo),
+        status: estadoNorm,
+        year: year && year !== 'all' ? String(year) : null
       });
     });
 
@@ -690,6 +773,7 @@ export const ClientJKAnime = {
 
   formatUrl(pathOrUrl) {
     if (!pathOrUrl) return '';
+    if (pathOrUrl.startsWith('//')) return 'https:' + pathOrUrl;
     if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) return pathOrUrl;
     if (!pathOrUrl.startsWith('/')) pathOrUrl = '/' + pathOrUrl;
     return `${this.baseUrl}${pathOrUrl}`;
@@ -721,6 +805,7 @@ export const ClientJKAnime = {
 
       const img = card.querySelector('.set-bg, img');
       let imgSrc = img ? (img.getAttribute('data-setbg') || img.getAttribute('src')) : null;
+      if (imgSrc && !imgSrc.startsWith('http')) imgSrc = this.formatUrl(imgSrc);
       if (!imgSrc) imgSrc = `https://cdn.jkdesa.com/assets/images/animes/image/${slug}.jpg`;
 
       items.push({
@@ -753,7 +838,11 @@ export const ClientJKAnime = {
 
     doc.querySelectorAll('.anime__item').forEach(item => {
       if (item.closest('.anime__sidebar, .product__sidebar, .sidebar, aside, header, nav, footer')) return;
-      const sectionHeading = item.closest('section, div[class*="col"]')?.querySelector('h4, h5, .section-title')?.textContent?.toLowerCase() || '';
+      const sectionEl = item.closest('section');
+      const sectionHeading = (sectionEl
+        ? sectionEl.querySelector(':scope > .section-title, :scope > div > .section-title, :scope > h4')?.textContent
+        : item.closest('div[class*="col"]')?.querySelector(':scope > .section-title, :scope > h4')?.textContent
+      )?.toLowerCase() || '';
       if (sectionHeading.includes('buscado') || sectionHeading.includes('top ') || sectionHeading.includes('popular')) return;
 
       const a = item.querySelector('a[href*="jkanime.net/"], a[href^="/"]');
@@ -776,6 +865,7 @@ export const ClientJKAnime = {
 
       const img = item.querySelector('.set-bg, img');
       let image = img ? (img.getAttribute('data-setbg') || img.getAttribute('src')) : null;
+      if (image && !image.startsWith('http')) image = this.formatUrl(image);
       if (!image) image = `https://cdn.jkdesa.com/assets/images/animes/image/${m[1]}.jpg`;
 
       results.push({
@@ -839,15 +929,27 @@ export const ClientJKAnime = {
       } catch (_) {}
     }
 
-    if (episodes.length === 0) {
-      for (let e = 1; e <= 12; e++) {
-        episodes.push({
-          number: e,
-          title: `Episodio ${e}`,
-          url: `https://jkanime.net/${slug}/${e}/`,
-          image: `https://cdn.jkdesa.com/assets/images/animes/image/${slug}.jpg`
-        });
-      }
+    if (episodes.length === 0 && slug) {
+      const escapedSlug = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const epRegex = new RegExp(`(?:https?://jkanime\\.net)?/${escapedSlug}/(\\d+)/?$`);
+      const seenDomEps = new Set();
+      doc.querySelectorAll('a').forEach(a => {
+        const href = a.getAttribute('href') || '';
+        const m = href.match(epRegex);
+        if (m) {
+          const num = parseInt(m[1], 10);
+          if (!isNaN(num) && !seenDomEps.has(num)) {
+            seenDomEps.add(num);
+            episodes.push({
+              number: num,
+              title: `Episodio ${num}`,
+              url: `https://jkanime.net/${slug}/${num}/`,
+              image: `https://cdn.jkdesa.com/assets/images/animes/image/${slug}.jpg`
+            });
+          }
+        }
+      });
+      episodes.sort((a, b) => a.number - b.number);
     }
 
     return {
@@ -881,20 +983,51 @@ export const ClientJKAnime = {
     }
     if (!animeTitle) animeTitle = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
-    const prevUrl = epNum > 1 ? `${this.baseUrl}/${slug}/${epNum - 1}/` : null;
-    const nextUrl = `${this.baseUrl}/${slug}/${epNum + 1}/`;
+    let prevUrl = null;
+    let nextUrl = null;
+    for (const a of doc.querySelectorAll('a')) {
+      const t = a.textContent.trim().toLowerCase();
+      const h = a.getAttribute('href');
+      if (h && (t === 'siguiente' || a.querySelector('.fa-arrow-right, .fa-chevron-right'))) {
+        nextUrl = this.formatUrl(h);
+      }
+      if (h && (t === 'anterior' || a.querySelector('.fa-arrow-left, .fa-chevron-left'))) {
+        prevUrl = this.formatUrl(h);
+      }
+    }
+    if (!prevUrl && epNum > 1) {
+      prevUrl = `${this.baseUrl}/${slug}/${epNum - 1}/`;
+    }
+    if (prevUrl && !prevUrl.endsWith('/')) prevUrl += '/';
+    if (nextUrl && !nextUrl.endsWith('/')) nextUrl += '/';
 
     const isDub = ['latino', 'castellano', 'doblado', 'dub'].some(k => (slug + ' ' + animeTitle).toLowerCase().includes(k));
     const audioType = isDub ? 'DUB' : 'SUB';
     const audioPrefix = `[${audioType}] `;
+
+    const isHiddenServer = (name, url) => {
+      const target = `${name || ''} ${url || ''}`.toLowerCase();
+      return target.includes('mixdrop') ||
+             target.includes('mp4upload') ||
+             target.includes('streamtape') ||
+             target.includes('doodstream') ||
+             target.includes('dood') ||
+             target.includes('dsvplay') ||
+             target.includes('mdbekjwqa');
+    };
 
     const servers = [];
     const videoEmbeds = [...html.matchAll(/video\[\d+\]\s*=\s*['"]<iframe[^>]+src=['"]([^'"]+)['"]/g)].map(m => m[1]);
     const serverNameEls = doc.querySelectorAll('.bg-servers a');
     const serverNames = Array.from(serverNameEls).map(el => el.textContent.trim());
 
-    videoEmbeds.forEach((embedUrl, idx) => {
-      const sName = serverNames[idx] || `Servidor ${idx + 1}`;
+    videoEmbeds.forEach((rawEmbedUrl, idx) => {
+      let embedUrl = typeof rawEmbedUrl === 'string' ? rawEmbedUrl.trim() : '';
+      if (embedUrl.startsWith('//')) embedUrl = 'https:' + embedUrl;
+      if (!/^https?:\/\//i.test(embedUrl)) return;
+      const rawName = serverNames[idx] || `Servidor ${idx + 1}`;
+      const sName = rawName.replace(/\s*\((?:mirror|Mirror)\)\s*/gi, '').trim();
+      if (isHiddenServer(sName, embedUrl)) return;
       servers.push({
         name: `${audioPrefix}${sName}`,
         embed: embedUrl,
@@ -913,6 +1046,15 @@ export const ClientJKAnime = {
               if (decoded.startsWith('http')) {
                 const rawName = s.server || 'Descarga';
                 const cleanName = rawName.replace(/\s*\((?:mirror|Mirror)\)\s*/gi, '').trim();
+                if (cleanName.toLowerCase().includes('mediafire') || decoded.includes('mediafire.com')) {
+                  continue;
+                }
+                if (decoded.endsWith('/embed/') || decoded.endsWith('/embed')) {
+                  continue;
+                }
+                if (isHiddenServer(cleanName, decoded)) {
+                  continue;
+                }
                 servers.push({
                   name: `${audioPrefix}${cleanName}`,
                   embed: decoded,
@@ -1005,6 +1147,9 @@ export const ClientJKAnime = {
           else if (rawTipo.toLowerCase().includes('esp')) tipoNorm = 'Especial';
           else if (rawTipo.toLowerCase().includes('ona')) tipoNorm = 'ONA';
 
+          const rawEstado = a.estado || a.status || 'En emisión';
+          const estadoNorm = (rawEstado.toLowerCase().includes('emi') || rawEstado.toLowerCase().includes('curr')) ? 'En emisión' : 'Finalizado';
+
           results.push({
             title: fixText(title),
             url: animeUrl,
@@ -1012,7 +1157,8 @@ export const ClientJKAnime = {
             synopsis: fixText(a.synopsis || ''),
             source: this.name,
             type: tipoNorm,
-            status: a.estado || null
+            status: estadoNorm,
+            year: year && year !== 'all' ? String(year) : null
           });
         }
       } catch (_) {}
@@ -1021,27 +1167,38 @@ export const ClientJKAnime = {
     // 2. Fallback to DOM elements if var animes was not found
     if (results.length === 0) {
       const doc = parseDocument(html);
+      const DIR_EXCLUDED_SLUGS = new Set([
+        'buscar', 'directorio', 'horario', 'top', 'editar-perfil', 'jkanime.net',
+        'guardados', 'favoritos', 'historial', 'login', 'registro', 'recuperar',
+        'privacidad', 'terminos', 'dmca', 'contacto', 'noticias', 'blog',
+        'calendario', 'aleatorio', 'buscados', 'buscados-recientemente',
+        'emision', 'finalizados', 'estrenos', 'peliculas', 'ovas', 'especiales'
+      ]);
       doc.querySelectorAll('.anime__item, .custom_item, article, .card').forEach(item => {
+        if (item.closest('.anime__sidebar, .product__sidebar, .sidebar, aside, header, nav, footer')) return;
         const a = item.querySelector('a[href*="jkanime.net/"], a[href^="/"]');
         if (!a) return;
         const href = a.getAttribute('href') || '';
-        const mSlug = href.match(/(?:https:\/\/jkanime\.net)?\/([^/]+)\/?$/);
+        if (href.startsWith('http') && !href.includes('jkanime.net')) return;
+        const mSlug = href.match(/(?:https:\/\/jkanime\.net)?\/([^/?#]+)\/?$/);
         if (!mSlug) return;
 
-        const slug = mSlug[1];
-        if (seen.has(slug) || ['buscar', 'directorio', 'horario', 'top', 'aleatorio'].includes(slug)) return;
-        seen.add(slug);
+        const rawSlug = mSlug[1];
+        const slugLower = rawSlug.toLowerCase();
+        if (seen.has(slugLower) || DIR_EXCLUDED_SLUGS.has(slugLower) || slugLower.includes('hentai') || slugLower.includes('.php') || slugLower.includes('.html')) return;
+        seen.add(slugLower);
 
         const titleEl = item.querySelector('h5, h6, h4, .title');
-        let title = titleEl ? titleEl.textContent.trim() : slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        let title = titleEl ? titleEl.textContent.trim() : rawSlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
         const img = item.querySelector('.set-bg, img');
         let image = img ? (img.getAttribute('data-setbg') || img.getAttribute('src')) : null;
-        if (!image) image = `https://cdn.jkdesa.com/assets/images/animes/image/${slug}.jpg`;
+        if (image && !image.startsWith('http')) image = this.formatUrl(image);
+        if (!image) image = `https://cdn.jkdesa.com/assets/images/animes/image/${rawSlug}.jpg`;
 
         results.push({
           title: fixText(title),
-          url: `https://jkanime.net/${slug}/`,
+          url: `https://jkanime.net/${rawSlug}/`,
           image,
           source: this.name,
           type: 'TV Anime'
@@ -1058,11 +1215,21 @@ export const ClientJKAnime = {
 // ==============================================================================
 export const ClientScraper = {
   detectProvider(url) {
-    const lower = String(url || '').toLowerCase();
-    if (lower.includes('animeav1.com')) return ClientAnimeAV1;
-    if (lower.includes('tioanime.com')) return ClientTioAnime;
-    if (lower.includes('jkanime.net')) return ClientJKAnime;
-    return ClientAnimeAV1;
+    if (!url || typeof url !== 'string') return null;
+    let trimmed = url.trim();
+    if (trimmed.startsWith('//')) trimmed = 'https:' + trimmed;
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+      if (parsed.username || parsed.password) return null;
+      const host = parsed.hostname.toLowerCase().replace(/\.+$/, '');
+      if (host === 'animeav1.com' || host.endsWith('.animeav1.com')) return ClientAnimeAV1;
+      if (host === 'tioanime.com' || host.endsWith('.tioanime.com')) return ClientTioAnime;
+      if (host === 'jkanime.net' || host.endsWith('.jkanime.net')) return ClientJKAnime;
+    } catch (_) {
+      return null;
+    }
+    return null;
   },
 
   async getLatest(source = 'all') {
@@ -1120,11 +1287,17 @@ export const ClientScraper = {
 
   async getAnime(url) {
     const provider = this.detectProvider(url);
+    if (!provider) {
+      throw new Error('URL no soportada. Debe pertenecer a animeav1.com, jkanime.net o tioanime.com');
+    }
     return provider.getAnime(url);
   },
 
   async getWatch(url) {
     const provider = this.detectProvider(url);
+    if (!provider) {
+      throw new Error('URL no soportada. Debe pertenecer a animeav1.com, jkanime.net o tioanime.com');
+    }
     return provider.getWatch(url);
   },
 

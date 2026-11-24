@@ -30,7 +30,10 @@ export const Icons = {
   chevronDown: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`,
   chevronUp: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>`,
   tv: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>`,
-  x: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`
+  x: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`,
+  fastForward: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 19 22 12 13 5 13 19"></polygon><polygon points="2 19 11 12 2 5 2 19"></polygon></svg>`,
+  gauge: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"></path><path d="M3.34 19a10 10 0 1 1 17.32 0"></path></svg>`,
+  clock: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`
 };
 
 export function getDefaultPoster(title = 'Anime', source = '') {
@@ -54,9 +57,23 @@ export function getDefaultPoster(title = 'Anime', source = '') {
 
 export function resolveAnimeCover(item) {
   if (!item) return getDefaultPoster();
-  const img = item.image;
-  if (img && !img.includes('placeholder.com') && !img.includes('undefined') && !img.includes('null') && img.startsWith('http')) {
-    return img;
+  let img = item.image;
+  if (img && typeof img === 'string') {
+    img = img.trim();
+    if (img.startsWith('//')) {
+      img = 'https:' + img;
+    }
+    const lower = img.toLowerCase();
+    const isBadCover = lower.includes('placeholder.com') ||
+                       lower.includes('undefined') ||
+                       lower.includes('null') ||
+                       lower.includes('/assets/img/logo') ||
+                       lower.includes('/logo.png') ||
+                       lower.includes('/logo-dark') ||
+                       lower.includes('/logo-light');
+    if (!isBadCover && img.startsWith('http')) {
+      return img;
+    }
   }
   
   // Try extracting slug from url or animeUrl if JKAnime
@@ -66,6 +83,19 @@ export function resolveAnimeCover(item) {
     const m = url.match(/jkanime\.net\/([^\/]+)/);
     if (m && m[1] && m[1] !== 'directorio' && m[1] !== 'buscar') {
       return `https://cdn.jkdesa.com/assets/images/animes/image/${m[1]}.jpg`;
+    }
+  }
+
+  // Try extracting slug from url or animeUrl if TioAnime
+  if (src.includes('tio') || url.includes('tioanime.com')) {
+    let m = url.match(/(?:tioanime\.com)?\/ver\/(.+)-(\d+)\/?$/);
+    if (m && m[1]) {
+      const slug = m[1].replace(/^\//, '');
+      return `https://tioanime.com/uploads/thumbs/${slug}.jpg`;
+    }
+    m = url.match(/(?:tioanime\.com)?\/anime\/([^\/]+)/);
+    if (m && m[1] && m[1] !== 'directorio' && m[1] !== 'programacion') {
+      return `https://tioanime.com/uploads/thumbs/${m[1]}.jpg`;
     }
   }
 
@@ -98,10 +128,25 @@ export function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+export function formatTime(seconds) {
+  if (isNaN(seconds) || !isFinite(seconds) || seconds === null || seconds === undefined || seconds < 0) return '0:00';
+  const totalSec = Math.floor(seconds);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  const h = Math.floor(m / 60);
+  const remM = m % 60;
+  if (h > 0) {
+    return `${h}:${remM < 10 ? '0' : ''}${remM}:${s < 10 ? '0' : ''}${s}`;
+  }
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
 export function timeAgo(timestamp) {
   if (!timestamp) return '';
+  const ts = typeof timestamp === 'number' ? timestamp : new Date(timestamp).getTime();
+  if (isNaN(ts)) return '';
   const now = Date.now();
-  const diffSec = Math.floor((now - timestamp) / 1000);
+  const diffSec = Math.floor((now - ts) / 1000);
 
   if (diffSec < 60) return 'Hace un momento';
   const diffMin = Math.floor(diffSec / 60);
@@ -136,14 +181,45 @@ export function showToast(message, type = 'info', duration = 3000) {
 
 export function fixEncoding(str) {
   if (!str || typeof str !== 'string') return str;
-  if (/Ã|Â|â|ð|ï¿½/.test(str)) {
-    try {
-      return decodeURIComponent(escape(str));
-    } catch (e) {
-      return str;
-    }
+  let text = str;
+  if (/Ã|Â|â|ð|ï¿½/.test(text)) {
+    // 1. Decode multi-byte UTF-8 sequences mistakenly interpreted as Latin-1 / Windows-1252
+    text = text.replace(/[\xC2-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3}/g, (match) => {
+      try {
+        const bytes = new Uint8Array([...match].map(c => c.charCodeAt(0)));
+        return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      } catch {
+        return match;
+      }
+    });
+
+    // 2. Handle orphaned single-byte mojibake where second byte was stripped
+    text = text
+      .replace(/Ã¡/g, 'á')
+      .replace(/Ã©/g, 'é')
+      .replace(/Ã\xad/g, 'í')
+      .replace(/Ã³/g, 'ó')
+      .replace(/Ãº/g, 'ú')
+      .replace(/Ã±/g, 'ñ')
+      .replace(/Ã\x81/g, 'Á')
+      .replace(/Ã‰/g, 'É')
+      .replace(/Ã\x8d/g, 'Í')
+      .replace(/Ã“/g, 'Ó')
+      .replace(/Ãš/g, 'Ú')
+      .replace(/Ã‘/g, 'Ñ')
+      .replace(/Ã(?=[a-zA-ZáéíóúÁÉÍÓÚ])/g, 'í')
+      .replace(/Â¿/g, '¿')
+      .replace(/Â¡/g, '¡')
+      .replace(/Â/g, '')
+      .replace(/â€”/g, '—')
+      .replace(/â€“/g, '–')
+      .replace(/â€˜/g, "'")
+      .replace(/â€™/g, "'")
+      .replace(/â€œ/g, '"')
+      .replace(/â€/g, '"')
+      .replace(/\uFFFD/g, '');
   }
-  return str;
+  return text;
 }
 
 export function slugifyGenre(genre) {
@@ -167,9 +243,37 @@ export function getRelationBadgeClass(rel) {
   return 'badge-relation-other';
 }
 
+export function safeHttpUrl(url, allowApi = false) {
+  if (!url || typeof url !== 'string') return '#';
+  let trimmed = url.trim();
+  if (allowApi && trimmed.startsWith('/api/')) return trimmed;
+  if (trimmed.startsWith('//')) trimmed = 'https:' + trimmed;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return parsed.toString();
+    }
+  } catch (_) {}
+  return '#';
+}
+
 export function openExternalUrl(url) {
   if (!url || typeof url !== 'string') return;
-  const target = url.trim();
+  let target = url.trim();
+  if (target.startsWith('//')) {
+    target = 'https:' + target;
+  } else if (target.startsWith('/')) {
+    target = 'https://myanimelist.net' + target;
+  }
+  try {
+    const parsed = new URL(target);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return;
+    }
+    target = parsed.toString();
+  } catch (_) {
+    return;
+  }
   if (typeof window !== 'undefined') {
     if (window.electronAPI && typeof window.electronAPI.openExternal === 'function') {
       window.electronAPI.openExternal(target);

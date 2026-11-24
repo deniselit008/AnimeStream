@@ -143,19 +143,19 @@ async function fetchMalRelations(title) {
     }
 
     const best = items[0];
-    const malUrl = best.url;
+    let malUrl = best.url;
     if (!malUrl) {
       cache.set(cacheKey, [], 60 * 60 * 1000);
       return [];
     }
+    if (malUrl.startsWith('/')) {
+      malUrl = `https://myanimelist.net${malUrl}`;
+    }
 
     const pageRes = await httpClient.get(malUrl, { headers: getHeaders('https://myanimelist.net'), timeout: 8000 });
     const $ = cheerio.load(pageRes.data);
-    const relatedDiv = $('div.related-entries');
-    if (relatedDiv.length === 0) {
-      cache.set(cacheKey, [], 60 * 60 * 1000);
-      return [];
-    }
+    const relatedDiv = $('div.related-entries, table.anime_detail_related_anime');
+    if (relatedDiv.length > 0) {
 
     // 1. Prominent visual entry tiles
     relatedDiv.find('div.entry').each((_, el) => {
@@ -192,6 +192,13 @@ async function fetchMalRelations(title) {
 
       if (itemTitle && !seenTitles.has(itemTitle.toLowerCase())) {
         seenTitles.add(itemTitle.toLowerCase());
+        let fullItemUrl = itemUrl;
+        if (fullItemUrl && fullItemUrl.startsWith('/')) {
+          fullItemUrl = `https://myanimelist.net${fullItemUrl}`;
+        } else if (!fullItemUrl && malId) {
+          fullItemUrl = `https://myanimelist.net/anime/${malId}`;
+        }
+
         relations.push({
           title: itemTitle,
           relation: relLabel,
@@ -199,7 +206,7 @@ async function fetchMalRelations(title) {
           type: typeLabel || mediaType,
           image: hdImage,
           mal_id: malId,
-          mal_url: itemUrl
+          mal_url: fullItemUrl
         });
       }
     });
@@ -223,6 +230,12 @@ async function fetchMalRelations(title) {
         seenTitles.add(itemTitle.toLowerCase());
         const idMatch = href.match(/\/anime\/(\d+)/);
         const malId = idMatch ? parseInt(idMatch[1], 10) : null;
+        let fullHref = href;
+        if (fullHref && fullHref.startsWith('/')) {
+          fullHref = `https://myanimelist.net${fullHref}`;
+        } else if (!fullHref && malId) {
+          fullHref = `https://myanimelist.net/anime/${malId}`;
+        }
 
         relations.push({
           title: itemTitle,
@@ -231,7 +244,7 @@ async function fetchMalRelations(title) {
           type: null,
           image: null,
           mal_id: malId,
-          mal_url: href
+          mal_url: fullHref
         });
       });
     });
@@ -252,6 +265,7 @@ async function fetchMalRelations(title) {
           }
         }
       }
+    }
     }
 
     // Sort relations by franchise priority

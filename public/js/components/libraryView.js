@@ -5,7 +5,7 @@
  */
 import { Storage } from '../storage.js?v=5.0';
 import { Api } from '../api.js?v=5.0';
-import { Icons, escapeHtml, showToast, getDefaultPoster, resolveAnimeCover } from '../utils.js?v=5.0';
+import { Icons, escapeHtml, showToast, getDefaultPoster, resolveAnimeCover, fixEncoding } from '../utils.js?v=5.0';
 
 const STATUS_LABELS = {
   all: 'Todos',
@@ -125,6 +125,7 @@ export async function renderLibrary(container, params = new URLSearchParams()) {
 
   // Update tabs, stats, and grid
   function refreshView() {
+    if (!container.isConnected || !container.querySelector('#count-all')) return;
     const allItems = Storage.getLibrary();
     const stats = Storage.getLibraryStats();
 
@@ -185,15 +186,17 @@ export async function renderLibrary(container, params = new URLSearchParams()) {
     }
 
     // Pagination slice
-    const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+    const totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
     if (page > totalPages) page = totalPages;
+    if (page < 1) page = 1;
+    currentPage = page;
     const startIndex = (page - 1) * ITEMS_PER_PAGE;
     const pageItems = items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
     grid.innerHTML = pageItems.map(item => {
       const statusColor = STATUS_COLORS[item.status] || '#6366f1';
       const defaultPoster = getDefaultPoster(item.title, 'MyAnimeList');
-      const coverUrl = resolveAnimeCover({ image: item.image, title: item.title });
+      const coverUrl = resolveAnimeCover({ image: item.image, title: item.title, animeUrl: item.animeUrl });
 
       return `
         <div class="anime-card lib-card" data-id="${escapeHtml(String(item.id))}">
@@ -284,6 +287,7 @@ export async function renderLibrary(container, params = new URLSearchParams()) {
     grid.querySelectorAll('.btn-add-ep').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         const id = btn.dataset.id;
         const it = items.find(i => String(i.id) === id);
         if (it) {
@@ -293,6 +297,9 @@ export async function renderLibrary(container, params = new URLSearchParams()) {
             if (it.totalEpisodes > 0 && it.watchedEpisodes === it.totalEpisodes) {
               it.status = 'completed';
               it.statusLabel = 'Visto';
+            } else if (it.status === 'plan_to_watch' || it.status === 'on_hold') {
+              it.status = 'watching';
+              it.statusLabel = 'Viendo';
             }
             Storage.saveLibraryItem(it);
             refreshView();
@@ -304,10 +311,15 @@ export async function renderLibrary(container, params = new URLSearchParams()) {
     grid.querySelectorAll('.btn-sub-ep').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         const id = btn.dataset.id;
         const it = items.find(i => String(i.id) === id);
         if (it && it.watchedEpisodes > 0) {
           it.watchedEpisodes--;
+          if (it.status === 'completed' && it.totalEpisodes > 0 && it.watchedEpisodes < it.totalEpisodes) {
+            it.status = 'watching';
+            it.statusLabel = 'Viendo';
+          }
           Storage.saveLibraryItem(it);
           refreshView();
         }
@@ -321,6 +333,9 @@ export async function renderLibrary(container, params = new URLSearchParams()) {
         if (it) {
           it.status = sel.value;
           it.statusLabel = STATUS_LABELS[sel.value] || 'En lista';
+          if (it.status === 'completed' && it.totalEpisodes > 0 && it.watchedEpisodes < it.totalEpisodes) {
+            it.watchedEpisodes = it.totalEpisodes;
+          }
           Storage.saveLibraryItem(it);
           refreshView();
           showToast(`Estado cambiado a "${it.statusLabel}"`, 'success');
@@ -434,7 +449,7 @@ export async function renderLibrary(container, params = new URLSearchParams()) {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
     showToast(`Exportados ${data.length} animes en archivo JSON`, 'success');
   });
 
@@ -445,12 +460,15 @@ export async function renderLibrary(container, params = new URLSearchParams()) {
   async function openImportModal() {
     const modalMount = container.querySelector('#import-modal-mount');
     
-    // Check for auto-detected file in local Downloads
+    // Check for auto-detected file in local Downloads (PC/Server mode only)
     let localDetected = null;
     try {
-      const checkRes = await Api.detectLocalMalFile();
-      if (checkRes && checkRes.found) {
-        localDetected = checkRes;
+      const isLocalAndroid = window.location.host.includes('appassets.androidplatform.net') || window.location.protocol === 'file:' || Boolean(window.AndroidBridge && !localStorage.getItem('animestream_server_url'));
+      if (!isLocalAndroid) {
+        const checkRes = await Api.detectLocalMalFile();
+        if (checkRes && checkRes.found) {
+          localDetected = checkRes;
+        }
       }
     } catch (e) {
       // Local check optional
@@ -536,7 +554,17 @@ export async function renderLibrary(container, params = new URLSearchParams()) {
     const statusBox = modalMount.querySelector('#import-status-box');
     const statusText = modalMount.querySelector('#import-status-text');
 
+    const onEsc = (e) => {
+      if (!document.body.contains(backdrop)) {
+        window.removeEventListener('keydown', onEsc);
+        return;
+      }
+      if (e.key === 'Escape') closeModal();
+    };
+    window.addEventListener('keydown', onEsc);
+
     function closeModal() {
+      window.removeEventListener('keydown', onEsc);
       modalMount.innerHTML = '';
     }
 
@@ -596,7 +624,8 @@ export async function renderLibrary(container, params = new URLSearchParams()) {
         // 1. Try in-browser native decompression and XML parsing (ultra-fast, zero-network)
         try {
           let xmlText = '';
-          if (file.name.endsWith('.gz') || file.type.includes('gzip')) {
+          const lowerName = (file.name || '').toLowerCase();
+          if (lowerName.endsWith('.gz') || (file.type && file.type.includes('gzip'))) {
             if (typeof DecompressionStream !== 'undefined') {
               const ds = new DecompressionStream('gzip');
               const decompressed = file.stream().pipeThrough(ds);
@@ -644,11 +673,11 @@ export async function renderLibrary(container, params = new URLSearchParams()) {
 
               animes.push({
                 id: (idNode && idNode.textContent) ? idNode.textContent.trim() : '',
-                title,
+                title: fixEncoding(title),
                 type: (typeNode && typeNode.textContent) ? typeNode.textContent.trim() : 'TV',
-                totalEpisodes: parseInt((epNode && epNode.textContent) || '0', 10) || 0,
-                watchedEpisodes: parseInt((watchedNode && watchedNode.textContent) || '0', 10) || 0,
-                score: parseInt((scoreNode && scoreNode.textContent) || '0', 10) || 0,
+                totalEpisodes: Math.max(0, parseInt((epNode && epNode.textContent) || '0', 10) || 0),
+                watchedEpisodes: Math.max(0, parseInt((watchedNode && watchedNode.textContent) || '0', 10) || 0),
+                score: Math.min(10, Math.max(0, parseInt((scoreNode && scoreNode.textContent) || '0', 10) || 0)),
                 status: map.status,
                 statusLabel: map.label,
                 updatedAt: Date.now()
@@ -665,6 +694,10 @@ export async function renderLibrary(container, params = new URLSearchParams()) {
 
         // 2. Fallback to backend parser if client-side parse was skipped
         if (!parsed) {
+          const isLocalAndroid = window.location.host.includes('appassets.androidplatform.net') || window.location.protocol === 'file:' || Boolean(window.AndroidBridge && !localStorage.getItem('animestream_server_url'));
+          if (isLocalAndroid) {
+            throw new Error('No se pudo leer este archivo en el móvil. Prueba con el archivo .xml descomprimido o conecta tu PC.');
+          }
           parsed = await Api.parseMalUpload(file);
         }
 
@@ -678,7 +711,7 @@ export async function renderLibrary(container, params = new URLSearchParams()) {
         showToast(`¡Éxito! Se importaron ${count} animes de ${parsed.username || 'MyAnimeList'}.`, 'success', 5000);
       } catch (err) {
         statusBox.style.display = 'none';
-        alert(`Error al procesar el archivo: ${err.message}`);
+        showToast(`Error al procesar el archivo: ${err.message}`, 'error', 4500);
       }
     }
   }

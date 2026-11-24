@@ -53,7 +53,7 @@
           <div class="logo-icon-small">
             <svg viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>
           </div>
-          <span>Anime<span class="text-gradient">Stream</span> <small class="version-tag">v1.2.4 Multiplataforma</small></span>
+          <span>Anime<span class="text-gradient">Stream</span> <small class="version-tag">v1.3.0 Multiplataforma</small></span>
         </div>
         <p class="footer-desc">
           Agregador y reproductor de anime unificado en tiempo real. Fuentes indexadas concurrentemente de 
@@ -75,12 +75,25 @@
       console.error('[AnimeStream Error]', e);
       var mount = document.getElementById('main-content-mount');
       if (mount && mount.querySelector('.spinner')) {
-        mount.innerHTML = '<div class="error-container">' +
-          '<div class="error-icon">⚠️</div>' +
-          '<h3>Error al inicializar la aplicación</h3>' +
-          '<p>' + (e.message || 'Error cargando módulos de la aplicación.') + '</p>' +
-          '<button onclick="window.location.reload(true)" class="btn btn-primary">Reintentar carga</button>' +
-          '</div>';
+        var box = document.createElement('div');
+        box.className = 'error-container';
+        var icon = document.createElement('div');
+        icon.className = 'error-icon';
+        icon.textContent = '⚠️';
+        var h3 = document.createElement('h3');
+        h3.textContent = 'Error al inicializar la aplicación';
+        var p = document.createElement('p');
+        p.textContent = (e && e.message) ? String(e.message) : 'Error cargando módulos de la aplicación.';
+        var btn = document.createElement('button');
+        btn.className = 'btn btn-primary';
+        btn.textContent = 'Reintentar carga';
+        btn.onclick = function() { window.location.reload(true); };
+        box.appendChild(icon);
+        box.appendChild(h3);
+        box.appendChild(p);
+        box.appendChild(btn);
+        mount.innerHTML = '';
+        mount.appendChild(box);
       }
     });
   </script>

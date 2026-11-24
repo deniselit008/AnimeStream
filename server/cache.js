@@ -4,8 +4,9 @@
 const { CACHE_TTL_MS } = require('./config');
 
 class MemoryCache {
-  constructor() {
+  constructor(maxSize = 1000) {
     this.store = new Map();
+    this.maxSize = maxSize;
     this.hits = 0;
     this.misses = 0;
 
@@ -24,12 +25,26 @@ class MemoryCache {
       this.misses++;
       return null;
     }
+    // Refresh position to maintain LRU (least recently used) order
+    this.store.delete(key);
+    this.store.set(key, item);
     this.hits++;
     return item.value;
   }
 
   set(key, value, ttlMs = CACHE_TTL_MS) {
     if (value === undefined || value === null) return;
+
+    // Evict oldest entry if capacity reached
+    if (this.store.size >= this.maxSize && !this.store.has(key)) {
+      const oldestKey = this.store.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.store.delete(oldestKey);
+      }
+    }
+
+    // Delete first so re-insertion places it at the end of the Map
+    this.store.delete(key);
     this.store.set(key, {
       value,
       expiresAt: Date.now() + ttlMs,

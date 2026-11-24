@@ -40,7 +40,8 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
   // 3. Inject <base href="..."> for relative resources
   if (baseHref) {
     cleaned = cleaned.replace(/<base[^>]*>/gi, '');
-    const baseTag = `<base href="${baseHref}">`;
+    const safeHref = String(baseHref).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const baseTag = `<base href="${safeHref}">`;
     if (/<head>/i.test(cleaned)) {
       cleaned = cleaned.replace(/<head>/i, `<head>\n${baseTag}`);
     } else {
@@ -49,11 +50,12 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
   }
 
   if (active) {
-    // 3. Remove script and iframe tags loading known ad network domains
+    // 3. Remove script and iframe tags loading known ad network domains (bounded attribute match so < inside JS is never eaten)
     for (const domain of AD_DOMAINS) {
-      const scriptRegex = new RegExp(`<script[^>]*src=['"][^'"]*${domain}[^'"]*['"][^>]*>.*?</script>`, 'gis');
-      const scriptSelfClose = new RegExp(`<script[^>]*src=['"][^'"]*${domain}[^'"]*['"][^>]*/>`, 'gi');
-      const iframeRegex = new RegExp(`<iframe[^>]*src=['"][^'"]*${domain}[^'"]*['"][^>]*>.*?</iframe>`, 'gis');
+      const escapedDomain = domain.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const scriptRegex = new RegExp(`<script(?:\\s+[^<>]*)?\\s+src=['"][^'"]*${escapedDomain}[^'"]*['"][^<>]*>[\\s\\S]*?</script>`, 'gi');
+      const scriptSelfClose = new RegExp(`<script(?:\\s+[^<>]*)?\\s+src=['"][^'"]*${escapedDomain}[^'"]*['"][^<>]*/>`, 'gi');
+      const iframeRegex = new RegExp(`<iframe(?:\\s+[^<>]*)?\\s+src=['"][^'"]*${escapedDomain}[^'"]*['"][^<>]*>[\\s\\S]*?</iframe>`, 'gi');
       cleaned = cleaned.replace(scriptRegex, '').replace(scriptSelfClose, '').replace(iframeRegex, '');
     }
 
@@ -77,6 +79,16 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
     <script>
     (function() {
       try {
+        // Capture reference to genuine parent window before anti-framebuster sandboxing
+        var realParent = null;
+        try {
+          if (window.parent && window.parent !== window) {
+            realParent = window.parent;
+          } else if (window.opener && window.opener !== window) {
+            realParent = window.opener;
+          }
+        } catch (_) {}
+
         // 🛡️ ANTI-FRAMEBUSTER SHIELD: Strictly prevent proxied players from hijacking window.top or parent
         try {
           Object.defineProperty(window, 'top', {
@@ -110,8 +122,8 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
 
         function notifyAdBlocked(reason) {
           try {
-            if (window.top && window.top !== window) {
-              window.top.postMessage({ type: 'ANIMESTREAM_ADBLOCK_HIT', reason: reason }, '*');
+            if (realParent) {
+              realParent.postMessage({ type: 'ANIMESTREAM_ADBLOCK_HIT', reason: reason }, '*');
             }
           } catch (e) {}
         }
@@ -179,6 +191,125 @@ function sanitizePlayerHtml(html, baseHref = null, active = true) {
           purgeClickjacking();
         }
         setInterval(purgeClickjacking, 1200);
+
+        // Video Remote Control & Time Tracking Bridge
+        function getActiveVideo() {
+          return document.querySelector('video');
+        }
+
+        var pendingCmds = [];
+        function applyPendingCmds(v) {
+          if (!v || pendingCmds.length === 0) return;
+          while (pendingCmds.length > 0) {
+            var d = pendingCmds.shift();
+            try {
+              if (d.cmd === 'seek_to') {
+                var target = (typeof d.seconds === 'number' && !isNaN(d.seconds) && d.seconds >= 0) ? d.seconds : 0;
+                if (v.readyState >= 1) {
+                  var dur = (typeof v.duration === 'number' && !isNaN(v.duration) && v.duration > 0) ? v.duration : 999999;
+                  v.currentTime = Math.max(0, Math.min(dur, target));
+                } else {
+                  v.addEventListener('loadedmetadata', function() {
+                    var dur = (typeof v.duration === 'number' && !isNaN(v.duration) && v.duration > 0) ? v.duration : 999999;
+                    v.currentTime = Math.max(0, Math.min(dur, target));
+                  }, { once: true });
+                }
+              } else if (d.cmd === 'set_rate') {
+                var r = parseFloat(d.rate);
+                v.playbackRate = (!isNaN(r) && r > 0) ? r : 1.0;
+              }
+            } catch (_) {}
+          }
+        }
+
+        window.addEventListener('message', function(e) {
+          if (!e.data || e.data.type !== 'PLAYER_CMD') return;
+          var v = getActiveVideo();
+          if (!v) {
+            if (e.data.cmd === 'seek_to' || e.data.cmd === 'set_rate') {
+              pendingCmds.push(e.data);
+              if (pendingCmds.length > 5) pendingCmds.shift();
+            }
+            return;
+          }
+          var d = e.data;
+          try {
+            var dur = (typeof v.duration === 'number' && !isNaN(v.duration) && v.duration > 0) ? v.duration : 999999;
+            var cur = (typeof v.currentTime === 'number' && !isNaN(v.currentTime) && v.currentTime >= 0) ? v.currentTime : 0;
+            if (d.cmd === 'seek_relative') {
+              var s = d.seconds !== undefined ? d.seconds : (d.delta !== undefined ? d.delta : 10);
+              var numS = (typeof s === 'number' && !isNaN(s)) ? s : 10;
+              v.currentTime = Math.max(0, Math.min(dur, cur + numS));
+            } else if (d.cmd === 'seek_forward') {
+              v.currentTime = Math.max(0, Math.min(dur, cur + 10));
+            } else if (d.cmd === 'seek_backward') {
+              v.currentTime = Math.max(0, Math.min(dur, cur - 10));
+            } else if (d.cmd === 'seek_to') {
+              var target = (typeof d.seconds === 'number' && !isNaN(d.seconds) && d.seconds >= 0) ? d.seconds : 0;
+              if (v.readyState >= 1) {
+                v.currentTime = Math.max(0, Math.min(dur, target));
+              } else {
+                v.addEventListener('loadedmetadata', function() {
+                  var dur = (typeof v.duration === 'number' && !isNaN(v.duration) && v.duration > 0) ? v.duration : 999999;
+                  v.currentTime = Math.max(0, Math.min(dur, target));
+                }, { once: true });
+              }
+            } else if (d.cmd === 'set_rate') {
+              var r = parseFloat(d.rate);
+              v.playbackRate = (!isNaN(r) && r > 0) ? r : 1.0;
+            } else if (d.cmd === 'play') {
+              if (v.paused) v.play().catch(function(){});
+            } else if (d.cmd === 'pause') {
+              if (!v.paused) v.pause();
+            } else if (d.cmd === 'toggle_play') {
+              if (v.paused) v.play().catch(function(){}); else v.pause();
+            } else if (d.cmd === 'toggle_mute') {
+              v.muted = !v.muted;
+            } else if (d.cmd === 'volume_up') {
+              var curVol = (!isNaN(v.volume)) ? v.volume : 1;
+              v.volume = Math.min(1, Math.round((curVol + 0.05) * 100) / 100);
+            } else if (d.cmd === 'volume_down') {
+              var curVol = (!isNaN(v.volume)) ? v.volume : 1;
+              v.volume = Math.max(0, Math.round((curVol - 0.05) * 100) / 100);
+            }
+          } catch (_) {}
+        });
+
+        function hookVideoBridge() {
+          try {
+            var v = getActiveVideo();
+            if (!v || v._asBridgeHooked) return;
+            v._asBridgeHooked = true;
+            applyPendingCmds(v);
+            v.addEventListener('timeupdate', function() {
+              try {
+                if (realParent) {
+                  realParent.postMessage({
+                    type: 'ANIMESTREAM_TIME_UPDATE',
+                    currentTime: v.currentTime,
+                    duration: v.duration || 0,
+                    playbackRate: v.playbackRate || 1.0
+                  }, '*');
+                }
+              } catch (_) {}
+            });
+            v.addEventListener('pause', function() {
+              try {
+                if (realParent) {
+                  realParent.postMessage({ type: 'ANIMESTREAM_PAUSE' }, '*');
+                }
+              } catch (_) {}
+            });
+            v.addEventListener('ended', function() {
+              try {
+                if (realParent) {
+                  realParent.postMessage({ type: 'ANIMESTREAM_ENDED' }, '*');
+                }
+              } catch (_) {}
+            });
+          } catch (_) {}
+        }
+        setInterval(hookVideoBridge, 1000);
       } catch(e) {}
     })();
     </script>`;

@@ -22,15 +22,22 @@ const STATUS_MAPPING = {
 };
 
 function parseMalXml(xmlContent) {
+  if (!xmlContent || typeof xmlContent !== 'string') {
+    throw new Error('Contenido XML vacío o no válido');
+  }
+
   const parser = new XMLParser({
     ignoreAttributes: false,
     parseTagValue: false,
     trimValues: true
   });
   const parsed = parser.parse(xmlContent);
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('No se pudo estructurar el contenido XML');
+  }
 
   const myanimelist = parsed.myanimelist || parsed;
-  const userName = myanimelist.myinfo?.user_name || 'Usuario';
+  const userName = (myanimelist.myinfo && myanimelist.myinfo.user_name) || 'Usuario';
 
   let rawAnimes = myanimelist.anime || [];
   if (!Array.isArray(rawAnimes)) {
@@ -47,8 +54,11 @@ function parseMalXml(xmlContent) {
   };
 
   for (const a of rawAnimes) {
-    if (!a) continue;
-    const title = (a.series_title || '').trim();
+    if (!a || typeof a !== 'object') continue;
+    const rawTitleVal = (typeof a.series_title === 'string')
+      ? a.series_title
+      : (a.series_title !== undefined && a.series_title !== null && typeof a.series_title !== 'object' ? String(a.series_title) : '');
+    const title = rawTitleVal.trim();
     if (!title) continue;
 
     const rawStatus = String(a.my_status || 'Plan to Watch').trim();
@@ -58,9 +68,9 @@ function parseMalXml(xmlContent) {
       stats[statusKey]++;
     }
 
-    const totalEps = parseInt(a.series_episodes, 10) || 0;
-    const watchedEps = parseInt(a.my_watched_episodes, 10) || 0;
-    const score = parseInt(a.my_score, 10) || 0;
+    const totalEps = Math.max(0, parseInt(a.series_episodes, 10) || 0);
+    const watchedEps = Math.max(0, parseInt(a.my_watched_episodes, 10) || 0);
+    const score = Math.min(10, Math.max(0, parseInt(a.my_score, 10) || 0));
     const stype = (a.series_type || 'TV').trim();
     const aid = String(a.series_animedb_id || '').trim();
 
@@ -86,8 +96,16 @@ function parseMalXml(xmlContent) {
 }
 
 function decompressBufferIfNeeded(buffer, filename = '') {
-  if (filename.toLowerCase().endsWith('.gz') || (buffer[0] === 0x1f && buffer[1] === 0x8b)) {
-    return zlib.gunzipSync(buffer).toString('utf-8');
+  if (!buffer) return '';
+  if (!Buffer.isBuffer(buffer)) {
+    return typeof buffer === 'string' ? buffer : String(buffer);
+  }
+  try {
+    if (filename.toLowerCase().endsWith('.gz') || (buffer.length >= 2 && buffer[0] === 0x1f && buffer[1] === 0x8b)) {
+      return zlib.gunzipSync(buffer).toString('utf-8');
+    }
+  } catch (_) {
+    return buffer.toString('utf-8');
   }
   return buffer.toString('utf-8');
 }

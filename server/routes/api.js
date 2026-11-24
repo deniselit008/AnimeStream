@@ -4,6 +4,7 @@
 const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
+const path = require('path');
 const { cache } = require('../cache');
 const { httpClient, getHeaders, fixEncoding, REQUEST_TIMEOUT_MS } = require('../config');
 const {
@@ -17,7 +18,11 @@ const {
   getHlsPlayerHtml,
   handleHlsM3u8,
   handleHlsSegment,
-  handleImageProxy
+  handleImageProxy,
+  isPrivateOrBlockedHost,
+  assertSafeRedirect,
+  proxyHttpAgent,
+  proxyHttpsAgent
 } = require('../services/streamProxy');
 const { sanitizePlayerHtml } = require('../services/playerSanitizer');
 const {
@@ -28,6 +33,15 @@ const {
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
+
+function escapeAttr(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
 
 // ==============================================================================
 // 1. LATEST EPISODES
@@ -284,6 +298,9 @@ router.get('/watch', async (req, res) => {
 // HLS Embebbed Player HTML
 router.get('/hls/player/:hash_id', (req, res) => {
   const hashId = (req.params.hash_id || '').replace(/[^a-fA-F0-9]/g, '');
+  if (!hashId) {
+    return res.status(400).send('Hash HLS inválido');
+  }
   const html = getHlsPlayerHtml(hashId);
   res.set({
     'Content-Type': 'text/html; charset=utf-8',
@@ -312,34 +329,35 @@ router.get('/proxy-player', async (req, res) => {
     return res.status(400).send('URL requerida');
   }
 
-  if (targetUrl.startsWith('/')) {
+  targetUrl = targetUrl.trim();
+  if (targetUrl.startsWith('//')) {
+    targetUrl = 'https:' + targetUrl;
+  } else if (/^\/api\/hls\/player\/[a-fA-F0-9]+\/?$/.test(targetUrl)) {
     return res.redirect(307, targetUrl);
+  } else if (targetUrl.startsWith('/')) {
+    return res.status(400).send('Ruta relativa no permitida');
   }
 
   if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
     targetUrl = 'https://' + targetUrl;
   }
 
+  // SSRF Protection: Reject loopback, private networks, and metadata endpoints
+  let parsedTarget;
   try {
-    const headers = getHeaders(ref);
-    if (!ref) {
-      try {
-        const parsed = new URL(targetUrl);
-        headers['Referer'] = `${parsed.protocol}//${parsed.host}/`;
-      } catch (_) {}
-    }
+    parsedTarget = new URL(targetUrl);
+  } catch (_) {
+    return res.status(400).send('URL inválida');
+  }
 
-    const response = await httpClient.get(targetUrl, {
-      headers,
-      timeout: REQUEST_TIMEOUT_MS,
-      responseType: 'text'
-    });
+  const hostname = parsedTarget.hostname.toLowerCase();
+  if (isPrivateOrBlockedHost(hostname)) {
+    return res.status(403).send('Acceso denegado a hosts locales o privados');
+  }
 
-    const contentType = (response.headers['content-type'] || '').toLowerCase();
-
-    // Direct video stream (.mp4, video/*) -> HTML5 player
-    if (contentType.includes('video/') || targetUrl.toLowerCase().endsWith('.mp4') || targetUrl.toLowerCase().endsWith('.webm')) {
-      const videoHtml = `<!DOCTYPE html>
+  try {
+    const pathnameLower = parsedTarget.pathname.toLowerCase();
+    const buildDirectVideoHtml = (videoSrc) => `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -351,8 +369,9 @@ router.get('/proxy-player', async (req, res) => {
   </style>
 </head>
 <body>
-  <video src="${targetUrl}" controls autoplay playsinline></video>
+  <video id="video" src="${escapeAttr(videoSrc)}" controls autoplay playsinline></video>
   <script>
+    const video = document.getElementById('video');
     let idleT = null;
     function resetC() {
       document.body.classList.remove('hide-cursor');
@@ -363,15 +382,135 @@ router.get('/proxy-player', async (req, res) => {
     window.addEventListener('mousedown', resetC);
     window.addEventListener('touchstart', resetC, { passive: true });
     resetC();
+
+    window.seekRelative = function(delta) {
+      if (video) {
+        const dur = (isFinite(video.duration) && video.duration > 0) ? video.duration : 999999;
+        const cur = (isFinite(video.currentTime) && video.currentTime >= 0) ? video.currentTime : 0;
+        const d = isFinite(delta) ? delta : 10;
+        video.currentTime = Math.max(0, Math.min(dur, cur + d));
+      }
+    };
+    window.seekTo = function(seconds) {
+      if (video) {
+        const s = (isFinite(seconds) && seconds >= 0) ? seconds : 0;
+        if (video.readyState >= 1) {
+          const dur = (isFinite(video.duration) && video.duration > 0) ? video.duration : 999999;
+          video.currentTime = Math.max(0, Math.min(dur, s));
+        } else {
+          video.addEventListener('loadedmetadata', () => {
+            const dur = (isFinite(video.duration) && video.duration > 0) ? video.duration : 999999;
+            video.currentTime = Math.max(0, Math.min(dur, s));
+          }, { once: true });
+        }
+      }
+    };
+    window.setPlaybackRate = function(rate) {
+      if (video) {
+        const r = parseFloat(rate);
+        video.playbackRate = (isFinite(r) && r > 0) ? r : 1.0;
+      }
+    };
+    window.changeVolume = function(delta) {
+      if (video) {
+        const curVol = isFinite(video.volume) ? video.volume : 1;
+        video.volume = Math.max(0, Math.min(1, Math.round((curVol + delta) * 100) / 100));
+      }
+    };
+    window.togglePlay = function() {
+      if (!video) return;
+      if (video.paused) video.play().catch(() => {}); else video.pause();
+    };
+    window.toggleMute = function() {
+      if (!video) return;
+      video.muted = !video.muted;
+    };
+
+    window.addEventListener('message', (e) => {
+      if (!e.data || e.data.type !== 'PLAYER_CMD') return;
+      const d = e.data;
+      if (d.cmd === 'seek_relative') window.seekRelative(d.seconds !== undefined ? d.seconds : (d.delta !== undefined ? d.delta : 10));
+      else if (d.cmd === 'seek_forward') window.seekRelative(10);
+      else if (d.cmd === 'seek_backward') window.seekRelative(-10);
+      else if (d.cmd === 'seek_to') window.seekTo(d.seconds);
+      else if (d.cmd === 'set_rate') window.setPlaybackRate(d.rate);
+      else if (d.cmd === 'play') { if (video && video.paused) video.play().catch(() => {}); }
+      else if (d.cmd === 'pause') { if (video && !video.paused) video.pause(); }
+      else if (d.cmd === 'toggle_play') window.togglePlay();
+      else if (d.cmd === 'toggle_mute') window.toggleMute();
+      else if (d.cmd === 'volume_up') window.changeVolume(0.05);
+      else if (d.cmd === 'volume_down') window.changeVolume(-0.05);
+    });
+
+    video.addEventListener('timeupdate', () => {
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({
+            type: 'ANIMESTREAM_TIME_UPDATE',
+            currentTime: video.currentTime,
+            duration: video.duration || 0,
+            playbackRate: video.playbackRate || 1.0
+          }, '*');
+        }
+      } catch (_) {}
+    });
+
+    video.addEventListener('pause', () => {
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'ANIMESTREAM_PAUSE' }, '*');
+        }
+      } catch (_) {}
+    });
+
+    video.addEventListener('ended', () => {
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'ANIMESTREAM_ENDED' }, '*');
+        }
+      } catch (_) {}
+    });
   </script>
 </body>
 </html>`;
+
+    // Direct video URLs (.mp4/.webm/.m4v, including signed query strings): avoid buffering huge binary video in RAM
+    if (pathnameLower.endsWith('.mp4') || pathnameLower.endsWith('.webm') || pathnameLower.endsWith('.m4v')) {
       res.set({
         'Content-Type': 'text/html; charset=utf-8',
         'X-Frame-Options': 'ALLOWALL',
         'Access-Control-Allow-Origin': '*'
       });
-      return res.send(videoHtml);
+      return res.send(buildDirectVideoHtml(targetUrl));
+    }
+
+    const headers = getHeaders(ref);
+    if (!ref) {
+      try {
+        headers['Referer'] = `${parsedTarget.protocol}//${parsedTarget.host}/`;
+      } catch (_) {}
+    }
+
+    const response = await httpClient.get(targetUrl, {
+      headers,
+      timeout: REQUEST_TIMEOUT_MS,
+      responseType: 'text',
+      maxContentLength: 5 * 1024 * 1024,
+      beforeRedirect: assertSafeRedirect,
+      httpAgent: proxyHttpAgent,
+      httpsAgent: proxyHttpsAgent
+    });
+
+    const contentType = (response.headers['content-type'] || '').toLowerCase();
+
+    // Direct video stream reported by Content-Type -> HTML5 player
+    if (contentType.includes('video/')) {
+      res.set({
+        'Content-Type': 'text/html; charset=utf-8',
+        'X-Frame-Options': 'ALLOWALL',
+        'Access-Control-Allow-Origin': '*'
+      });
+      return res.send(buildDirectVideoHtml(targetUrl));
     }
 
     // Calculate base_href
@@ -383,7 +522,8 @@ router.get('/proxy-player', async (req, res) => {
       baseHref = `${u.protocol}//${u.host}${pathParts.join('/')}/`;
     } catch (_) {}
 
-    const cleanHtml = sanitizePlayerHtml(response.data, baseHref, adblock);
+    const rawBody = typeof response.data === 'string' ? response.data : JSON.stringify(response.data ?? '');
+    const cleanHtml = sanitizePlayerHtml(rawBody, baseHref, adblock);
 
     res.set({
       'Content-Type': 'text/html; charset=utf-8',
@@ -397,9 +537,9 @@ router.get('/proxy-player', async (req, res) => {
       <div style="font-family: sans-serif; background: #07090e; color: #f8fafc; padding: 30px; text-align: center; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box;">
         <div style="font-size: 2.5rem; margin-bottom: 12px;">⚠️</div>
         <h3 style="margin: 0 0 10px; font-size: 1.2rem; color: #ef4444;">No se pudo cargar el reproductor remoto</h3>
-        <p style="margin: 0 0 18px; font-size: 0.9rem; color: #94a3b8; max-width: 480px;">${err.message}</p>
+        <p style="margin: 0 0 18px; font-size: 0.9rem; color: #94a3b8; max-width: 480px;">${escapeAttr(err.message)}</p>
         <div>
-          <a href="${targetUrl}" target="_blank" rel="noopener noreferrer" style="background: #ff6b00; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 600;">Abrir en pestaña externa</a>
+          <a href="${escapeAttr(targetUrl)}" target="_blank" rel="noopener noreferrer" style="background: #ff6b00; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 600;">Abrir en pestaña externa</a>
         </div>
       </div>
     `);

@@ -80,11 +80,11 @@ async function createWindow(serverUrl) {
     {
       label: 'AnimeStream',
       submenu: [
-        { label: 'Recargar', accelerator: 'CmdOrCtrl+R', click: () => mainWindow.reload() },
-        { label: 'Forzar recarga', accelerator: 'CmdOrCtrl+Shift+R', click: () => mainWindow.webContents.reloadIgnoringCache() },
+        { label: 'Recargar', accelerator: 'CmdOrCtrl+R', click: () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.reload(); } },
+        { label: 'Forzar recarga', accelerator: 'CmdOrCtrl+Shift+R', click: () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.reloadIgnoringCache(); } },
         { type: 'separator' },
-        { label: 'Pantalla completa', accelerator: 'F11', click: () => mainWindow.setFullScreen(!mainWindow.isFullScreen()) },
-        { label: 'Herramientas de desarrollador', accelerator: 'F12', click: () => mainWindow.webContents.toggleDevTools() },
+        { label: 'Pantalla completa', accelerator: 'F11', click: () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setFullScreen(!mainWindow.isFullScreen()); } },
+        { label: 'Herramientas de desarrollador', accelerator: 'F12', click: () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.toggleDevTools(); } },
         { type: 'separator' },
         { label: 'Salir', accelerator: 'CmdOrCtrl+Q', click: () => app.quit() }
       ]
@@ -92,11 +92,11 @@ async function createWindow(serverUrl) {
     {
       label: 'Navegación',
       submenu: [
-        { label: 'Inicio', click: () => mainWindow.loadURL(`${serverUrl}/#/`) },
-        { label: 'Directorio', click: () => mainWindow.loadURL(`${serverUrl}/#/directory`) },
-        { label: 'Mi Lista', click: () => mainWindow.loadURL(`${serverUrl}/#/library`) },
-        { label: 'Favoritos', click: () => mainWindow.loadURL(`${serverUrl}/#/favorites`) },
-        { label: 'Historial', click: () => mainWindow.loadURL(`${serverUrl}/#/history`) }
+        { label: 'Inicio', click: () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(`${serverUrl}/#/`); } },
+        { label: 'Directorio', click: () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(`${serverUrl}/#/directory`); } },
+        { label: 'Mi Lista', click: () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(`${serverUrl}/#/library`); } },
+        { label: 'Favoritos', click: () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(`${serverUrl}/#/favorites`); } },
+        { label: 'Historial', click: () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(`${serverUrl}/#/history`); } }
       ]
     }
   ];
@@ -134,10 +134,12 @@ async function createWindow(serverUrl) {
     }
     try {
       const parsed = new URL(targetUrl);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+      if (parsed.username || parsed.password) return false;
       const host = parsed.hostname.toLowerCase();
       return ALLOWED_EXTERNAL_DOMAINS.some(d => host === d || host.endsWith('.' + d));
     } catch (_) {
-      return ALLOWED_EXTERNAL_DOMAINS.some(d => lower.includes(d));
+      return false;
     }
   }
 
@@ -164,8 +166,19 @@ async function createWindow(serverUrl) {
     }
 
     // Keep navigation strictly within local app root origin and prevent proxy-player from hijacking top window
-    const isLocalApp = url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:');
-    if (!isLocalApp || url.includes('/proxy-player')) {
+    let isLocalApp = false;
+    try {
+      const parsedNav = new URL(url);
+      const navHost = parsedNav.hostname.toLowerCase();
+      isLocalApp = (parsedNav.protocol === 'http:' || parsedNav.protocol === 'https:') &&
+                   !parsedNav.username &&
+                   !parsedNav.password &&
+                   (navHost === 'localhost' || navHost === '127.0.0.1') &&
+                   !parsedNav.pathname.includes('/proxy-player');
+    } catch (_) {
+      isLocalApp = false;
+    }
+    if (!isLocalApp) {
       event.preventDefault();
       logDebug(`[AdBlock Native] Bloqueada navegación no autorizada de top window: ${url}`);
     }
@@ -260,10 +273,14 @@ async function createWindow(serverUrl) {
   });
 
   mainWindow.on('maximize', () => {
-    mainWindow.webContents.send('maximize-change', true);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('maximize-change', true);
+    }
   });
   mainWindow.on('unmaximize', () => {
-    mainWindow.webContents.send('maximize-change', false);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('maximize-change', false);
+    }
   });
 
   mainWindow.on('closed', () => {
@@ -314,7 +331,18 @@ ipcMain.on('adblock-toggle', (_, enabled) => {
 
 ipcMain.on('open-external', (_, url) => {
   if (url && typeof url === 'string') {
-    shell.openExternal(url);
+    let trimmed = url.trim();
+    if (trimmed.startsWith('//')) {
+      trimmed = 'https:' + trimmed;
+    } else if (trimmed.startsWith('/')) {
+      trimmed = 'https://myanimelist.net' + trimmed;
+    }
+    try {
+      const parsed = new URL(trimmed);
+      if ((parsed.protocol === 'http:' || parsed.protocol === 'https:') && !parsed.username && !parsed.password) {
+        shell.openExternal(parsed.toString());
+      }
+    } catch (_) {}
   }
 });
 

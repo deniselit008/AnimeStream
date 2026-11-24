@@ -2,7 +2,7 @@
  * Watch History View Component
  */
 import { Storage } from '../storage.js?v=5.0';
-import { Icons, escapeHtml, timeAgo, showToast, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster } from '../utils.js?v=5.0';
+import { Icons, escapeHtml, timeAgo, showToast, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster, formatTime } from '../utils.js?v=5.0';
 
 export function renderHistory(container) {
   const history = Storage.getHistory();
@@ -34,9 +34,14 @@ export function renderHistory(container) {
           ${history.map(item => {
             const coverUrl = resolveAnimeCover(item);
             const defaultSvg = getDefaultPoster(item.animeTitle, item.source);
+            const safeWatchImg = (coverUrl && !coverUrl.startsWith('data:')) ? coverUrl : (item.image || '');
+            const savedPos = Storage.getPlaybackPosition(item.url);
+            const curTime = (item.currentTime > 0) ? item.currentTime : (savedPos?.currentTime || 0);
+            const dur = (item.duration > 0) ? item.duration : (savedPos?.duration || 0);
+            const prog = (item.progress > 0) ? item.progress : (savedPos?.progress || (dur > 0 ? curTime / dur : 0.5));
             return `
             <div class="anime-card">
-              <a href="#/watch?url=${encodeURIComponent(item.url)}&image=${encodeURIComponent(item.image || '')}&title=${encodeURIComponent(item.animeTitle || '')}" class="anime-card-media">
+              <a href="#/watch?url=${encodeURIComponent(item.url)}&image=${encodeURIComponent(safeWatchImg)}&title=${encodeURIComponent(item.animeTitle || '')}&animeUrl=${encodeURIComponent(item.animeUrl || '')}" class="anime-card-media">
                 <img 
                   src="${escapeHtml(coverUrl)}" 
                   alt="${escapeHtml(item.animeTitle)}" 
@@ -55,16 +60,21 @@ export function renderHistory(container) {
                 <div class="card-badge-bottom-right">
                   <span class="badge badge-episode">Ep. ${escapeHtml(String(item.episode))}</span>
                 </div>
+                ${curTime > 0 ? `
+                  <div class="card-progress-bar">
+                    <div class="card-progress-fill" style="width: ${Math.min(100, Math.max(4, Math.round(prog * 100)))}%;"></div>
+                  </div>
+                ` : ''}
                 <div class="card-seen-indicator">
                   ${Icons.check} Visto
                 </div>
               </a>
               <div class="anime-card-info">
-                <a href="#/watch?url=${encodeURIComponent(item.url)}&image=${encodeURIComponent(item.image || '')}&title=${encodeURIComponent(item.animeTitle || '')}" class="anime-card-title">
+                <a href="#/watch?url=${encodeURIComponent(item.url)}&image=${encodeURIComponent(safeWatchImg)}&title=${encodeURIComponent(item.animeTitle || '')}&animeUrl=${encodeURIComponent(item.animeUrl || '')}" class="anime-card-title">
                   ${escapeHtml(item.animeTitle)}
                 </a>
                 <div class="anime-card-meta">
-                  <span>${timeAgo(item.watchedAt)}</span>
+                  <span>${curTime > 0 ? `Min. ${formatTime(curTime)} • ` : ''}${timeAgo(item.watchedAt)}</span>
                   <button 
                     class="btn-icon btn-remove-history" 
                     data-url="${escapeHtml(item.url)}" 

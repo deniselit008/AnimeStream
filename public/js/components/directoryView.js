@@ -3,7 +3,7 @@
  * Multi-faceted catalog filtering by Category/Genre, Type, Year, Status, and Source.
  */
 import { Api } from '../api.js?v=5.0';
-import { Icons, escapeHtml, getSourceBadgeClass, getDefaultPoster, fixEncoding, slugifyGenre } from '../utils.js?v=5.0';
+import { Icons, escapeHtml, getSourceBadgeClass, getDefaultPoster, fixEncoding, slugifyGenre, resolveAnimeCover } from '../utils.js?v=5.0';
 
 const GENRES = [
   { id: 'all', label: 'Todos los géneros' },
@@ -59,7 +59,14 @@ const SOURCES = [
 // Generate years 2026 down to 1980 (47 years)
 const YEARS = ['all', ...Array.from({ length: 47 }, (_, i) => String(2026 - i))];
 
+let activeDirectoryToken = 0;
+
+export function cleanupDirectoryView() {
+  activeDirectoryToken++;
+}
+
 export async function renderDirectory(container, params = new URLSearchParams()) {
+  const myDirToken = ++activeDirectoryToken;
   const rawGenre = params.get('genre') || '';
   const selectedGenres = new Set();
 
@@ -89,7 +96,8 @@ export async function renderDirectory(container, params = new URLSearchParams())
   const currentYear = params.get('year') || 'all';
   const currentStatus = params.get('status') || 'all';
   const currentSource = params.get('source') || 'all';
-  const currentPage = parseInt(params.get('page') || '1', 10);
+  const rawPage = parseInt(params.get('page') || '1', 10);
+  const currentPage = (!isNaN(rawPage) && rawPage >= 1) ? rawPage : 1;
 
   // Build active filters summary
   const activeFilters = [];
@@ -359,20 +367,21 @@ export async function renderDirectory(container, params = new URLSearchParams())
     status: currentStatus,
     source: currentSource,
     page: currentPage
-  });
+  }, myDirToken);
 }
 
 function renderSkeletons(count = 12) {
   return Array(count).fill(0).map(() => `<div class="skeleton-card" style="aspect-ratio: 2/3;"></div>`).join('');
 }
 
-async function loadCatalog(container, filters) {
+async function loadCatalog(container, filters, dirToken) {
   const gridMount = container.querySelector('#directory-grid-mount');
   const infoMount = container.querySelector('#dir-results-info');
   const pagMount = container.querySelector('#directory-pagination-mount');
 
   try {
     const res = await Api.getDirectory(filters);
+    if (dirToken !== activeDirectoryToken) return;
     const items = Array.isArray(res) ? res : (res && res.items ? res.items : []);
 
     if (items.length === 0) {
@@ -389,7 +398,24 @@ async function loadCatalog(container, filters) {
           </button>
         </div>
       `;
-      pagMount.innerHTML = '';
+      if (filters.page > 1) {
+        pagMount.innerHTML = `
+          <div style="display: flex; justify-content: center; align-items: center; gap: 14px;">
+            <button id="btn-dir-empty-prev" class="btn btn-secondary">
+              ${Icons.arrowLeft} Página Anterior
+            </button>
+            <span style="font-weight: 600; color: #fff; padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.9rem;">
+              Página ${filters.page} (vacía)
+            </span>
+          </div>
+        `;
+        const backBtn = pagMount.querySelector('#btn-dir-empty-prev');
+        if (backBtn) {
+          backBtn.addEventListener('click', () => navigateToPage(filters, filters.page - 1));
+        }
+      } else {
+        pagMount.innerHTML = '';
+      }
       return;
     }
 
@@ -398,11 +424,12 @@ async function loadCatalog(container, filters) {
     // Render Anime Cards
     gridMount.innerHTML = items.map(item => {
       const fallbackSvg = getDefaultPoster(item.title, item.source);
+      const coverUrl = resolveAnimeCover(item);
       return `
         <div class="anime-card">
           <a href="#/anime?url=${encodeURIComponent(item.url)}" class="anime-card-media" style="aspect-ratio: 2/3;" title="${escapeHtml(item.title)}">
             <img 
-              src="${escapeHtml(item.image || fallbackSvg)}" 
+              src="${escapeHtml(coverUrl)}" 
               alt="${escapeHtml(item.title)}" 
               class="anime-card-img" 
               loading="lazy"
@@ -474,7 +501,7 @@ async function loadCatalog(container, filters) {
           ${Icons.arrowLeft} Página Anterior
         </button>
 
-        <span style="font-weight: 600; color: #fff; padding: 6px 14px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.9rem;">
+        <span style="font-weight: 600; color: #fff; padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.9rem;">
           Página ${filters.page}
         </span>
 
@@ -505,6 +532,7 @@ async function loadCatalog(container, filters) {
     }
 
   } catch (err) {
+    if (dirToken !== activeDirectoryToken) return;
     gridMount.innerHTML = `
       <div class="alert-banner error" style="grid-column: 1/-1;">
         <div>

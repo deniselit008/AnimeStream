@@ -5,7 +5,23 @@
 import { Api, getApiBase, isStandaloneMode } from '../api.js?v=5.0';
 import { Icons, escapeHtml, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster } from '../utils.js?v=5.0';
 
-export async function renderSearch(container, query, source = 'all') {
+let activeSearchToken = 0;
+
+export function cleanupSearchView() {
+  activeSearchToken++;
+}
+
+function normalizeSourceParam(src) {
+  const s = String(src || 'all').toLowerCase().trim();
+  if (s === 'av1') return 'animeav1';
+  if (s === 'jk') return 'jkanime';
+  if (s === 'tio') return 'tioanime';
+  return ['all', 'animeav1', 'jkanime', 'tioanime'].includes(s) ? s : 'all';
+}
+
+export async function renderSearch(container, query, rawSource = 'all') {
+  const mySearchToken = ++activeSearchToken;
+  const source = normalizeSourceParam(rawSource);
   container.innerHTML = `
     <div class="search-view-container">
       <div class="section-header" style="gap: 16px; align-items: center; margin-bottom: 24px;">
@@ -118,6 +134,7 @@ export async function renderSearch(container, query, source = 'all') {
 
   try {
     const data = await Api.search(query, source);
+    if (mySearchToken !== activeSearchToken) return;
     let results = Array.isArray(data) ? data : (data?.results || []);
     const errors = Array.isArray(data?.errors) ? data.errors : [];
 
@@ -201,7 +218,7 @@ export async function renderSearch(container, query, source = 'all') {
               class="anime-card-img" 
               loading="lazy"
               referrerpolicy="no-referrer"
-              onerror="if (!this.dataset.retried && this.src && '${escapeHtml(retryProxyUrl)}' !== '${escapeHtml(fallbackSvg)}') { this.dataset.retried='1'; this.src='${escapeHtml(retryProxyUrl)}'; } else { this.onerror=null; this.src='${escapeHtml(fallbackSvg)}'; }"
+              onerror="this.onerror=null; this.src='${escapeHtml(fallbackSvg)}';"
             />
             <div class="play-overlay">
               <div class="play-btn-circle">${Icons.play}</div>
@@ -229,6 +246,7 @@ export async function renderSearch(container, query, source = 'all') {
     }).join('');
 
   } catch (err) {
+    if (mySearchToken !== activeSearchToken) return;
     grid.innerHTML = `
       <div class="alert-banner error" style="grid-column: 1/-1;">
         <div>

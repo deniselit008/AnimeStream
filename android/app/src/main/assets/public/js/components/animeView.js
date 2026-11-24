@@ -4,9 +4,16 @@
  */
 import { Api } from '../api.js?v=5.0';
 import { Storage } from '../storage.js?v=5.0';
-import { Icons, escapeHtml, showToast, getSourceBadgeClass, getRelationBadgeClass, fixEncoding, slugifyGenre, getDefaultPoster, openExternalUrl } from '../utils.js?v=5.0';
+import { Icons, escapeHtml, showToast, getSourceBadgeClass, getRelationBadgeClass, fixEncoding, slugifyGenre, getDefaultPoster, openExternalUrl, formatTime, safeHttpUrl, resolveAnimeCover } from '../utils.js?v=5.0';
+
+let activeAnimeRenderToken = 0;
+
+export function cleanupAnimeView() {
+  activeAnimeRenderToken++;
+}
 
 export async function renderAnime(container, animeUrl) {
+  const myToken = ++activeAnimeRenderToken;
   container.innerHTML = `
     <div class="anime-detail-container">
       <div style="display: flex; justify-content: center; padding: 80px 0;">
@@ -17,11 +24,23 @@ export async function renderAnime(container, animeUrl) {
 
   try {
     const anime = await Api.getAnime(animeUrl);
+    if (myToken !== activeAnimeRenderToken) return;
     if (anime) {
       anime.title = fixEncoding(anime.title);
       anime.synopsis = fixEncoding(anime.synopsis);
       if (anime.genres) {
         anime.genres = anime.genres.map(g => fixEncoding(g));
+      }
+      const resolvedCover = resolveAnimeCover(anime);
+      if (resolvedCover && !resolvedCover.startsWith('data:')) {
+        anime.image = resolvedCover;
+      } else if (anime.image && typeof anime.image === 'string' && anime.image.trim().startsWith('//')) {
+        anime.image = 'https:' + anime.image.trim();
+      } else if (anime.image && typeof anime.image === 'string' && anime.image.toLowerCase().includes('logo')) {
+        anime.image = null;
+      }
+      if (anime.backdrop && typeof anime.backdrop === 'string' && anime.backdrop.trim().startsWith('//')) {
+        anime.backdrop = 'https:' + anime.backdrop.trim();
       }
     }
     let isFav = Storage.isFavorite(anime.url);
@@ -179,10 +198,10 @@ export async function renderAnime(container, animeUrl) {
                         ${Icons.search} Buscar
                       </span>
 
-                      ${rel.mal_url ? `
+                      ${(rel.mal_url || rel.mal_id) ? `
                         <span 
                           class="relation-mal-link" 
-                          data-mal-href="${escapeHtml(rel.mal_url)}"
+                          data-mal-href="${escapeHtml(rel.mal_url || `https://myanimelist.net/anime/${rel.mal_id}`)}"
                           title="Ver ficha oficial en MyAnimeList"
                         >
                           MAL ${Icons.external}
@@ -204,11 +223,43 @@ export async function renderAnime(container, animeUrl) {
 
     function buildHtml() {
       const fallbackPoster = getDefaultPoster(anime.title, anime.source);
+
+      // Determine smart primary action: continue watching if in progress, or next unseen episode, or episode 1
+      let primaryEp = allEpisodes.length > 0 ? allEpisodes[0] : null;
+      let primaryLabel = 'Ver Episodio 1';
+      let primarySub = '';
+
+      if (allEpisodes.length > 0) {
+        const positions = Storage.getPlaybackPositions();
+        const inProgressEp = allEpisodes.find(ep => {
+          const p = positions[ep.url];
+          return p && p.currentTime >= 10 && (!p.duration || p.currentTime < p.duration - 15);
+        });
+
+        if (inProgressEp) {
+          primaryEp = inProgressEp;
+          const p = positions[inProgressEp.url];
+          primaryLabel = `Continuar Ep. ${inProgressEp.number}`;
+          if (p && p.currentTime > 0) {
+            primarySub = ` (${formatTime(p.currentTime)})`;
+          }
+        } else {
+          const firstUnseen = allEpisodes.find(ep => !Storage.isSeen(ep.url));
+          if (firstUnseen) {
+            primaryEp = firstUnseen;
+            primaryLabel = `Ver Episodio ${firstUnseen.number}`;
+          } else {
+            primaryEp = allEpisodes[0];
+            primaryLabel = 'Volver a ver Ep. 1';
+          }
+        }
+      }
+
       return `
         <!-- Detail Hero Header -->
         <div class="detail-hero">
           ${anime.backdrop || anime.image ? `
-            <img src="${escapeHtml(anime.backdrop || anime.image)}" class="detail-backdrop" alt="Backdrop" />
+            <img src="${escapeHtml(anime.backdrop || anime.image)}" class="detail-backdrop" alt="Backdrop" onerror="this.style.display='none'" />
           ` : ''}
           <div class="detail-gradient"></div>
 
@@ -273,9 +324,9 @@ export async function renderAnime(container, animeUrl) {
 
               <!-- Actions -->
               <div class="detail-actions">
-                ${allEpisodes.length > 0 ? `
-                  <a href="#/watch?url=${encodeURIComponent(allEpisodes[0].url)}" class="btn btn-primary">
-                    ${Icons.play} Ver Episodio 1
+                ${primaryEp ? `
+                  <a href="#/watch?url=${encodeURIComponent(primaryEp.url)}&image=${encodeURIComponent(anime.image || '')}&title=${encodeURIComponent(anime.title || '')}&animeUrl=${encodeURIComponent(anime.url || '')}" class="btn btn-primary" title="${escapeHtml(primaryLabel + primarySub)}">
+                    ${Icons.play} ${escapeHtml(primaryLabel + primarySub)}
                   </a>
                 ` : ''}
 
@@ -365,11 +416,13 @@ export async function renderAnime(container, animeUrl) {
       }
       return eps.map(ep => {
         const isSeen = Storage.isSeen(ep.url);
+        const savedPos = Storage.getPlaybackPosition(ep.url);
+        const inProgress = !isSeen && savedPos && savedPos.currentTime >= 10 && (!savedPos.duration || savedPos.currentTime < savedPos.duration - 15);
         const watchHref = `#/watch?url=${encodeURIComponent(ep.url)}&image=${encodeURIComponent(anime.image || '')}&title=${encodeURIComponent(anime.title || '')}&animeUrl=${encodeURIComponent(anime.url || '')}`;
         return `
-          <a href="${watchHref}" class="ep-btn-card ${isSeen ? 'seen' : ''}" title="Ver Episodio ${ep.number}">
+          <a href="${watchHref}" class="ep-btn-card ${isSeen ? 'seen' : (inProgress ? 'in-progress' : '')}" title="Ver Episodio ${ep.number}${inProgress ? ` (Pausado en ${formatTime(savedPos.currentTime)})` : ''}">
             <span class="ep-btn-num">${escapeHtml(String(ep.number))}</span>
-            <span class="ep-btn-label">Capítulo</span>
+            <span class="ep-btn-label">${inProgress ? formatTime(savedPos.currentTime) : 'Capítulo'}</span>
           </a>
         `;
       }).join('');
@@ -399,8 +452,14 @@ export async function renderAnime(container, animeUrl) {
         link.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const targetUrl = link.dataset.malHref;
+          let targetUrl = link.dataset.malHref;
           if (targetUrl) {
+            targetUrl = targetUrl.trim();
+            if (targetUrl.startsWith('//')) {
+              targetUrl = 'https:' + targetUrl;
+            } else if (targetUrl.startsWith('/')) {
+              targetUrl = 'https://myanimelist.net' + targetUrl;
+            }
             openExternalUrl(targetUrl);
           }
         });
@@ -411,10 +470,12 @@ export async function renderAnime(container, animeUrl) {
       relCards.forEach(card => {
         card.addEventListener('click', (e) => {
           if (e.target.closest('.relation-mal-link')) return;
+          if (e.button === 1 || e.ctrlKey || e.metaKey) return;
           e.preventDefault();
           const href = card.getAttribute('href');
           if (href) {
-            window.location.hash = href;
+            const cleanHash = href.startsWith('#') ? href.slice(1) : href;
+            window.location.hash = cleanHash;
           }
         });
       });
@@ -425,6 +486,7 @@ export async function renderAnime(container, animeUrl) {
     // If relations were not included in initial response, fetch in background
     if (!currentRelations || currentRelations.length === 0) {
       Api.getRelations(anime.title).then(fetched => {
+        if (myToken !== activeAnimeRenderToken) return;
         const relMount = container.querySelector('#relations-mount');
         if (fetched && fetched.length > 0) {
           currentRelations = fetched;
@@ -436,6 +498,7 @@ export async function renderAnime(container, animeUrl) {
           relMount.innerHTML = '';
         }
       }).catch(err => {
+        if (myToken !== activeAnimeRenderToken) return;
         console.debug('Background MAL relations error:', err);
         const relMount = container.querySelector('#relations-mount');
         if (relMount) relMount.innerHTML = '';
@@ -489,10 +552,13 @@ export async function renderAnime(container, animeUrl) {
           Storage.removeLibraryItem(anime.title);
           showToast(`Eliminado de Mi Lista`, 'info');
         } else {
+          const existingLib = Storage.getLibraryItem(anime.title);
+          const preservedTotal = Math.max(existingLib?.totalEpisodes || 0, allEpisodes.length);
           Storage.saveLibraryItem({
             title: anime.title,
-            type: 'TV',
-            totalEpisodes: allEpisodes.length,
+            type: existingLib?.type || 'TV',
+            totalEpisodes: preservedTotal,
+            watchedEpisodes: val === 'completed' && preservedTotal > 0 ? preservedTotal : undefined,
             status: val,
             image: anime.image,
             animeUrl: anime.url
@@ -535,13 +601,14 @@ export async function renderAnime(container, animeUrl) {
     });
 
   } catch (err) {
+    if (myToken !== activeAnimeRenderToken) return;
     container.innerHTML = `
       <div class="alert-banner error" style="margin-top: 40px;">
         <div>
           ${Icons.alert} <strong>No se pudo cargar la información del anime:</strong> ${escapeHtml(err.message)}
         </div>
         <div style="display: flex; gap: 10px;">
-          <a href="${escapeHtml(animeUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+          <a href="${escapeHtml(safeHttpUrl(animeUrl))}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary external-link" data-external-url="${escapeHtml(safeHttpUrl(animeUrl))}">
             ${Icons.external} Abrir enlace original
           </a>
           <button class="btn btn-primary" onclick="window.history.back()">Volver</button>

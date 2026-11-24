@@ -123,13 +123,16 @@ export const Api = {
       try {
         const controller = new AbortController();
         const tid = setTimeout(() => controller.abort(), 7000);
-        const res = await fetch(jikanUrl, {
-          headers: { 'Accept': 'application/json' },
-          signal: controller.signal
-        });
-        clearTimeout(tid);
-        if (res.ok) {
-          return await res.json();
+        try {
+          const res = await fetch(jikanUrl, {
+            headers: { 'Accept': 'application/json' },
+            signal: controller.signal
+          });
+          if (res.ok) {
+            return await res.json();
+          }
+        } finally {
+          clearTimeout(tid);
         }
       } catch (_) {}
 
@@ -182,16 +185,20 @@ export const Api = {
         try {
           const controller = new AbortController();
           const tid = setTimeout(() => controller.abort(), 6000);
-          const aniRes = await fetch('https://graphql.anilist.co', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify({ query: aniQuery, variables: { search: variant } }),
-            signal: controller.signal
-          });
-          clearTimeout(tid);
+          let aniRes;
+          try {
+            aniRes = await fetch('https://graphql.anilist.co', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify({ query: aniQuery, variables: { search: variant } }),
+              signal: controller.signal
+            });
+          } finally {
+            clearTimeout(tid);
+          }
 
           if (aniRes.ok) {
             const aniData = await aniRes.json();

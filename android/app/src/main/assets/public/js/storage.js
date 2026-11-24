@@ -10,7 +10,9 @@ const KEYS = {
   SEEN: 'animestream_seen',
   LAST_PLAYED: 'animestream_last_played',
   LIBRARY: 'animestream_library',
-  VOLUME: 'animestream_player_volume'
+  VOLUME: 'animestream_player_volume',
+  PLAYBACK_POSITIONS: 'animestream_playback_positions',
+  PLAYBACK_SPEED: 'animestream_playback_speed'
 };
 
 export const Storage = {
@@ -34,6 +36,138 @@ export const Storage = {
     } catch (e) {}
   },
 
+  // --- Playback Speed Persistence ---
+  getPlaybackSpeed() {
+    try {
+      const v = localStorage.getItem(KEYS.PLAYBACK_SPEED);
+      if (v !== null) {
+        const num = parseFloat(v);
+        if ([0.75, 1.0, 1.25, 1.5, 2.0].includes(num)) {
+          return num;
+        }
+      }
+      return 1.0;
+    } catch (e) {
+      return 1.0;
+    }
+  },
+
+  setPlaybackSpeed(speed) {
+    try {
+      const num = parseFloat(speed);
+      const valid = [0.75, 1.0, 1.25, 1.5, 2.0].includes(num) ? num : 1.0;
+      localStorage.setItem(KEYS.PLAYBACK_SPEED, String(valid));
+    } catch (e) {}
+  },
+
+  // --- Exact Playback Positions (Resume Playback) ---
+  getPlaybackPositions() {
+    try {
+      const data = localStorage.getItem(KEYS.PLAYBACK_POSITIONS);
+      return data ? JSON.parse(data) : {};
+    } catch (e) {
+      return {};
+    }
+  },
+
+  getPlaybackPosition(url) {
+    if (!url) return null;
+    try {
+      const map = this.getPlaybackPositions();
+      const entry = map[url];
+      if (!entry) return null;
+      // If position is valid (at least 10s into episode, and not within last 15s of video)
+      if (entry.currentTime >= 10 && (!entry.duration || entry.currentTime < entry.duration - 15)) {
+        return entry;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  savePlaybackPosition(url, currentTime, duration = 0, animeTitle = '', episode = '') {
+    if (!url || isNaN(currentTime) || !isFinite(currentTime) || currentTime < 5) return;
+    try {
+      const map = this.getPlaybackPositions();
+      const existingEntry = map[url];
+      const sec = Math.floor(currentTime);
+      const passedDur = (isFinite(duration) && duration > 0) ? Math.floor(duration) : 0;
+      const dur = passedDur > 0 ? passedDur : (existingEntry?.duration || 0);
+      const progress = dur > 0 ? (sec / dur) : (existingEntry?.progress || 0);
+
+      // If episode finished (within last 15s), clear resume position so it restarts from 0
+      if (dur > 30 && sec >= dur - 15) {
+        delete map[url];
+        localStorage.setItem(KEYS.PLAYBACK_POSITIONS, JSON.stringify(map));
+        this.updateHistoryProgress(url, sec, dur, 1.0);
+        return;
+      }
+
+      map[url] = {
+        url,
+        currentTime: sec,
+        duration: dur,
+        progress: Math.min(1, Math.max(0, Math.round(progress * 100) / 100)),
+        updatedAt: Date.now(),
+        animeTitle: animeTitle || existingEntry?.animeTitle || '',
+        episode: episode || existingEntry?.episode || ''
+      };
+
+      // Prune oldest if exceeds 200 items
+      const keys = Object.keys(map);
+      if (keys.length > 200) {
+        const sorted = keys.sort((a, b) => (map[a].updatedAt || 0) - (map[b].updatedAt || 0));
+        for (let i = 0; i < keys.length - 200; i++) {
+          delete map[sorted[i]];
+        }
+      }
+
+      localStorage.setItem(KEYS.PLAYBACK_POSITIONS, JSON.stringify(map));
+      this.updateHistoryProgress(url, sec, dur, progress);
+    } catch (e) {
+      console.error('Storage savePlaybackPosition error:', e);
+    }
+  },
+
+  clearPlaybackPosition(url) {
+    if (!url) return;
+    try {
+      const map = this.getPlaybackPositions();
+      if (map[url]) {
+        delete map[url];
+        localStorage.setItem(KEYS.PLAYBACK_POSITIONS, JSON.stringify(map));
+      }
+    } catch (e) {}
+  },
+
+  updateHistoryProgress(url, currentTime, duration = 0, progress = 0) {
+    if (!url || !isFinite(currentTime)) return;
+    try {
+      let history = this.getHistory();
+      const idx = history.findIndex(h => h.url === url);
+      const sec = Math.max(0, Math.floor(currentTime));
+      if (idx !== -1) {
+        history[idx].currentTime = sec;
+        if (isFinite(duration) && duration > 0) history[idx].duration = Math.floor(duration);
+        const finalDur = history[idx].duration || 0;
+        const rawProg = progress > 0 ? progress : (finalDur > 0 ? sec / finalDur : 0);
+        history[idx].progress = Math.min(1, Math.max(0, Math.round(rawProg * 100) / 100));
+        history[idx].watchedAt = Date.now();
+        localStorage.setItem(KEYS.HISTORY, JSON.stringify(history));
+      }
+      const lastPlayed = this.getLastPlayed();
+      if (lastPlayed && lastPlayed.url === url) {
+        lastPlayed.currentTime = sec;
+        if (isFinite(duration) && duration > 0) lastPlayed.duration = Math.floor(duration);
+        const finalDur = lastPlayed.duration || 0;
+        const rawProg = progress > 0 ? progress : (finalDur > 0 ? sec / finalDur : 0);
+        lastPlayed.progress = Math.min(1, Math.max(0, Math.round(rawProg * 100) / 100));
+        localStorage.setItem(KEYS.LAST_PLAYED, JSON.stringify(lastPlayed));
+      }
+    } catch (e) {}
+  },
+
   // --- Watch History ---
   getHistory() {
     try {
@@ -41,13 +175,19 @@ export const Storage = {
       if (!data) return [];
       const list = JSON.parse(data);
       if (!Array.isArray(list)) return [];
-      // Auto-heal legacy entries missing images
-      return list.map(item => {
-        if (!item.image || item.image.includes('placeholder.com') || item.image === 'undefined') {
-          item.image = resolveAnimeCover(item);
-        }
-        return item;
-      });
+      // Auto-heal legacy entries missing images or holding provider logos
+      return list
+        .filter(item => item && typeof item === 'object' && Boolean(item.url || item.episodeUrl || item.animeUrl))
+        .map(item => {
+          if (!item.url && item.episodeUrl) item.url = item.episodeUrl;
+          const lowerImg = (item.image || '').toLowerCase();
+          if (!item.image || lowerImg.includes('placeholder.com') || lowerImg === 'undefined' ||
+              lowerImg.includes('/assets/img/logo') || lowerImg.includes('/logo.png') ||
+              lowerImg.includes('/logo-dark') || lowerImg.includes('/logo-light')) {
+            item.image = resolveAnimeCover(item);
+          }
+          return item;
+        });
     } catch (e) {
       console.error('Storage getHistory error:', e);
       return [];
@@ -57,9 +197,16 @@ export const Storage = {
   saveToHistory(item) {
     try {
       let history = this.getHistory();
+      const existing = history.find(h => h.url === item.url);
+      const savedPos = this.getPlaybackPosition(item.url);
+
       // Remove existing entry for same episode url if exists
       history = history.filter(h => h.url !== item.url);
       
+      const currentTime = item.currentTime !== undefined ? item.currentTime : (savedPos?.currentTime || existing?.currentTime || 0);
+      const duration = item.duration !== undefined ? item.duration : (savedPos?.duration || existing?.duration || 0);
+      const progress = item.progress !== undefined ? item.progress : (savedPos?.progress || existing?.progress || (duration > 0 ? currentTime / duration : 0));
+
       const newEntry = {
         animeTitle: item.animeTitle || item.title || 'Anime',
         episode: item.episode,
@@ -67,7 +214,10 @@ export const Storage = {
         animeUrl: item.animeUrl || '',
         image: resolveAnimeCover(item),
         source: item.source || 'Anime',
-        watchedAt: Date.now()
+        watchedAt: Date.now(),
+        currentTime: Math.floor(currentTime),
+        duration: Math.floor(duration),
+        progress: Math.min(1, Math.max(0, Math.round(progress * 100) / 100))
       };
 
       // Put latest first, limit to 50 items
@@ -91,6 +241,13 @@ export const Storage = {
       let history = this.getHistory();
       history = history.filter(h => h.url !== url);
       localStorage.setItem(KEYS.HISTORY, JSON.stringify(history));
+
+      this.clearPlaybackPosition(url);
+
+      const lastPlayed = this.getLastPlayed();
+      if (lastPlayed && lastPlayed.url === url) {
+        localStorage.removeItem(KEYS.LAST_PLAYED);
+      }
       return true;
     } catch (e) {
       return false;
@@ -101,6 +258,7 @@ export const Storage = {
     try {
       localStorage.removeItem(KEYS.HISTORY);
       localStorage.removeItem(KEYS.LAST_PLAYED);
+      localStorage.removeItem(KEYS.PLAYBACK_POSITIONS);
       return true;
     } catch (e) {
       return false;
@@ -127,15 +285,28 @@ export const Storage = {
   },
 
   isSeen(url) {
+    if (!url) return false;
     const map = this.getSeenMap();
     return Boolean(map[url]);
   },
 
   markSeen(url, seen = true) {
     try {
+      if (!url) return;
       const map = this.getSeenMap();
       if (seen) {
         map[url] = Date.now();
+        // Prune if map exceeds 2000 entries to prevent localStorage quota exhaustion
+        const keys = Object.keys(map);
+        if (keys.length > 2000) {
+          const sorted = keys.sort((a, b) => (map[b] || 0) - (map[a] || 0));
+          const prunedMap = {};
+          for (let i = 0; i < 1500; i++) {
+            prunedMap[sorted[i]] = map[sorted[i]];
+          }
+          localStorage.setItem(KEYS.SEEN, JSON.stringify(prunedMap));
+          return;
+        }
       } else {
         delete map[url];
       }
@@ -144,6 +315,7 @@ export const Storage = {
   },
 
   toggleSeen(url) {
+    if (!url) return false;
     const current = this.isSeen(url);
     this.markSeen(url, !current);
     return !current;
@@ -155,7 +327,7 @@ export const Storage = {
       const data = localStorage.getItem(KEYS.FAVORITES);
       if (!data) return [];
       const list = JSON.parse(data);
-      return Array.isArray(list) ? list : [];
+      return Array.isArray(list) ? list.filter(item => item && typeof item === 'object' && item.url) : [];
     } catch (e) {
       return [];
     }
@@ -201,6 +373,7 @@ export const Storage = {
   },
 
   toggleFavorite(anime) {
+    if (!anime || !anime.url) return false;
     try {
       let favorites = this.getFavorites();
       const exists = favorites.some(f => f.url === anime.url);
@@ -231,7 +404,7 @@ export const Storage = {
       const data = localStorage.getItem(KEYS.LIBRARY);
       if (!data) return [];
       const list = JSON.parse(data);
-      return Array.isArray(list) ? list : [];
+      return Array.isArray(list) ? list.filter(item => item && typeof item === 'object' && item.title) : [];
     } catch (e) {
       console.error('Storage getLibrary error:', e);
       return [];
@@ -265,6 +438,7 @@ export const Storage = {
 
   saveLibraryItem(item) {
     try {
+      if (!item || !item.title) return null;
       let list = this.getLibrary();
       const cleanTitle = (item.title || '').toLowerCase().trim();
       
@@ -272,23 +446,48 @@ export const Storage = {
         (item.id && i.id && String(i.id) === String(item.id)) ||
         (i.title && i.title.toLowerCase().trim() === cleanTitle)
       );
+      const existing = existingIdx >= 0 ? list[existingIdx] : null;
 
+      const total = item.totalEpisodes !== undefined 
+        ? Math.max(0, parseInt(item.totalEpisodes, 10) || 0)
+        : (existing?.totalEpisodes || 0);
+
+      let watched = item.watchedEpisodes !== undefined
+        ? Math.max(0, parseInt(item.watchedEpisodes, 10) || 0)
+        : (existing?.watchedEpisodes || 0);
+
+      const targetStatus = item.status || existing?.status || 'plan_to_watch';
+
+      // If marked as completed and total is known, auto-sync watched to total
+      if (targetStatus === 'completed' && total > 0 && item.watchedEpisodes === undefined) {
+        watched = total;
+      }
+
+      const STATUS_LABELS_DEFAULT = {
+        watching: 'Viendo',
+        completed: 'Visto',
+        plan_to_watch: 'Pendiente',
+        on_hold: 'Pausado',
+        dropped: 'Abandonado'
+      };
+
+      const rawScore = item.score !== undefined ? (parseInt(item.score, 10) || 0) : (existing?.score || 0);
       const entry = {
-        id: item.id || `local_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        id: item.id || existing?.id || `local_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
         title: item.title,
-        type: item.type || 'TV',
-        totalEpisodes: parseInt(item.totalEpisodes, 10) || 0,
-        watchedEpisodes: parseInt(item.watchedEpisodes, 10) || 0,
-        score: parseInt(item.score, 10) || 0,
-        status: item.status || 'plan_to_watch',
-        statusLabel: item.statusLabel || 'Pendiente',
-        image: item.image || null,
-        animeUrl: item.animeUrl || null,
+        type: item.type || existing?.type || 'TV',
+        totalEpisodes: total,
+        watchedEpisodes: total > 0 ? Math.min(total, watched) : watched,
+        score: Math.min(10, Math.max(0, rawScore)),
+        status: targetStatus,
+        statusLabel: item.statusLabel || existing?.statusLabel || STATUS_LABELS_DEFAULT[targetStatus] || 'En lista',
+        image: item.image || existing?.image || null,
+        animeUrl: item.animeUrl || existing?.animeUrl || null,
         updatedAt: Date.now()
       };
 
       if (existingIdx >= 0) {
-        list[existingIdx] = { ...list[existingIdx], ...entry };
+        list[existingIdx] = { ...existing, ...entry };
       } else {
         list.unshift(entry);
       }
@@ -304,8 +503,11 @@ export const Storage = {
   removeLibraryItem(idOrTitle) {
     try {
       let list = this.getLibrary();
-      const target = String(idOrTitle).toLowerCase().trim();
-      list = list.filter(i => String(i.id) !== target && i.title.toLowerCase().trim() !== target);
+      const target = String(idOrTitle || '').toLowerCase().trim();
+      list = list.filter(i =>
+        String(i.id || '').toLowerCase().trim() !== target &&
+        (i.title || '').toLowerCase().trim() !== target
+      );
       localStorage.setItem(KEYS.LIBRARY, JSON.stringify(list));
       return true;
     } catch (e) {
@@ -332,13 +534,15 @@ export const Storage = {
       items.forEach(it => {
         const key = it.title ? it.title.toLowerCase().trim() : String(it.id);
         const existing = map.get(key) || {};
+        const total = Math.max(0, parseInt(it.totalEpisodes, 10) || 0);
+        const rawWatched = Math.max(0, parseInt(it.watchedEpisodes, 10) || 0);
         map.set(key, {
           id: it.id || existing.id || `mal_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
           title: it.title,
           type: it.type || existing.type || 'TV',
-          totalEpisodes: parseInt(it.totalEpisodes, 10) || 0,
-          watchedEpisodes: parseInt(it.watchedEpisodes, 10) || 0,
-          score: parseInt(it.score, 10) || 0,
+          totalEpisodes: total,
+          watchedEpisodes: total > 0 ? Math.min(total, rawWatched) : rawWatched,
+          score: Math.min(10, Math.max(0, parseInt(it.score, 10) || 0)),
           status: it.status || 'plan_to_watch',
           statusLabel: it.statusLabel || 'Pendiente',
           image: it.image || existing.image || null,

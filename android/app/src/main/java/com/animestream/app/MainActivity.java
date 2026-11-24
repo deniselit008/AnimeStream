@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
@@ -114,7 +115,22 @@ public class MainActivity extends Activity {
         public void openExternal(String url) {
             if (url == null || url.trim().isEmpty()) return;
             try {
-                android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(url.trim()));
+                String target = url.trim();
+                if (target.startsWith("//")) {
+                    target = "https:" + target;
+                } else if (target.startsWith("/")) {
+                    target = "https://myanimelist.net" + target;
+                }
+                Uri parsed = Uri.parse(target);
+                String scheme = parsed.getScheme();
+                String host = parsed.getHost();
+                if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
+                    return;
+                }
+                if (host != null && host.equalsIgnoreCase("appassets.androidplatform.net")) {
+                    return;
+                }
+                android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, parsed);
                 intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
                 mContext.startActivity(intent);
             } catch (Exception e) {
@@ -148,12 +164,24 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void connectToServer(final String url) {
+            if (url == null) return;
+            final String clean = url.trim();
+            try {
+                Uri parsed = Uri.parse(clean);
+                String scheme = parsed.getScheme();
+                String host = parsed.getHost();
+                if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https")) || host == null || host.isEmpty()) {
+                    return;
+                }
+            } catch (Exception ignored) {
+                return;
+            }
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    saveServerUrl(url);
+                    saveServerUrl(clean);
                     if (webView != null) {
-                        webView.loadUrl(url);
+                        webView.loadUrl(clean);
                     }
                 }
             });
@@ -179,6 +207,20 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String fetchUrl(String urlString, String headersJson) {
+            return fetchUrlWithDepth(urlString, headersJson, 0);
+        }
+
+        private String fetchUrlWithDepth(String urlString, String headersJson, int depth) {
+            if (depth > 6) {
+                try {
+                    JSONObject res = new JSONObject();
+                    res.put("status", 310);
+                    res.put("body", "Error: Demasiadas redirecciones (Too Many Redirects)");
+                    return res.toString();
+                } catch (Exception e) {
+                    return "{\"status\":310,\"body\":\"\"}";
+                }
+            }
             HttpURLConnection conn = null;
             try {
                 URL url = new URL(urlString);
@@ -219,7 +261,7 @@ public class MainActivity extends Activity {
                             URL base = new URL(urlString);
                             location = new URL(base, location).toString();
                         }
-                        return fetchUrl(location, headersJson);
+                        return fetchUrlWithDepth(location, headersJson, depth + 1);
                     }
                 }
 
@@ -395,10 +437,10 @@ public class MainActivity extends Activity {
                         return false;
                     }
 
-                    // If a custom remote PC server was configured, allow it
+                    // If a custom remote PC server was configured, allow exact host match
                     SharedPreferences prefs = getSharedPreferences("animestream_prefs", MODE_PRIVATE);
                     String serverUrl = prefs.getString("server_url", "");
-                    if (serverUrl != null && !serverUrl.isEmpty() && host != null && serverUrl.contains(host)) {
+                    if (isConfiguredServerHost(serverUrl, host)) {
                         return false;
                     }
 
@@ -448,14 +490,17 @@ public class MainActivity extends Activity {
                     SharedPreferences prefs = getSharedPreferences("animestream_prefs", MODE_PRIVATE);
                     String serverUrl = prefs.getString("server_url", "");
                     Uri failingUri = request.getUrl();
-                    if (serverUrl != null && !serverUrl.isEmpty() && failingUri != null && serverUrl.contains(failingUri.getHost())) {
-                        webView.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                String redirectUrl = "https://appassets.androidplatform.net/assets/public/index.html?error=unreachable&server=" + Uri.encode(serverUrl);
-                                webView.loadUrl(redirectUrl);
-                            }
-                        });
+                    if (isConfiguredServerHost(serverUrl, failingUri != null ? failingUri.getHost() : null)) {
+                        final WebView targetView = view != null ? view : webView;
+                        if (targetView != null) {
+                            targetView.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    String redirectUrl = "https://appassets.androidplatform.net/assets/public/index.html?error=unreachable&server=" + Uri.encode(serverUrl);
+                                    targetView.loadUrl(redirectUrl);
+                                }
+                            });
+                        }
                     }
                 }
             }
@@ -582,6 +627,13 @@ public class MainActivity extends Activity {
                 if (customViewCallback != null) {
                     customViewCallback.onCustomViewHidden();
                 }
+                if (mCustomView != null) {
+                    customViewContainer.removeView(mCustomView);
+                    customViewContainer.setVisibility(View.GONE);
+                    webView.setVisibility(View.VISIBLE);
+                    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+                    mCustomView = null;
+                }
                 return true;
             }
             if (webView != null && webView.canGoBack()) {
@@ -613,7 +665,20 @@ public class MainActivity extends Activity {
     }
 
     private static final String ANDROID_UA = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36";
-    private final Map<String, String> hlsCookieCache = new HashMap<>();
+    private final Map<String, String> hlsCookieCache = new ConcurrentHashMap<>();
+
+    private static boolean isConfiguredServerHost(String serverUrl, String candidateHost) {
+        if (serverUrl == null || serverUrl.isEmpty() || candidateHost == null || candidateHost.isEmpty()) {
+            return false;
+        }
+        try {
+            Uri configured = Uri.parse(serverUrl.trim());
+            String configuredHost = configured.getHost();
+            return configuredHost != null && configuredHost.equalsIgnoreCase(candidateHost);
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
 
     private WebResourceResponse handleAndroidHlsProxy(String path) {
         Map<String, String> corsHeaders = new HashMap<>();
@@ -625,13 +690,29 @@ public class MainActivity extends Activity {
                 String hash = path.replace("/android-hls/player/", "").replaceAll("[^a-fA-F0-9]", "");
                 String html = "<!DOCTYPE html><html lang=\"es\"><head><meta charset=\"UTF-8\">" +
                     "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\">" +
-                    "<script src=\"https://appassets.androidplatform.net/assets/public/js/vendor/hls.min.js\"></script>" +
+                    "<script src=\"https://appassets.androidplatform.net/assets/public/vendor/hls.min.js\"></script>" +
                     "<style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}" +
                     "video{width:100%;height:100%;object-fit:contain;outline:none}" +
                     "#err{display:none;position:absolute;inset:0;color:#ef4444;background:#090d16;align-items:center;justify-content:center;text-align:center;padding:20px;font-family:sans-serif;font-weight:600}</style>" +
                     "</head><body><video id=\"v\" controls playsinline autoplay></video>" +
                     "<div id=\"err\">⚠️ No se pudo reproducir este vídeo HLS. Prueba con otro servidor.</div>" +
                     "<script>(function(){var v=document.getElementById('v'),src='https://appassets.androidplatform.net/android-hls/m3u8/" + hash + "';" +
+                    "window.addEventListener('message',function(e){if(!e.data||e.data.type!=='PLAYER_CMD'||!v)return;var d=e.data;" +
+                    "if(d.cmd==='seek_relative'){var s=d.seconds!==undefined?d.seconds:(d.delta!==undefined?d.delta:10);v.currentTime=Math.max(0,Math.min(v.duration||999999,(v.currentTime||0)+s));}" +
+                    "else if(d.cmd==='seek_forward'){v.currentTime=Math.max(0,Math.min(v.duration||999999,(v.currentTime||0)+10));}" +
+                    "else if(d.cmd==='seek_backward'){v.currentTime=Math.max(0,Math.min(v.duration||999999,(v.currentTime||0)-10));}" +
+                    "else if(d.cmd==='seek_to'){var s=(typeof d.seconds==='number'&&!isNaN(d.seconds)&&d.seconds>=0)?d.seconds:0;if(v.readyState>=1){v.currentTime=Math.max(0,Math.min(v.duration||999999,s));}else{v.addEventListener('loadedmetadata',function(){v.currentTime=Math.max(0,Math.min(v.duration||999999,s));},{once:true});}}" +
+                    "else if(d.cmd==='set_rate'){v.playbackRate=parseFloat(d.rate)||1.0;}" +
+                    "else if(d.cmd==='play'){if(v.paused)v.play();}" +
+                    "else if(d.cmd==='pause'){if(!v.paused)v.pause();}" +
+                    "else if(d.cmd==='toggle_play'){if(v.paused)v.play();else v.pause();}" +
+                    "else if(d.cmd==='toggle_mute'){v.muted=!v.muted;}" +
+                    "else if(d.cmd==='volume_up'){v.volume=Math.min(1,Math.round(((v.volume||1)+0.05)*100)/100);}" +
+                    "else if(d.cmd==='volume_down'){v.volume=Math.max(0,Math.round(((v.volume||1)-0.05)*100)/100);}" +
+                    "});" +
+                    "v.addEventListener('timeupdate',function(){try{if(window.parent&&window.parent!==window){window.parent.postMessage({type:'ANIMESTREAM_TIME_UPDATE',currentTime:v.currentTime,duration:v.duration||0,playbackRate:v.playbackRate||1.0},'*');}}catch(_){}});" +
+                    "v.addEventListener('pause',function(){try{if(window.parent&&window.parent!==window){window.parent.postMessage({type:'ANIMESTREAM_PAUSE'},'*');}}catch(_){}});" +
+                    "v.addEventListener('ended',function(){try{if(window.parent&&window.parent!==window){window.parent.postMessage({type:'ANIMESTREAM_ENDED'},'*');}}catch(_){}});" +
                     "if(window.Hls&&Hls.isSupported()){var h=new Hls({maxBufferLength:30,enableWorker:true});h.loadSource(src);h.attachMedia(v);" +
                     "h.on(Hls.Events.MANIFEST_PARSED,function(){v.play().catch(function(){});});" +
                     "h.on(Hls.Events.ERROR,function(e,d){if(d.fatal){if(d.type===Hls.ErrorTypes.NETWORK_ERROR)h.startLoad();" +
@@ -673,36 +754,56 @@ public class MainActivity extends Activity {
                 // 2. Fetch .m3u8 manifest
                 URL m3u8Url = new URL("https://player.zilla-networks.com/m3u8/" + hash);
                 HttpURLConnection mConn = (HttpURLConnection) m3u8Url.openConnection();
-                mConn.setConnectTimeout(12000);
-                mConn.setReadTimeout(12000);
-                mConn.setRequestProperty("User-Agent", ANDROID_UA);
-                mConn.setRequestProperty("Referer", "https://player.zilla-networks.com/play/" + hash);
-                mConn.setRequestProperty("Origin", "https://player.zilla-networks.com");
-                if (cookieHeader != null && !cookieHeader.isEmpty()) {
-                    mConn.setRequestProperty("Cookie", cookieHeader);
-                }
-
-                InputStream is = mConn.getInputStream();
-                String enc = mConn.getHeaderField("Content-Encoding");
-                if ("gzip".equalsIgnoreCase(enc)) is = new GZIPInputStream(is);
-                else if ("deflate".equalsIgnoreCase(enc)) is = new InflaterInputStream(is);
-
-                BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
                 StringBuilder sb = new StringBuilder();
-                String line;
-                while ((line = br.readLine()) != null) {
-                    if (line.contains("https://player.zilla-networks.com/segs/" + hash + "/")) {
-                        line = line.replace("https://player.zilla-networks.com/segs/" + hash + "/",
-                            "https://appassets.androidplatform.net/android-hls/seg/" + hash + "/");
-                    } else if (line.startsWith("/segs/" + hash + "/")) {
-                        line = "https://appassets.androidplatform.net/android-hls/seg/" + hash + "/" + line.substring(("/segs/" + hash + "/").length());
-                    } else if (!line.isEmpty() && !line.startsWith("#") && !line.startsWith("http")) {
-                        line = "https://appassets.androidplatform.net/android-hls/seg/" + hash + "/" + line;
+                try {
+                    mConn.setConnectTimeout(12000);
+                    mConn.setReadTimeout(12000);
+                    mConn.setRequestProperty("User-Agent", ANDROID_UA);
+                    mConn.setRequestProperty("Referer", "https://player.zilla-networks.com/play/" + hash);
+                    mConn.setRequestProperty("Origin", "https://player.zilla-networks.com");
+                    if (cookieHeader != null && !cookieHeader.isEmpty()) {
+                        mConn.setRequestProperty("Cookie", cookieHeader);
                     }
-                    sb.append(line).append("\n");
+
+                    InputStream is = mConn.getInputStream();
+                    String enc = mConn.getHeaderField("Content-Encoding");
+                    if ("gzip".equalsIgnoreCase(enc)) is = new GZIPInputStream(is);
+                    else if ("deflate".equalsIgnoreCase(enc)) is = new InflaterInputStream(is);
+
+                    BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+                    String line;
+                    java.util.regex.Pattern uriPattern = java.util.regex.Pattern.compile("URI=\"([^\"]+)\"");
+                    while ((line = br.readLine()) != null) {
+                        if (line.contains("https://player.zilla-networks.com/segs/" + hash + "/")) {
+                            line = line.replace("https://player.zilla-networks.com/segs/" + hash + "/",
+                                "https://appassets.androidplatform.net/android-hls/seg/" + hash + "/");
+                        } else if (line.startsWith("#")) {
+                            java.util.regex.Matcher m = uriPattern.matcher(line);
+                            StringBuffer uriBuf = new StringBuffer();
+                            while (m.find()) {
+                                String uriVal = m.group(1);
+                                if (uriVal != null && !uriVal.startsWith("https://appassets.androidplatform.net/android-hls/") && !uriVal.startsWith("http://") && !uriVal.startsWith("https://")) {
+                                    String cleanUri = uriVal.replaceFirst("^/segs/[^/]+/", "").split("\\?", 2)[0].replaceAll("[^a-zA-Z0-9_\\-\\.]", "");
+                                    if (!cleanUri.isEmpty()) {
+                                        m.appendReplacement(uriBuf, "URI=\"https://appassets.androidplatform.net/android-hls/seg/" + hash + "/" + cleanUri + "\"");
+                                        continue;
+                                    }
+                                }
+                                m.appendReplacement(uriBuf, java.util.regex.Matcher.quoteReplacement(m.group(0)));
+                            }
+                            m.appendTail(uriBuf);
+                            line = uriBuf.toString();
+                        } else if (line.startsWith("/segs/" + hash + "/")) {
+                            line = "https://appassets.androidplatform.net/android-hls/seg/" + hash + "/" + line.substring(("/segs/" + hash + "/").length());
+                        } else if (!line.isEmpty() && !line.startsWith("#") && !line.startsWith("http")) {
+                            line = "https://appassets.androidplatform.net/android-hls/seg/" + hash + "/" + line;
+                        }
+                        sb.append(line).append("\n");
+                    }
+                    br.close();
+                } finally {
+                    mConn.disconnect();
                 }
-                br.close();
-                mConn.disconnect();
 
                 corsHeaders.put("Cache-Control", "public, max-age=300");
                 return new WebResourceResponse("application/vnd.apple.mpegurl", "UTF-8", 200, "OK", corsHeaders,
@@ -715,7 +816,7 @@ public class MainActivity extends Activity {
                 if (slash <= 0) return null;
                 String hash = rest.substring(0, slash).replaceAll("[^a-fA-F0-9]", "");
                 String file = rest.substring(slash + 1).replaceAll("[^a-zA-Z0-9_\\-\\.]", "");
-                if (hash.isEmpty() || file.isEmpty()) return null;
+                if (hash.isEmpty() || file.isEmpty() || ".".equals(file) || "..".equals(file) || file.contains("..")) return null;
 
                 URL segUrl = new URL("https://player.zilla-networks.com/segs/" + hash + "/" + file);
                 HttpURLConnection sConn = (HttpURLConnection) segUrl.openConnection();
@@ -730,8 +831,13 @@ public class MainActivity extends Activity {
                 }
 
                 String mime = file.endsWith(".ts") ? "video/mp2t" : (file.endsWith(".m3u8") ? "application/vnd.apple.mpegurl" : "application/octet-stream");
-                corsHeaders.put("Cache-Control", "public, max-age=86400");
-                return new WebResourceResponse(mime, null, sConn.getResponseCode(), "OK", corsHeaders, sConn.getInputStream());
+                int segCode = sConn.getResponseCode();
+                InputStream segStream = (segCode >= 400) ? sConn.getErrorStream() : sConn.getInputStream();
+                if (segStream == null) {
+                    segStream = new ByteArrayInputStream(new byte[0]);
+                }
+                corsHeaders.put("Cache-Control", segCode < 400 ? "public, max-age=86400" : "no-store");
+                return new WebResourceResponse(mime, null, segCode, segCode < 400 ? "OK" : "Error", corsHeaders, segStream);
             }
         } catch (Exception ignored) {}
         return null;

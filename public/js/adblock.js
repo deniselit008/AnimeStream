@@ -17,6 +17,7 @@ class AdBlockEngine {
     this.originalWindowOpen = window.open;
     this.observer = null;
     this.initialized = false;
+    this._activeModalCleanup = null;
   }
 
   loadEnabled() {
@@ -185,8 +186,8 @@ class AdBlockEngine {
       #confirm_modal, #modal-back,
       div[class*="modal-backdrop"]:not(#adblock-modal-overlay),
       a[target="_blank"][style*="position: absolute"], a[target="_blank"][style*="position: fixed"],
-      [id*="ad-"], [class*="ad-"]:not(.anime-card):not(.active),
-      [id*="ads-"], [class*="ads-"],
+      [id^="ad-"], [id*="-ad-"], [class^="ad-"]:not(.active), [class*=" ad-"]:not(.active), [class*="-ad-"]:not(.anime-card),
+      [id^="ads-"], [id*="-ads-"], [class^="ads-"], [class*=" ads-"], [class*="-ads-"],
       [id*="banner-ad"], [class*="banner-ad"],
       [class*="popunder"], [id*="popunder"],
       [class*="popup-ad"], [id*="popup-ad"],
@@ -207,30 +208,32 @@ class AdBlockEngine {
 
   // Deceptive transparent overlay remover (Clickjacking Killer)
   initDomProtection() {
+    let purgeTimer = null;
     const purgeOverlays = () => {
       if (!this.enabled) return;
       try {
-        // Query potential transparent overlay traps
-        const candidates = document.querySelectorAll('div, a, span');
+        // Query potential transparent overlay traps (direct body siblings or rogue ad elements)
+        const candidates = document.querySelectorAll('body > div:not(#app):not(#network-modal):not(#adblock-modal-overlay), body > a, body > span, .ad-element');
         candidates.forEach(el => {
           // Never touch our legitimate player, video or app nodes
-          if (el.id === 'main-player-iframe' || el.closest('#app') && !el.classList.contains('ad-element')) {
-            // Only examine outside app or suspected rogue overlays
-            if (!el.hasAttribute('data-adblock-checked')) {
-              el.setAttribute('data-adblock-checked', '1');
-              const s = window.getComputedStyle(el);
-              const isFloating = s.position === 'fixed' || s.position === 'absolute';
-              const zIndex = parseInt(s.zIndex, 10) || 0;
-              const opacity = parseFloat(s.opacity);
+          if (el.id === 'main-player-iframe') return;
+          if (el.closest('#app') && !el.classList.contains('ad-element')) return;
 
-              // Detect invisible full-screen clickjacking traps (z-index >= 1000 and transparent)
-              if (isFloating && zIndex >= 1000 && (opacity < 0.05 || s.visibility === 'hidden')) {
-                const r = el.getBoundingClientRect();
-                if (r.width >= window.innerWidth * 0.7 && r.height >= window.innerHeight * 0.7) {
-                  if (!el.querySelector('video') && !el.querySelector('iframe')) {
-                    el.remove();
-                    this.recordBlock('Capa de secuestro de clics (Clickjacking overlay) eliminada');
-                  }
+          // Only examine outside app or suspected rogue overlays
+          if (!el.hasAttribute('data-adblock-checked')) {
+            el.setAttribute('data-adblock-checked', '1');
+            const s = window.getComputedStyle(el);
+            const isFloating = s.position === 'fixed' || s.position === 'absolute';
+            const zIndex = parseInt(s.zIndex, 10) || 0;
+            const opacity = parseFloat(s.opacity);
+
+            // Detect invisible full-screen clickjacking traps (z-index >= 1000 and transparent)
+            if (isFloating && zIndex >= 1000 && (opacity < 0.05 || s.visibility === 'hidden')) {
+              const r = el.getBoundingClientRect();
+              if (r.width >= window.innerWidth * 0.7 && r.height >= window.innerHeight * 0.7) {
+                if (!el.querySelector('video') && !el.querySelector('iframe')) {
+                  el.remove();
+                  this.recordBlock('Capa de secuestro de clics (Clickjacking overlay) eliminada');
                 }
               }
             }
@@ -239,9 +242,17 @@ class AdBlockEngine {
       } catch (e) {}
     };
 
+    const schedulePurge = () => {
+      if (purgeTimer) return;
+      purgeTimer = setTimeout(() => {
+        purgeTimer = null;
+        purgeOverlays();
+      }, 120);
+    };
+
     if (window.MutationObserver) {
       this.observer = new MutationObserver(() => {
-        purgeOverlays();
+        schedulePurge();
       });
       if (document.body) {
         this.observer.observe(document.body, { childList: true, subtree: true });
@@ -249,7 +260,7 @@ class AdBlockEngine {
     }
 
     // Periodic sweep
-    setInterval(purgeOverlays, 1500);
+    setInterval(purgeOverlays, 2500);
   }
 
   // Open modal (alias for showModal)
@@ -259,6 +270,11 @@ class AdBlockEngine {
 
   // Show interactive AdBlock stats & settings modal
   showModal() {
+    if (typeof this._activeModalCleanup === 'function') {
+      this._activeModalCleanup();
+      this._activeModalCleanup = null;
+    }
+
     let modalOverlay = document.getElementById('adblock-modal-overlay');
     if (modalOverlay) {
       modalOverlay.remove();
@@ -347,14 +363,17 @@ class AdBlockEngine {
     document.body.appendChild(modalOverlay);
 
     // Attach modal events
-    const closeModal = () => {
-      window.removeEventListener('keydown', onKeyDown);
-      modalOverlay.remove();
-    };
-
     const onKeyDown = (e) => {
       if (e.key === 'Escape') closeModal();
     };
+    const closeModal = () => {
+      window.removeEventListener('keydown', onKeyDown);
+      if (this._activeModalCleanup === closeModal) {
+        this._activeModalCleanup = null;
+      }
+      if (modalOverlay.parentNode) modalOverlay.remove();
+    };
+    this._activeModalCleanup = closeModal;
     window.addEventListener('keydown', onKeyDown);
 
     modalOverlay.querySelector('#btn-close-adblock-modal').addEventListener('click', closeModal);
@@ -407,7 +426,7 @@ class AdBlockEngine {
         const ads = doc.querySelectorAll(
           '#overlayads, .overlayads, [id*="overlayad"], [class*="overlayad"], ' +
           '#confirm_modal, #modal-back, .play-overlay, ' +
-          '.ad-banner, .advertisement, [id*="ad_"], [class*="popunder"], [id*="popunder"], ' +
+          '.ad-banner, .advertisement, [id^="ad_"], [id*="_ad_"], [class*="popunder"], [id*="popunder"], ' +
           'div[style*="z-index: 2147483647"], div[style*="z-index: 9999999"], ' +
           'a[target="_blank"][style*="position: absolute"], a[target="_blank"][style*="position: fixed"]'
         );

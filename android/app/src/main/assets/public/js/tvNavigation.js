@@ -151,9 +151,19 @@ class TVNavigationEngine {
 
     // When typing in an input, allow normal typing, Backspace (delete chars), Escape and Left/Right navigation
     if (isTyping) {
-      if (keyCode === 13) return; // Enter submits search
+      if (keyCode === 13) return; // Enter submits search or activates select
       if (keyCode === 8 || keyCode === 27) return; // Allow normal Backspace & Escape
-      if (keyCode === 38 || keyCode === 40) { // Up/Down escapes input
+      if (activeEl.tagName === 'SELECT') {
+        if (keyCode === 37 || keyCode === 39) { // Left/Right exits select
+          const dir = keyCode === 37 ? 'LEFT' : 'RIGHT';
+          activeEl.blur();
+          this.moveFocus(dir);
+          e.preventDefault();
+          return;
+        }
+        return; // Preserve native Up/Down option selection inside <select>
+      }
+      if (keyCode === 38 || keyCode === 40) { // Up/Down escapes text inputs
         activeEl.blur();
       } else {
         return; // Allow Left/Right cursor movement in input text
@@ -213,18 +223,6 @@ class TVNavigationEngine {
       return;
     }
 
-    // If currently typing in an input and pressing Left/Right/Up/Down, don't move spatial focus unless Escape/Enter
-    if (isTyping) {
-      if (keyCode === 13) { // Enter on search submits
-        return;
-      }
-      if (keyCode === 38 || keyCode === 40) { // Up/Down escapes input
-        activeEl.blur();
-      } else {
-        return;
-      }
-    }
-
     // 4. D-Pad Directional Navigation
     let direction = null;
     if (keyCode === 38 || key === 'ArrowUp' || key === 'Up') direction = 'UP';
@@ -252,7 +250,7 @@ class TVNavigationEngine {
     // A. Check if modal overlay is open (AdBlock modal, Network modal, etc.)
     const modal = document.querySelector('.modal-backdrop, .modal-overlay, #network-modal');
     if (modal) {
-      const closeBtn = modal.querySelector('.modal-close-btn, #btn-modal-close, #btn-close-network-modal-footer, .btn-close-modal-action');
+      const closeBtn = modal.querySelector('.modal-close-btn, #btn-modal-close, #btn-close-network-modal-footer, .btn-close-modal-action, #btn-close-modal');
       if (closeBtn) closeBtn.click();
       else modal.remove();
       return;
@@ -312,9 +310,19 @@ class TVNavigationEngine {
       }
     } catch (e) {}
 
-    // PostMessage fallback
+    // PostMessage fallback normalized for all player bridges
     try {
-      iframe.contentWindow.postMessage({ type: 'PLAYER_CMD', cmd }, '*');
+      if (cmd === 'seek_forward') {
+        iframe.contentWindow.postMessage({ type: 'PLAYER_CMD', cmd: 'seek_relative', seconds: 10, delta: 10 }, '*');
+      } else if (cmd === 'seek_backward') {
+        iframe.contentWindow.postMessage({ type: 'PLAYER_CMD', cmd: 'seek_relative', seconds: -10, delta: -10 }, '*');
+      } else if (cmd === 'play') {
+        iframe.contentWindow.postMessage({ type: 'PLAYER_CMD', cmd: 'play' }, '*');
+      } else if (cmd === 'pause') {
+        iframe.contentWindow.postMessage({ type: 'PLAYER_CMD', cmd: 'pause' }, '*');
+      } else {
+        iframe.contentWindow.postMessage({ type: 'PLAYER_CMD', cmd }, '*');
+      }
     } catch (e) {}
   }
 
@@ -339,11 +347,11 @@ class TVNavigationEngine {
 
     const nodes = Array.from(container.querySelectorAll(selector));
     return nodes.filter(el => {
-      // Must be visible on screen
-      if (!el.offsetParent && el.tagName !== 'BODY') return false;
+      // Must be visible on screen (note: position:fixed elements always have offsetParent === null)
+      const style = window.getComputedStyle(el);
+      if (style.position !== 'fixed' && !el.offsetParent && el.tagName !== 'BODY') return false;
       const rect = el.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) return false;
-      const style = window.getComputedStyle(el);
       if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) <= 0.05) return false;
 
       // Avoid duplicate stops inside standard cards where the card container itself is the target
@@ -380,7 +388,7 @@ class TVNavigationEngine {
 
     // Prefer prominent content element (hero button, first anime card, or watch tab)
     const preferred = focusables.find(el => 
-      el.classList.contains('hero-actions') || 
+      Boolean(el.closest('.hero-actions')) || 
       el.classList.contains('server-tab') || 
       el.classList.contains('anime-card') || 
       el.id === 'nav-search-input'
@@ -393,7 +401,7 @@ class TVNavigationEngine {
     const focusables = this.getFocusableElements();
     if (focusables.length === 0) return;
 
-    if (!this.currentFocus || !document.contains(this.currentFocus) || !this.currentFocus.offsetParent) {
+    if (!this.currentFocus || !document.contains(this.currentFocus) || this.currentFocus.getClientRects().length === 0) {
       this.focusFirstElement();
       return;
     }

@@ -36,7 +36,8 @@ function unblockedLookup(hostname, options, callback) {
     options = {};
   }
 
-  const isCfTarget = CF_DOMAIN_SUFFIXES.some(d => hostname === d || hostname.endsWith('.' + d));
+  const normalizedHost = String(hostname || '').toLowerCase().trim().replace(/\.+$/, '');
+  const isCfTarget = CF_DOMAIN_SUFFIXES.some(d => normalizedHost === d || normalizedHost.endsWith('.' + d));
   if (isCfTarget) {
     if (options && options.all) {
       return callback(null, [{ address: CF_CLEAN_IP, family: 4 }]);
@@ -46,6 +47,17 @@ function unblockedLookup(hostname, options, callback) {
 
   dns.lookup(hostname, options, (err, address, family) => {
     if (err) return callback(err, address, family);
+
+    // Handle Node 20+ array results when options.all === true
+    if (Array.isArray(address)) {
+      const sanitized = address.map(entry => {
+        if (entry && typeof entry.address === 'string' && (entry.address.startsWith('188.114.96.') || entry.address.startsWith('188.114.97.'))) {
+          return { address: CF_CLEAN_IP, family: 4 };
+        }
+        return entry;
+      });
+      return callback(null, sanitized);
+    }
 
     // If resolved IP is in the known blocked 188.114.96.x / 97.x ranges, redirect to clean node
     if (typeof address === 'string' && (address.startsWith('188.114.96.') || address.startsWith('188.114.97.'))) {
@@ -111,36 +123,45 @@ function getHeaders(referer = null) {
 function fixEncoding(str) {
   if (!str || typeof str !== 'string') return str;
   let text = str;
-  try {
-    if (/[\u00C0-\u00FF]/.test(text) && /[\u0080-\u00BF]/.test(text)) {
-      const buffer = Buffer.from(text, 'binary');
-      const decoded = buffer.toString('utf-8');
-      if (!decoded.includes('')) {
-        text = decoded;
+  if (/Ã|Â|â|ð|ï¿½/.test(text)) {
+    // 1. Decode multi-byte UTF-8 sequences mistakenly interpreted as Latin-1 / Windows-1252
+    text = text.replace(/[\xC2-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3}/g, (match) => {
+      try {
+        const bytes = new Uint8Array([...match].map(c => c.charCodeAt(0)));
+        return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      } catch {
+        return match;
       }
-    }
-  } catch (_) {}
+    });
 
-  // Explicit replacements for common Spanish mojibake patterns
-  text = text
-    .replace(/Ã¡/g, 'á')
-    .replace(/Ã©/g, 'é')
-    .replace(/Ã­/g, 'í')
-    .replace(/Ã³/g, 'ó')
-    .replace(/Ãº/g, 'ú')
-    .replace(/Ã±/g, 'ñ')
-    .replace(/Ã/g, 'Á')
-    .replace(/Ã‰/g, 'É')
-    .replace(/Ã/g, 'Í')
-    .replace(/Ã“/g, 'Ó')
-    .replace(/Ãš/g, 'Ú')
-    .replace(/Ã‘/g, 'Ñ')
-    .replace(/Â¿/g, '¿')
-    .replace(/Â¡/g, '¡')
-    .replace(/Â/g, '')
-    .trim();
+    // 2. Handle orphaned single-byte mojibake where second byte was stripped
+    text = text
+      .replace(/Ã¡/g, 'á')
+      .replace(/Ã©/g, 'é')
+      .replace(/Ã\xad/g, 'í')
+      .replace(/Ã³/g, 'ó')
+      .replace(/Ãº/g, 'ú')
+      .replace(/Ã±/g, 'ñ')
+      .replace(/Ã\x81/g, 'Á')
+      .replace(/Ã‰/g, 'É')
+      .replace(/Ã\x8d/g, 'Í')
+      .replace(/Ã“/g, 'Ó')
+      .replace(/Ãš/g, 'Ú')
+      .replace(/Ã‘/g, 'Ñ')
+      .replace(/Ã(?=[a-zA-ZáéíóúÁÉÍÓÚ])/g, 'í')
+      .replace(/Â¿/g, '¿')
+      .replace(/Â¡/g, '¡')
+      .replace(/Â/g, '')
+      .replace(/â€”/g, '—')
+      .replace(/â€“/g, '–')
+      .replace(/â€˜/g, "'")
+      .replace(/â€™/g, "'")
+      .replace(/â€œ/g, '"')
+      .replace(/â€/g, '"')
+      .replace(/\uFFFD/g, '');
+  }
 
-  return text;
+  return text.trim();
 }
 
 module.exports = {
@@ -149,6 +170,7 @@ module.exports = {
   USER_AGENTS,
   CF_CLEAN_IP,
   CF_DOMAIN_SUFFIXES,
+  unblockedLookup,
   httpClient,
   getRandomUserAgent,
   getHeaders,

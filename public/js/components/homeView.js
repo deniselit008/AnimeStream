@@ -4,11 +4,14 @@
  */
 import { Api } from '../api.js?v=5.0';
 import { Storage } from '../storage.js?v=5.0';
-import { Icons, escapeHtml, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster, showToast } from '../utils.js?v=5.0';
+import { Icons, escapeHtml, getSourceBadgeClass, resolveAnimeCover, getDefaultPoster, showToast, formatTime } from '../utils.js?v=5.0';
 
 let currentHeroInterval = null;
+let activeHomeToken = 0;
+let activeLatestReqToken = 0;
 
 export function cleanupHomeView() {
+  activeHomeToken++;
   if (currentHeroInterval) {
     clearInterval(currentHeroInterval);
     currentHeroInterval = null;
@@ -17,6 +20,7 @@ export function cleanupHomeView() {
 
 export async function renderHome(container) {
   cleanupHomeView();
+  const myHomeToken = activeHomeToken;
   container.innerHTML = `
     <div class="home-container">
       <!-- Hero Banner Placeholder with Skeleton -->
@@ -62,7 +66,7 @@ export async function renderHome(container) {
   renderContinueWatching(container.querySelector('#continue-watching-mount'));
 
   // Load Latest Episodes
-  await loadLatestEpisodes(container, 'all');
+  await loadLatestEpisodes(container, 'all', myHomeToken);
 
   // Filter Pills Event Listener
   const filterBtns = container.querySelectorAll('#home-source-filters .btn-pill');
@@ -73,7 +77,7 @@ export async function renderHome(container) {
       const source = btn.dataset.source;
       const grid = container.querySelector('#latest-episodes-grid');
       grid.innerHTML = renderSkeletons(10);
-      await loadLatestEpisodes(container, source);
+      await loadLatestEpisodes(container, source, myHomeToken);
     });
   });
 }
@@ -106,9 +110,14 @@ function renderContinueWatching(mount) {
           ${items.map(item => {
             const coverUrl = resolveAnimeCover(item);
             const defaultSvg = getDefaultPoster(item.animeTitle, item.source);
+            const safeWatchImg = (coverUrl && !coverUrl.startsWith('data:')) ? coverUrl : (item.image || '');
+            const savedPos = Storage.getPlaybackPosition(item.url);
+            const curTime = (item.currentTime > 0) ? item.currentTime : (savedPos?.currentTime || 0);
+            const dur = (item.duration > 0) ? item.duration : (savedPos?.duration || 0);
+            const prog = (item.progress > 0) ? item.progress : (savedPos?.progress || (dur > 0 ? curTime / dur : 0.5));
             return `
             <div class="anime-card">
-              <a href="#/watch?url=${encodeURIComponent(item.url)}&image=${encodeURIComponent(item.image || '')}&title=${encodeURIComponent(item.animeTitle || '')}&animeUrl=${encodeURIComponent(item.animeUrl || '')}" class="anime-card-media">
+              <a href="#/watch?url=${encodeURIComponent(item.url)}&image=${encodeURIComponent(safeWatchImg)}&title=${encodeURIComponent(item.animeTitle || '')}&animeUrl=${encodeURIComponent(item.animeUrl || '')}" class="anime-card-media">
                 <img 
                   src="${escapeHtml(coverUrl)}" 
                   alt="${escapeHtml(item.animeTitle)}" 
@@ -127,16 +136,23 @@ function renderContinueWatching(mount) {
                 <div class="card-badge-bottom-right">
                   <span class="badge badge-episode">Ep. ${escapeHtml(String(item.episode))}</span>
                 </div>
+                ${curTime > 0 ? `
+                  <div class="card-progress-bar">
+                    <div class="card-progress-fill" style="width: ${Math.min(100, Math.max(4, Math.round(prog * 100)))}%;"></div>
+                  </div>
+                ` : ''}
               </a>
               <div class="anime-card-info">
-                <a href="#/watch?url=${encodeURIComponent(item.url)}&image=${encodeURIComponent(item.image || '')}&title=${encodeURIComponent(item.animeTitle || '')}" class="anime-card-title" title="${escapeHtml(item.animeTitle)}">
+                <a href="#/watch?url=${encodeURIComponent(item.url)}&image=${encodeURIComponent(safeWatchImg)}&title=${encodeURIComponent(item.animeTitle || '')}&animeUrl=${encodeURIComponent(item.animeUrl || '')}" class="anime-card-title" title="${escapeHtml(item.animeTitle)}">
                   ${escapeHtml(item.animeTitle)}
                 </a>
                 <div class="anime-card-meta">
-                  <span>Episodio ${escapeHtml(String(item.episode))}</span>
-                  <a href="#/anime?url=${encodeURIComponent(item.animeUrl)}" title="Ficha del anime" style="color: var(--accent-primary);">
-                    Ficha
-                  </a>
+                  <span>Ep. ${escapeHtml(String(item.episode))}${curTime > 0 ? ` • ${formatTime(curTime)}` : ''}</span>
+                  ${item.animeUrl ? `
+                    <a href="#/anime?url=${encodeURIComponent(item.animeUrl)}" title="Ficha del anime" style="color: var(--accent-primary);">
+                      Ficha
+                    </a>
+                  ` : ''}
                 </div>
               </div>
             </div>
@@ -150,12 +166,14 @@ function renderContinueWatching(mount) {
   }
 }
 
-async function loadLatestEpisodes(container, source = 'all') {
+async function loadLatestEpisodes(container, source = 'all', homeToken = activeHomeToken) {
+  const myReqToken = ++activeLatestReqToken;
   const grid = container.querySelector('#latest-episodes-grid');
   const heroMount = container.querySelector('#hero-banner-mount');
 
   try {
     const episodes = await Api.getLatest(source);
+    if (homeToken !== activeHomeToken || myReqToken !== activeLatestReqToken) return;
     if (!episodes || episodes.length === 0) {
       if (heroMount && heroMount.querySelector('.hero-skeleton-placeholder')) {
         heroMount.innerHTML = '';
@@ -289,12 +307,14 @@ async function loadLatestEpisodes(container, source = 'all') {
     grid.innerHTML = episodes.map(ep => {
       const isSeen = Storage.isSeen(ep.url);
       const fallbackImg = getDefaultPoster(ep.title, ep.source);
-      const watchHref = `#/watch?url=${encodeURIComponent(ep.url)}&image=${encodeURIComponent(ep.image || '')}&title=${encodeURIComponent(ep.title || '')}&animeUrl=${encodeURIComponent(ep.animeUrl || '')}`;
+      const coverUrl = resolveAnimeCover(ep);
+      const safeWatchImg = (coverUrl && !coverUrl.startsWith('data:')) ? coverUrl : (ep.image || '');
+      const watchHref = `#/watch?url=${encodeURIComponent(ep.url)}&image=${encodeURIComponent(safeWatchImg)}&title=${encodeURIComponent(ep.title || '')}&animeUrl=${encodeURIComponent(ep.animeUrl || '')}`;
       return `
         <div class="anime-card">
           <a href="${watchHref}" class="anime-card-media" title="Ver ${escapeHtml(ep.title)} - Episodio ${ep.episode}">
             <img 
-              src="${escapeHtml(ep.image || fallbackImg)}" 
+              src="${escapeHtml(coverUrl)}" 
               alt="${escapeHtml(ep.title)}" 
               class="anime-card-img" 
               loading="lazy"
@@ -337,6 +357,7 @@ async function loadLatestEpisodes(container, source = 'all') {
     }).join('');
 
   } catch (err) {
+    if (homeToken !== activeHomeToken || myReqToken !== activeLatestReqToken) return;
     if (heroMount && heroMount.querySelector('.hero-skeleton-placeholder')) {
       heroMount.innerHTML = '';
     }

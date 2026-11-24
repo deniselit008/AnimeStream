@@ -12,6 +12,9 @@ class JKAnimeProvider {
 
   _formatUrl(pathOrUrl) {
     if (!pathOrUrl) return '';
+    if (pathOrUrl.startsWith('//')) {
+      return 'https:' + pathOrUrl;
+    }
     if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
       return pathOrUrl;
     }
@@ -45,7 +48,8 @@ class JKAnimeProvider {
       if (seen.has(seenKey)) return;
       seen.add(seenKey);
 
-      const card = $(el).closest('.col, .item, .card, .anime') || $(el);
+      const cardEl = $(el).closest('.col, .item, .card, .anime');
+      const card = cardEl.length ? cardEl : $(el);
       const imgEl = card.find('.set-bg, img').first();
       let imgSrc = imgEl.attr('data-setbg') || imgEl.attr('src');
       if (!imgSrc) {
@@ -104,8 +108,12 @@ class JKAnimeProvider {
     });
 
     items.each((_, el) => {
-      // Also ignore container sections explicitly titled "Buscado recientemente" or "Top"
-      const sectionHeading = $(el).closest('section, div[class*="col"]').find('h4, h5, .section-title').first().text().toLowerCase();
+      // Check section title without picking up the anime card's own <h5> title inside .col-*
+      const sectionEl = $(el).closest('section');
+      const sectionHeading = (sectionEl.length
+        ? sectionEl.find('> .section-title, > div > .section-title, > h4').first().text()
+        : $(el).closest('div[class*="col"]').children('.section-title, h4').first().text()
+      ).toLowerCase();
       if (sectionHeading.includes('buscado') || sectionHeading.includes('top ') || sectionHeading.includes('popular')) {
         return;
       }
@@ -246,8 +254,10 @@ class JKAnimeProvider {
           image: page1Thumbs[i] || null
         });
       }
-    } else {
-      const regex = new RegExp(`(?:${this.baseUrl})?/${slug}/(\\d+)/?$`);
+    } else if (slug) {
+      const escapedBase = this.baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const escapedSlug = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(?:${escapedBase})?/${escapedSlug}/(\\d+)/?$`);
       $('a').each((_, el) => {
         const href = $(el).attr('href') || '';
         const m = href.match(regex);
@@ -320,8 +330,23 @@ class JKAnimeProvider {
     animeTitle = fixEncoding(animeTitle);
 
     // Prev / Next
-    const prevUrl = epNum > 1 ? `${this.baseUrl}/${slug}/${epNum - 1}/` : null;
-    const nextUrl = `${this.baseUrl}/${slug}/${epNum + 1}/`;
+    let prevUrl = null;
+    let nextUrl = null;
+    $('a').each((_, el) => {
+      const t = $(el).text().trim().toLowerCase();
+      const h = $(el).attr('href');
+      if (h && (t === 'siguiente' || $(el).find('.fa-arrow-right, .fa-chevron-right').length > 0)) {
+        nextUrl = this._formatUrl(h);
+      }
+      if (h && (t === 'anterior' || $(el).find('.fa-arrow-left, .fa-chevron-left').length > 0)) {
+        prevUrl = this._formatUrl(h);
+      }
+    });
+    if (!prevUrl && epNum > 1) {
+      prevUrl = `${this.baseUrl}/${slug}/${epNum - 1}/`;
+    }
+    if (prevUrl && !prevUrl.endsWith('/')) prevUrl += '/';
+    if (nextUrl && !nextUrl.endsWith('/')) nextUrl += '/';
 
     // Audio determination
     const isDub = ['latino', 'castellano', 'doblado', 'dub'].some(k => (slug + ' ' + animeTitle).toLowerCase().includes(k));
@@ -345,7 +370,10 @@ class JKAnimeProvider {
              target.includes('mdbekjwqa');
     };
 
-    videoEmbeds.forEach((embedUrl, idx) => {
+    videoEmbeds.forEach((rawEmbedUrl, idx) => {
+      let embedUrl = typeof rawEmbedUrl === 'string' ? rawEmbedUrl.trim() : '';
+      if (embedUrl.startsWith('//')) embedUrl = 'https:' + embedUrl;
+      if (!/^https?:\/\//i.test(embedUrl)) return;
       const rawName = serverNames[idx] || `Servidor ${idx + 1}`;
       const sName = rawName.replace(/\s*\((?:mirror|Mirror)\)\s*/gi, '').trim();
       if (isHiddenServer(sName, embedUrl)) {
@@ -458,7 +486,7 @@ class JKAnimeProvider {
     const txt = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
     const items = [];
 
-    const m = txt.match(/var animes = ({.*?});\s*\n/);
+    const m = txt.match(/var animes\s*=\s*(\{[\s\S]*?\});/);
     if (m) {
       try {
         const data = JSON.parse(m[1]);
@@ -491,6 +519,50 @@ class JKAnimeProvider {
           });
         }
       } catch (_) {}
+    }
+
+    // Fallback to DOM elements if var animes was missing or unparseable
+    if (items.length === 0) {
+      const $ = cheerio.load(txt);
+      const seen = new Set();
+      const DIR_EXCLUDED_SLUGS = new Set([
+        'buscar', 'directorio', 'horario', 'top', 'editar-perfil', 'jkanime.net',
+        'guardados', 'favoritos', 'historial', 'login', 'registro', 'recuperar',
+        'privacidad', 'terminos', 'dmca', 'contacto', 'noticias', 'blog',
+        'calendario', 'aleatorio', 'buscados', 'buscados-recientemente',
+        'emision', 'finalizados', 'estrenos', 'peliculas', 'ovas', 'especiales'
+      ]);
+      $('.anime__item, .custom_item, article, .card').each((_, el) => {
+        if ($(el).closest('.anime__sidebar, .product__sidebar, .sidebar, aside, header, nav, footer').length) return;
+        const a = $(el).find('a[href*="jkanime.net/"], a[href^="/"]').first();
+        if (!a.length) return;
+        const href = a.attr('href') || '';
+        if (href.startsWith('http') && !href.includes('jkanime.net')) return;
+        const mSlug = href.match(/(?:https:\/\/jkanime\.net)?\/([^/?#]+)\/?$/);
+        if (!mSlug) return;
+
+        const rawSlug = mSlug[1];
+        const slugLower = rawSlug.toLowerCase();
+        if (seen.has(slugLower) || DIR_EXCLUDED_SLUGS.has(slugLower) || slugLower.includes('hentai') || slugLower.includes('.php') || slugLower.includes('.html')) return;
+        seen.add(slugLower);
+
+        const titleEl = $(el).find('h5, h6, h4, .title').first();
+        const title = fixEncoding(titleEl.text().trim() || rawSlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
+        const img = $(el).find('.set-bg, img').first();
+        let image = img.attr('data-setbg') || img.attr('src');
+        if (image && !image.startsWith('http')) image = this._formatUrl(image);
+        if (!image) image = `https://cdn.jkdesa.com/assets/images/animes/image/${rawSlug}.jpg`;
+
+        items.push({
+          title,
+          url: `${this.baseUrl}/${rawSlug}/`,
+          image,
+          source: this.name,
+          type: 'TV Anime',
+          status: (status && status.toLowerCase().includes('fin')) ? 'Finalizado' : 'En emisión',
+          year: year && year !== 'all' ? String(year) : null
+        });
+      });
     }
 
     return items;

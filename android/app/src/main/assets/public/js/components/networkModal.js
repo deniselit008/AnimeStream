@@ -179,10 +179,16 @@ function renderAndroidManualConnectModal(modal) {
       if (!raw.startsWith('http://') && !raw.startsWith('https://')) {
         raw = `http://${raw}`;
       }
-      if (!raw.includes(':', 7)) {
-        raw = `${raw.replace(/\/+$/, '')}:3000`;
+      try {
+        const parsed = new URL(raw);
+        const rawHadPort = /:\d+$/.test(parsed.host);
+        if (!rawHadPort && parsed.protocol === 'http:' && parsed.hostname !== 'localhost' && !parsed.hostname.includes('appassets')) {
+          parsed.port = '3000';
+        }
+        raw = `${parsed.protocol}//${parsed.host}`;
+      } catch (_) {
+        raw = raw.replace(/\/+$/, '');
       }
-      raw = raw.replace(/\/+$/, '');
 
       connectBtn.disabled = true;
       connectBtn.textContent = 'Conectando...';
@@ -194,8 +200,12 @@ function renderAndroidManualConnectModal(modal) {
       try {
         const controller = new AbortController();
         const tid = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch(`${raw}/api/health`, { signal: controller.signal });
-        clearTimeout(tid);
+        let res;
+        try {
+          res = await fetch(`${raw}/api/health`, { signal: controller.signal });
+        } finally {
+          clearTimeout(tid);
+        }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         localStorage.setItem('animestream_server_url', raw);

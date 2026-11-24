@@ -34,12 +34,19 @@ function copyRecursiveSync(src, dest, ignorePatterns = []) {
   }
 }
 
+function resetDir(dir) {
+  if (fs.existsSync(dir)) {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+  fs.mkdirSync(dir, { recursive: true });
+}
+
 // -----------------------------------------------------------------------------
 // 1. WINDOWS PACKAGE (.exe & Silent Portable)
 // -----------------------------------------------------------------------------
 console.log('[1/3] Preparando paquete para Windows (.exe y modo silencioso)...');
 const winDir = path.join(EXPORT_DIR, 'AnimeStream-Windows');
-if (!fs.existsSync(winDir)) fs.mkdirSync(winDir, { recursive: true });
+resetDir(winDir);
 
 ['electron', 'server', 'public', 'build'].forEach(folder => {
   copyRecursiveSync(path.join(ROOT_DIR, folder), path.join(winDir, folder), ['.git']);
@@ -73,7 +80,7 @@ console.log('  ✔ Paquete Windows creado en dist/exports/AnimeStream-Windows');
 // -----------------------------------------------------------------------------
 console.log('[2/3] Preparando paquete para Linux (Binario ELF & AppImage)...');
 const linuxDir = path.join(EXPORT_DIR, 'AnimeStream-Linux');
-if (!fs.existsSync(linuxDir)) fs.mkdirSync(linuxDir, { recursive: true });
+resetDir(linuxDir);
 
 ['electron', 'server', 'public', 'build'].forEach(folder => {
   copyRecursiveSync(path.join(ROOT_DIR, folder), path.join(linuxDir, folder), ['.git']);
@@ -88,7 +95,7 @@ fs.writeFileSync(path.join(linuxDir, 'AnimeStream.desktop'),
 `[Desktop Entry]
 Name=AnimeStream
 Comment=Agregador y reproductor de anime en tiempo real
-Exec=bash -c "cd $(dirname %k) && ./iniciar_linux.sh"
+Exec=bash -c 'cd "$(dirname "%k")" && ./iniciar_linux.sh'
 Icon=video-display
 Terminal=false
 Type=Application
@@ -120,17 +127,18 @@ console.log('  ✔ Paquete Linux creado en dist/exports/AnimeStream-Linux');
 // -----------------------------------------------------------------------------
 console.log('[3/3] Preparando paquete para Android (.apk)...');
 const androidExportDir = path.join(EXPORT_DIR, 'AnimeStream-Android');
-if (!fs.existsSync(androidExportDir)) fs.mkdirSync(androidExportDir, { recursive: true });
+resetDir(androidExportDir);
 
 // Sync Android project structure
 copyRecursiveSync(path.join(ROOT_DIR, 'android'), path.join(androidExportDir, 'project'), ['.gradle', 'build', '.idea']);
 
 // Sync public web assets into android assets
 const androidAssetsDir = path.join(ROOT_DIR, 'android', 'app', 'src', 'main', 'assets', 'public');
-if (!fs.existsSync(androidAssetsDir)) fs.mkdirSync(androidAssetsDir, { recursive: true });
+resetDir(androidAssetsDir);
 copyRecursiveSync(path.join(ROOT_DIR, 'public'), androidAssetsDir);
 
 // Copy assets to exported android project as well
+resetDir(path.join(androidExportDir, 'project', 'app', 'src', 'main', 'assets', 'public'));
 copyRecursiveSync(path.join(ROOT_DIR, 'public'), path.join(androidExportDir, 'project', 'app', 'src', 'main', 'assets', 'public'));
 
 fs.writeFileSync(path.join(androidExportDir, 'COMO_COMPILAR_Y_USAR_APK.txt'),

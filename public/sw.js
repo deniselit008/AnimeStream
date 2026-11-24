@@ -1,19 +1,25 @@
 /**
  * AnimeStream - Service Worker for PWA & Offline Shell Caching
  */
-const CACHE_NAME = 'animestream-v5.0.0';
+const CACHE_NAME = 'animestream-v5.2.0';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/assets/logo.svg',
+  '/assets/icon-512.png',
   '/css/style.css',
+  '/js/vendor/qrcode.js',
   '/js/app.js',
   '/js/api.js',
+  '/js/clientScraper.js',
   '/js/utils.js',
   '/js/storage.js',
   '/js/adblock.js',
   '/js/tvNavigation.js',
   '/js/components/navbar.js',
+  '/js/components/networkModal.js',
+  '/js/components/mobileConnectView.js',
   '/js/components/homeView.js',
   '/js/components/directoryView.js',
   '/js/components/animeView.js',
@@ -76,11 +82,12 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       })
       .catch(() => {
-        return caches.match(event.request).then((cachedResponse) => {
+        return caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse;
           if (event.request.mode === 'navigate') {
             return caches.match('/index.html');
           }
+          return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
         });
       })
   );
